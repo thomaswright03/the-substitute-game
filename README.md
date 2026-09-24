@@ -29,7 +29,7 @@ explains this and shows the command above.
 
 ## How to play
 
-A round is one 3rd-period class (two minutes of real time, 9:05 to 9:50).
+A round is one 3rd-period class, 9:05 to 9:50 on the clock: two minutes of real time on Standard, four on Relaxed.
 
 1. **Take attendance first.** Pick up a name card from the chalkboard and hand it to that
    student. If you're not sure who that is, use **roll call**. The student answers, and the
@@ -145,8 +145,17 @@ every push and pull request.
 | `test/unit`, `test/e2e` | Rules tests and browser tests |
 | `scripts/` | Static server and the asset optimizer |
 
-The rules advance on real elapsed time, not frames, so a period lasts two minutes of
-unpaused play on any machine. The game pauses itself when the tab is hidden.
+The rules advance on real elapsed time, not frames, so a period lasts the same on any machine:
+two minutes of unpaused play on Standard, four on Relaxed. The game pauses itself when the tab
+is hidden.
+
+**Difficulty and balance.** The start screen offers Relaxed (a four-minute period, a calmer
+class and fewer throws) and Standard (the two-minute period the game was designed around). A
+first visit starts on Relaxed and the choice is remembered; each difficulty keeps its own best
+grade. `test/unit/balance.test.js` plays many seeded periods with a simulated first-time player
+that has to find each card's owner by roll call and walking, and sometimes tries the wrong desk,
+and checks the win-rate targets stated there. Notes from real playtests go in
+`docs/playtests.md`.
 
 **Sound.** `src/audio.js` synthesises every cue with the Web Audio API, so there are no
 audio files: the school bell at the start and end of the period, a tick for each of the last

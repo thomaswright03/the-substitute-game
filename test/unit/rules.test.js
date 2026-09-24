@@ -7,7 +7,6 @@ import {
 } from '../../src/rules.js';
 import { STUDENTS, TUNING } from '../../src/data.js';
 import { eventsOf, finishAttendance, newGame, run } from './helpers.js';
-import { playWell } from './bot.js';
 
 function activateNow(game, id, escalation = 0) {
   const st = game.students[id];
@@ -57,16 +56,6 @@ describe('an idle round', () => {
 });
 
 describe('a round played well', () => {
-  test('is winnable, and most seeds are won by a competent player', () => {
-    let wins = 0;
-    for (let seed = 1; seed <= 30; seed++) {
-      const game = newGame({ seed });
-      const outcome = playWell(game);
-      if (outcome.won) wins++;
-    }
-    assert.ok(wins >= 27, `only ${wins}/30 well-played rounds were won`);
-  });
-
   test('a finished attendance with no incidents wins at the bell', () => {
     const game = newGame();
     finishAttendance(game, deliverCard, pickupCard);

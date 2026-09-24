@@ -21,7 +21,7 @@ import { updateProjectile } from './effects.js';
 import { updatePrincipal } from './principal.js';
 import { setupRound, showBest, updateCountdown } from './round.js';
 import { setupAudio } from './audio.js';
-import { setupSettings } from './settings.js';
+import { difficulty, setupSettings } from './settings.js';
 import { applyCameraOverride, exposeTestHooks } from './testhooks.js';
 import { registerServiceWorker } from './offline.js';
 
@@ -107,7 +107,7 @@ async function init() {
   setupDiscipline();
   setupRound();
   buildTags();
-  S.game = R.createGame();
+  S.game = R.createGame({ difficulty: difficulty() });
   syncCamera(camera);
   boot.ready();
   showBest();

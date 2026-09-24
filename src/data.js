@@ -44,6 +44,38 @@ export const STUDENTS = [
 
 export const PRINCIPAL_MODEL = 'business-man';
 
+// The room's floor plan in metres (the chalkboard is at frontZ), shared by the 3D scene and the
+// simulated player in the balance tests.
+export const ROOM = {
+  halfWidth: 4.6,
+  frontZ: -6.2,
+  backZ: 6.2,
+  height: 3.15,
+  colsX: [-2.6, -0.87, 0.87, 2.6],
+  rowsZ: [-3.0, -0.75],
+  doorX: -2.6,
+};
+
+// The teacher walks at this speed (m/s) and starts each period at the back of the room.
+export const TEACHER = { speed: 3.1, startZ: ROOM.backZ - 1.7 };
+
+// Difficulty presets, applied over TUNING. Standard is the two-minute period the game was
+// designed around. The balance tests show that a player a little slower than the simulated
+// first-timer (slower to react, to aim and to find each card's owner) loses almost every
+// Standard period, mostly by running out of time for attendance; Relaxed doubles the period and
+// calms the class so that player wins most rounds. See test/unit/balance.test.js.
+export const DIFFICULTY = {
+  relaxed: {
+    period: 240,
+    rateScale: 0.7,
+    attendanceRateScale: 0.5,
+    throwChanceAttendance: 0.08,
+    throwChanceLesson: 0.15,
+  },
+  standard: {},
+};
+export const DEFAULT_DIFFICULTY = 'relaxed';
+
 export const ICON = {
   notes: '📝', phone: '📱', plane: '✈️', tip: '🪑', argue: '💬', sleep: '💤', snack: '🍪', spin: '🌀',
 };
@@ -60,6 +92,9 @@ export const TUNING = {
   // less often and escalate more slowly, but they do act up.
   attendanceSpawnScale: 1.35,
   attendanceRateScale: 0.7,
+
+  // Multiplies every student's escalation rate (the relaxed difficulty lowers it).
+  rateScale: 1,
 
   // Escalation thresholds (percent).
   warnAt: 80,

@@ -2,16 +2,9 @@
 import * as THREE from 'three';
 import './three-setup.js';
 import { t } from './strings.js';
+import { ROOM } from './data.js';
 
-export const ROOM = {
-  halfWidth: 4.6,
-  frontZ: -6.2,
-  backZ: 6.2,
-  height: 3.15,
-  colsX: [-2.6, -0.87, 0.87, 2.6],
-  rowsZ: [-3.0, -0.75],
-  doorX: -2.6,
-};
+export { ROOM };
 
 // Each desk has its chair behind it (toward the back of the room). Metres, relative to the desk.
 export const CHAIR = {

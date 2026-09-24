@@ -424,7 +424,7 @@ body.touch .log div:nth-last-child(n+3) { display: none; }
   margin: auto; background: var(--chalk); color: var(--ink); border-radius: 16px;
   box-shadow: 0 10px 0 var(--frame-dark), 0 14px 30px rgba(0, 0, 0, 0.4);
 }
-.panel { padding: 22px 24px 24px; max-width: 540px; width: 100%; }
+.panel { padding: 22px 24px 24px; max-width: 540px; width: 100%; color-scheme: light; }
 .panel .kicker { font-family: var(--font-display); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; font-size: var(--fs-1); color: var(--notebook-blue); }
 .panel h1 { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-6); margin: 4px 0 6px; text-wrap: balance; line-height: 1.1; }
 .panel h2 { font-family: var(--font-display); font-weight: 600; font-size: var(--fs-2); letter-spacing: 0.08em; text-transform: uppercase; color: var(--frame-dark); margin: 14px 0 6px; }
@@ -453,6 +453,16 @@ body.touch .log div:nth-last-child(n+3) { display: none; }
 .reportCard .grade { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-6); line-height: 1; color: var(--notebook-blue); min-width: 44px; text-align: center; }
 .reportCard .label { font-family: var(--font-display); font-weight: 600; font-size: var(--fs-1); text-transform: uppercase; letter-spacing: 0.08em; color: var(--frame-dark); }
 .reportCard ul { margin: 2px 0 0; padding: 0 0 0 16px; font-size: var(--fs-2); color: var(--muted-ink); }
+.difficulty { border: none; margin: 0 0 10px; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.difficulty legend { font-family: var(--font-display); font-weight: 600; font-size: var(--fs-2); letter-spacing: 0.08em; text-transform: uppercase; color: var(--frame-dark); margin: 0 auto 6px; padding: 0; }
+.difficulty label {
+  display: flex; gap: 8px; align-items: flex-start; text-align: left; cursor: pointer; min-height: var(--touch);
+  background: var(--paper-deep); border: 2px solid transparent; border-radius: 10px; padding: 8px 10px; font-size: var(--fs-2); color: var(--ink);
+}
+.difficulty label:has(input:checked) { border-color: var(--ink); background: var(--paper); }
+.difficulty input { margin: 3px 0 0; width: 18px; height: 18px; accent-color: var(--notebook-blue); flex: none; }
+.difficulty small { display: block; font-size: var(--fs-1); color: var(--muted-ink); line-height: 1.35; }
+@container stage (max-width: 380px) { .difficulty { grid-template-columns: 1fr; } }
 .settings { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 18px; margin: 0 0 14px; font-size: var(--fs-2); color: var(--muted-ink); }
 .settings label { display: inline-flex; align-items: center; gap: 8px; min-height: var(--touch); cursor: pointer; }
 .settings input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--notebook-blue); margin: 0; }

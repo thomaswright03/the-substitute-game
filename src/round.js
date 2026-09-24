@@ -13,24 +13,27 @@ import { closeSeatChartForRoundEnd } from './seating.js';
 import { clearProjectile } from './effects.js';
 import { releaseLook, requestLook, stopHoverLook } from './input.js';
 import { play } from './audio.js';
+import { difficulty, onDifficultyChange } from './settings.js';
 
-const BEST_GRADE_KEY = 'substitute_best_grade';
+// Standard keeps the key best grades were saved under before there was a choice of difficulty.
+const BEST_GRADE_KEYS = { standard: 'substitute_best_grade', relaxed: 'substitute_best_grade_relaxed' };
 const GRADE_ORDER = ['A', 'B', 'C', 'D'];
 
 /* ---------------- best grade ---------------- */
 
-function bestGrade() {
-  try { return localStorage.getItem(BEST_GRADE_KEY); } catch { return null; }
+function bestGrade(level) {
+  try { return localStorage.getItem(BEST_GRADE_KEYS[level]); } catch { return null; }
 }
 
-function saveBestGrade(grade) {
-  const prev = bestGrade();
+function saveBestGrade(level, grade) {
+  const prev = bestGrade(level);
   if (prev && GRADE_ORDER.indexOf(prev) <= GRADE_ORDER.indexOf(grade)) return;
-  try { localStorage.setItem(BEST_GRADE_KEY, grade); } catch { /* storage unavailable */ }
+  try { localStorage.setItem(BEST_GRADE_KEYS[level], grade); } catch { /* storage unavailable */ }
 }
 
+// The best grade at the difficulty that is currently chosen.
 export function showBest() {
-  el.bestStart.textContent = bestGrade() || t('start.bestNone');
+  el.bestStart.textContent = bestGrade(difficulty()) || t('start.bestNone');
 }
 
 /* ---------------- pause ---------------- */
@@ -66,7 +69,7 @@ function resetVisuals() {
 }
 
 export function startRound() {
-  S.game = R.createGame();
+  S.game = R.createGame({ difficulty: difficulty() });
   resetVisuals();
   resetPlayer();
   S.paused = false;
@@ -132,7 +135,7 @@ function showReportCard(game) {
     li.textContent = line;
     notes.append(li);
   }
-  saveBestGrade(r.grade);
+  saveBestGrade(game.difficulty, r.grade);
   S.lastBestGrade = r.grade;
 }
 
@@ -181,6 +184,7 @@ export function endRound(outcome) {
 
 export function setupRound() {
   el.startBtn.addEventListener('click', startRound);
+  onDifficultyChange(showBest);
   el.restartBtn.addEventListener('click', startRound);
   el.pauseBtn.addEventListener('click', () => setPaused(!S.paused));
   el.resumeBtn.addEventListener('click', () => setPaused(false));

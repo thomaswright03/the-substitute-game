@@ -9,7 +9,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('an idle round does not end on the win screen', async ({ page }) => {
-  await hooks(page, (s) => s.fastForward(s.tuning.period + 5));
+  await hooks(page, (s) => s.fastForward(s.game.tuning.period + 5));
   await expect(page.locator('#endOverlay')).toBeVisible();
   await expect(page.locator('#endTitle')).not.toHaveText('You Made It');
 });
@@ -54,7 +54,7 @@ test('a student reaching 100% ends the round with the right copy', async ({ page
 
 test('unfinished attendance at the bell is a loss', async ({ page }) => {
   await freezeRandomness(page);
-  await hooks(page, (s) => s.fastForward(s.tuning.period + 1));
+  await hooks(page, (s) => s.fastForward(s.game.tuning.period + 1));
   await expect(page.locator('#endTitle')).toHaveText('Attendance Not Taken');
   await expect(page.locator('#endText')).toContainText('8 students still unmarked');
 });
@@ -189,7 +189,7 @@ test('a won round reports removals, detentions and every intervention', async ({
   });
   await expect(page.locator('#log')).toContainText('marched out', { timeout: 60_000 });
   await freezeRandomness(page);
-  await hooks(page, (s) => s.fastForward(s.tuning.period + 1));
+  await hooks(page, (s) => s.fastForward(s.game.tuning.period + 1));
   await expect(page.locator('#endTitle')).toHaveText('You Made It');
   const text = page.locator('#endText');
   await expect(text).toContainText('Moe Lester spent the rest of the period in the principal’s office');

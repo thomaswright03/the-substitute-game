@@ -4,16 +4,18 @@
 // the unpaused real time that passed, plus the player's action functions (pickupCard, help,
 // discipline, ...). The rules never produce text: they push semantic events onto
 // game.events, which the UI drains and turns into log lines, sounds and effects.
-import { STUDENTS, TUNING } from './data.js';
+import { DIFFICULTY, STUDENTS, TUNING } from './data.js';
 
 export const DISCIPLINE_OPTIONS = ['talk', 'detention', 'principal', 'zap'];
 
 export function createGame(options = {}) {
   const roster = options.students || STUDENTS;
-  const tuning = { ...TUNING, ...(options.tuning || {}) };
+  const difficulty = DIFFICULTY[options.difficulty] ? options.difficulty : 'standard';
+  const tuning = { ...TUNING, ...DIFFICULTY[difficulty], ...(options.tuning || {}) };
   const game = {
     roster,
     tuning,
+    difficulty,
     rng: options.rng || Math.random,
     phase: 'attendance', // 'attendance' -> 'lesson' -> 'over'
     outcome: null, // set when phase becomes 'over'
@@ -87,7 +89,7 @@ export function adjacentFriend(game, id) {
 export function escalationRate(game, id) {
   const cfg = studentConfig(game, id);
   const t = game.tuning;
-  let rate = cfg.rate;
+  let rate = cfg.rate * t.rateScale;
   if (game.phase === 'attendance') rate *= t.attendanceRateScale;
   if (adjacentFriend(game, id)) rate *= t.friendBoost;
   return rate;

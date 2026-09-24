@@ -1,13 +1,13 @@
 // The teacher: position, view direction and walking, with collisions against the desks and walls.
 import * as THREE from 'three';
-import { ROOM } from './scene.js';
+import { ROOM, TEACHER } from './data.js';
 import { S } from './session.js';
 import { world } from './world.js';
 
 export const EYE_HEIGHT = 1.62;
 const PLAYER_RADIUS = 0.35;
 const DESK_RADIUS = 0.85;
-const MOVE_SPEED = 3.1;
+const MOVE_SPEED = TEACHER.speed;
 const TURN_SPEED = 2.4; // radians per second for keyboard turning
 const EDGE_ASSIST_START = 0.82;
 const EDGE_ASSIST_RATE_YAW = 1.1;
@@ -15,7 +15,7 @@ const EDGE_ASSIST_RATE_PITCH = 0.85;
 const MOVE_STEP = 1 / 30; // movement is integrated in steps no longer than this
 const MAX_MOVE_DT = 0.25;
 
-const START = { x: 0, z: ROOM.backZ - 1.7, yaw: 0, pitch: -0.05 };
+const START = { x: 0, z: TEACHER.startZ, yaw: 0, pitch: -0.05 };
 export const player = { ...START };
 
 // Held movement keys, the on-screen stick, and the mouse's hover-look state (set by input.js).
