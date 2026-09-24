@@ -1,4 +1,5 @@
 // The teacher: position, view direction and walking, with collisions against the desks and walls.
+import * as THREE from 'three';
 import { ROOM } from './scene.js';
 import { S } from './session.js';
 import { world } from './world.js';

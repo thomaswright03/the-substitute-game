@@ -1,4 +1,5 @@
 // Only with ?test in the URL: a small API the browser tests use to set up situations directly.
+import * as THREE from 'three';
 import { STUDENTS, TUNING } from './data.js';
 import * as R from './rules.js';
 import { applyStaticStrings, setStrings } from './strings.js';

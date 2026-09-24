@@ -1,5 +1,6 @@
 // Roll call: the answering student's speech bubble, or an arrow toward them when they are
 // off screen. Floating hints are kept inside the part of the stage the HUD doesn't cover.
+import * as THREE from 'three';
 import * as R from './rules.js';
 import { lookup, t } from './strings.js';
 import { el } from './dom.js';

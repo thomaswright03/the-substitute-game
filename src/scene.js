@@ -1,5 +1,6 @@
 // The classroom itself: walls, floor, windows, chalkboard, desks and the attendance cards.
-// Uses the global THREE loaded by the classic <script> tags in index.html.
+import * as THREE from 'three';
+import './three-setup.js';
 import { t } from './strings.js';
 
 export const ROOM = {
@@ -41,7 +42,7 @@ export function canvasTexture(draw, w, h) {
   c.height = h;
   draw(c.getContext('2d'), w, h);
   const tex = new THREE.CanvasTexture(c);
-  tex.encoding = THREE.sRGBEncoding;
+  tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 4;
   tex.needsUpdate = true;
   return tex;
@@ -90,14 +91,21 @@ export function buildDesk(scale = 1) {
   return enableShadows(g);
 }
 
+// Light levels as designed under three.js r128, whose "legacy" lighting scaled every light by pi.
+const legacy = (intensity) => intensity * Math.PI;
+const POINT_LIGHT_MATCH = 0.8;
+
 function addLights(scene) {
-  scene.add(new THREE.HemisphereLight(0xdcebff, 0x40382a, 0.55));
+  scene.add(new THREE.HemisphereLight(0xdcebff, 0x40382a, legacy(0.55)));
   for (const [x, z] of [[-2, -2], [2, 2]]) {
-    const light = new THREE.PointLight(0xfff2d6, 0.55, 12);
+    // r128 faded point lights linearly to zero at their range. Physically based decay would put
+    // a hot spot on the ceiling just above each light, so these keep a flat fill instead, at the
+    // level r128's linear fade gave across the room.
+    const light = new THREE.PointLight(0xfff2d6, legacy(0.55) * POINT_LIGHT_MATCH, 12, 0);
     light.position.set(x, 3, z);
     scene.add(light);
   }
-  const sun = new THREE.DirectionalLight(0xfff3dd, 0.95);
+  const sun = new THREE.DirectionalLight(0xfff3dd, legacy(0.95));
   sun.position.set(5, 7, -3);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
@@ -341,19 +349,28 @@ export function buildAttendanceCards(scene, students) {
       ctx.fillStyle = '#f6f1e4';
       ctx.fillRect(0, 0, w, h);
       ctx.strokeStyle = '#4e2f18';
-      ctx.lineWidth = 10;
+      ctx.lineWidth = 12;
       ctx.strokeRect(6, 6, w - 12, h - 12);
       ctx.fillStyle = '#141c16';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
+      // Mipmaps of sRGB textures are averaged in linear light, which thins dark text on a light
+      // card when it is seen from across the room; a matching outline keeps the letters bold.
+      ctx.strokeStyle = '#141c16';
+      ctx.lineWidth = 2;
+      ctx.lineJoin = 'round';
+      const write = (text, x, y) => {
+        ctx.strokeText(text, x, y);
+        ctx.fillText(text, x, y);
+      };
       const parts = cfg.name.split(' ');
       if (parts.length > 1) {
         ctx.font = '700 52px Fredoka, sans-serif';
-        ctx.fillText(parts[0], w / 2, h * 0.33);
-        ctx.fillText(parts.slice(1).join(' '), w / 2, h * 0.67);
+        write(parts[0], w / 2, h * 0.33);
+        write(parts.slice(1).join(' '), w / 2, h * 0.67);
       } else {
         ctx.font = '700 60px Fredoka, sans-serif';
-        ctx.fillText(parts[0], w / 2, h / 2);
+        write(parts[0], w / 2, h / 2);
       }
     }, 256, 160);
     const position = new THREE.Vector3(colX[col], rowY[row], ROOM.frontZ + 0.05);

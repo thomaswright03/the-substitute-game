@@ -1,5 +1,6 @@
 // The Substitute: start-up and the frame loop. The rules live in rules.js; the modules
 // imported here turn them into a 3D classroom you can walk around in.
+import './three-setup.js';
 import * as R from './rules.js';
 import { applyStaticStrings, t } from './strings.js';
 import { el } from './dom.js';
@@ -71,10 +72,6 @@ async function init() {
   setTouch(window.matchMedia('(pointer: coarse)').matches);
   renderControlsLists();
   if (boot.blocked) return;
-  if (typeof THREE === 'undefined' || !THREE.GLTFLoader || !THREE.SkeletonUtils) {
-    boot.fail(new Error('three.js did not load'));
-    return;
-  }
   try {
     createRenderer();
   } catch (err) {

@@ -1,5 +1,10 @@
 // The three.js side: renderer, camera, the classroom and its characters, and the students'
 // body language each frame.
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { PRINCIPAL_MODEL, STUDENTS } from './data.js';
 import * as R from './rules.js';
 import { el } from './dom.js';
@@ -14,26 +19,52 @@ let composer = null;
 
 export const world = { students: {}, cards: {}, principal: null, principalPromise: null, faceTemplate: null, deskColliders: [] };
 
+// The classroom's look was designed with three.js r128 (see three-setup.js), where the scene was
+// tone-mapped once when rendered into the bloom's buffer and
+// again when the bloom pass drew it to the screen. These settings keep that look exactly.
+const EXPOSURE = 1.15;
+const ToneMapOnce = {
+  uniforms: { tDiffuse: { value: null }, exposure: { value: EXPOSURE } },
+  vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+  fragmentShader: `
+    uniform sampler2D tDiffuse;
+    uniform float exposure;
+    varying vec2 vUv;
+    vec3 RRTAndODTFit(vec3 v) {
+      vec3 a = v * (v + 0.0245786) - 0.000090537;
+      vec3 b = v * (0.983729 * v + 0.4329510) + 0.238081;
+      return a / b;
+    }
+    vec3 aces(vec3 color) {
+      const mat3 inputMat = mat3(vec3(0.59719, 0.07600, 0.02840), vec3(0.35458, 0.90834, 0.13383), vec3(0.04823, 0.01566, 0.83777));
+      const mat3 outputMat = mat3(vec3(1.60475, -0.10208, -0.00327), vec3(-0.53108, 1.10813, -0.07276), vec3(-0.07367, -0.00605, 1.07602));
+      color *= exposure / 0.6;
+      color = outputMat * RRTAndODTFit(inputMat * color);
+      return clamp(color, 0.0, 1.0);
+    }
+    void main() {
+      vec4 texel = texture2D(tDiffuse, vUv);
+      gl_FragColor = vec4(aces(texel.rgb), texel.a);
+    }`,
+};
+
 export function createRenderer() {
   renderer = new THREE.WebGLRenderer({ canvas: el.canvas, antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.15;
+  renderer.toneMappingExposure = EXPOSURE;
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(70, 1, 0.1, 60);
   camera.rotation.order = 'YXZ';
   // bloom is a progressive enhancement; without it the loop falls back to a plain render
   try {
-    if (THREE.EffectComposer && THREE.RenderPass && THREE.UnrealBloomPass) {
-      composer = new THREE.EffectComposer(renderer);
-      composer.addPass(new THREE.RenderPass(scene, camera));
-      const bloom = new THREE.UnrealBloomPass(new THREE.Vector2(256, 256), 0.55, 0.55, 0.86);
-      bloom.renderToScreen = true;
-      composer.addPass(bloom);
-    }
+    composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    composer.addPass(new ShaderPass(ToneMapOnce));
+    // the last pass: draws the buffer to the screen (tone-mapped, sRGB) and adds the glow on top
+    composer.addPass(new UnrealBloomPass(new THREE.Vector2(256, 256), 0.55, 0.55, 0.86));
   } catch (err) {
     console.warn('Bloom disabled:', err);
     composer = null;

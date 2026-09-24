@@ -10,7 +10,8 @@
     "test:unit": "node --test \"test/unit/**/*.test.js\"",
     "test:e2e": "playwright test",
     "lint": "eslint .",
-    "optimize-assets": "node scripts/optimize-assets.mjs"
+    "optimize-assets": "node scripts/optimize-assets.mjs",
+    "vendor-three": "node scripts/vendor-three.mjs"
   },
   "engines": {
     "node": ">=22"
@@ -21,8 +22,10 @@
     "@gltf-transform/extensions": "4.3.0",
     "@gltf-transform/functions": "4.3.0",
     "@playwright/test": "1.56.1",
+    "esbuild": "0.28.2",
     "eslint": "9.39.5",
     "globals": "17.12.0",
-    "meshoptimizer": "0.25.0"
+    "meshoptimizer": "0.25.0",
+    "three": "0.186.0"
   }
 }

@@ -187,17 +187,14 @@
 </main>
 
 <script src="src/boot.js"></script>
-<script src="lib/three.min.js"></script>
-<script src="lib/Pass.js"></script>
-<script src="lib/EffectComposer.js"></script>
-<script src="lib/RenderPass.js"></script>
-<script src="lib/ShaderPass.js"></script>
-<script src="lib/CopyShader.js"></script>
-<script src="lib/LuminosityHighPassShader.js"></script>
-<script src="lib/UnrealBloomPass.js"></script>
-<script src="lib/GLTFLoader.js"></script>
-<script src="lib/SkeletonUtils.js"></script>
-<script src="lib/meshopt_decoder.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "./lib/three/three.module.js",
+    "three/addons/": "./lib/three/addons/"
+  }
+}
+</script>
 <script type="module" src="src/main.js" onerror="window.SubstituteBoot &amp;&amp; window.SubstituteBoot.fail()"></script>
 </body>
 </html>

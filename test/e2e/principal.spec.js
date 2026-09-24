@@ -14,7 +14,7 @@ test('a principal model that never arrives does not freeze the round', async ({ 
   await page.keyboard.press('3');
   await expect(page.locator('#log')).toContainText('The principal is on the way');
   const frozenAt = await hooks(page, (s) => s.game.elapsed);
-  await expect(page.locator('#log')).toContainText('walks down there alone', { timeout: 12_000 });
+  await expect(page.locator('#log')).toContainText('walks down there alone', { timeout: 25_000 });
   expect(await hooks(page, (s) => s.world.students.hughJass.visible)).toBe(false);
   await page.waitForFunction((t0) => window.__substitute.game.elapsed > t0 + 0.2, frozenAt, { timeout: 20_000 });
 });

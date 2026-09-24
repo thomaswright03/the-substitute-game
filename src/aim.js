@@ -1,4 +1,5 @@
 // What the teacher is looking at, and what the main action (E) and discipline (F) do with it.
+import * as THREE from 'three';
 import { STUDENTS } from './data.js';
 import * as R from './rules.js';
 import { S, frozen } from './session.js';

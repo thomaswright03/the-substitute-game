@@ -1,4 +1,5 @@
 // Short visual effects: the hit flash, the zap bolt and the thrown paper ball.
+import * as THREE from 'three';
 import { el, restartAnimation } from './dom.js';
 import { S } from './session.js';
 import { scene, world } from './world.js';

@@ -118,9 +118,17 @@ tests. Nothing is exposed without it.
 
 ## Tech
 
-Vanilla HTML/CSS/JS modules on Three.js r128 (`lib/`), with `GLTFLoader`, `SkeletonUtils`,
-the bloom post-processing passes, and the Meshopt decoder. Everything the game loads ships
-in this repository, including the fonts, so it makes no requests to other hosts at runtime.
+Vanilla HTML/CSS/JS, loaded as native ES modules with no build step. three.js r186 (pinned in
+`package.json`) is vendored, minified, into `lib/three/` and mapped with an import map in
+`index.html`: the core, `GLTFLoader`, `SkeletonUtils`, the bloom post-processing passes and the
+Meshopt decoder. To move to another three.js release, change the pinned version, run
+`npm install && npm run vendor-three`, and run the tests (a unit test checks that `lib/three/`
+matches the pinned version). Everything the game loads ships in this repository, including the
+fonts, so it makes no requests to other hosts at runtime.
+
+The look was designed on three.js r128, and `src/three-setup.js` and `src/world.js` keep it:
+colours are used as linear values, lights use r128's intensity scale, and the frame is
+tone-mapped the way r128's bloom pipeline did it.
 
 Characters combine two things at runtime:
 - Body and clothing rigs from Quaternius's low-poly character packs. They have no sit

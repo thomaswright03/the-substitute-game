@@ -36,8 +36,8 @@ describe('the static server (npm start)', () => {
   });
 
   test('gzips text and models when the browser accepts it', async () => {
-    const plain = readFileSync(new URL('../../lib/three.min.js', import.meta.url));
-    const res = await get('/lib/three.min.js', { 'Accept-Encoding': 'gzip, deflate, br' });
+    const plain = readFileSync(new URL('../../lib/three/three.core.js', import.meta.url));
+    const res = await get('/lib/three/three.core.js', { 'Accept-Encoding': 'gzip, deflate, br' });
     assert.equal(res.headers['content-encoding'], 'gzip');
     assert.ok(res.body.length < plain.length / 2);
     assert.deepEqual(gunzipSync(res.body), plain);

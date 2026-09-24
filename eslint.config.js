@@ -11,7 +11,7 @@ export default [
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',
-      globals: { ...globals.browser, THREE: 'readonly', MeshoptDecoder: 'readonly' },
+      globals: { ...globals.browser },
     },
   },
   {
@@ -29,7 +29,7 @@ export default [
   {
     files: ['test/e2e/**/*.js'],
     languageOptions: {
-      globals: { ...globals.node, ...globals.browser, THREE: 'readonly' },
+      globals: { ...globals.node, ...globals.browser },
     },
   },
 ];

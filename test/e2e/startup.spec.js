@@ -85,3 +85,10 @@ test('the string table drives the on-screen text', async ({ page }) => {
   await expect(page.locator('#startBtn')).toContainText('Commencer');
   await expect(page.locator('#chaosLabel')).toHaveText('Chaos');
 });
+
+test('if three.js itself fails to download, the friendly error appears', async ({ page }) => {
+  await page.route('**/lib/three/three.core.js', (route) => route.fulfill({ status: 404, body: 'nope' }));
+  await page.goto('/');
+  await expect(page.locator('#loadFailed')).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('#loadingCard')).toBeHidden();
+});

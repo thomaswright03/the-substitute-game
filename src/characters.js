@@ -8,6 +8,11 @@
 // The bodies have no facial blend shapes, so a separate expressive head (52 ARKit morph targets,
 // assets/face.glb) is attached to each character's Head bone in place of the original head skin.
 
+import * as THREE from 'three';
+import './three-setup.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import { CHAIR, DESK, canvasTexture } from './scene.js';
 
 export const CHAR = {
@@ -30,8 +35,8 @@ const FACE_FORWARD_M = 0.012; // pokes the face just clear of hair that droops o
 const FACE_UP_M = 0.0;
 const FACE_HIDE_MATERIALS = ['Skin', 'Skin_Darker', 'Eyebrows', 'Eye'];
 
-const loader = new THREE.GLTFLoader();
-if (typeof MeshoptDecoder !== 'undefined') loader.setMeshoptDecoder(MeshoptDecoder);
+const loader = new GLTFLoader();
+loader.setMeshoptDecoder(MeshoptDecoder);
 
 const cache = {};
 
@@ -328,7 +333,7 @@ function findClip(animations, name) {
 // opts: {type, seated, model}
 export function buildCharacter(gltf, faceTemplate, opts) {
   const seated = opts.seated !== false;
-  const g = THREE.SkeletonUtils.clone(gltf.scene);
+  const g = cloneSkinned(gltf.scene);
   g.scale.setScalar(CHAR.scale);
   g.rotation.y = CHAR.forwardYaw;
   g.traverse((o) => {
