@@ -69,7 +69,7 @@ const AZERTY = { KeyQ: 'A', KeyW: 'Z', KeyA: 'Q', KeyM: ',' };
  * @param {readonly (string | undefined)[] | null | undefined} languages
  * @returns {'azerty' | 'qwerty'}
  */
-export function guessLayout(languages) {
+function guessLayout(languages) {
   const [lang, region] = String((languages && languages[0]) || '').split('-').map((p) => p.toUpperCase());
   if (lang === 'FR' && region !== 'CA' && region !== 'CH') return 'azerty';
   if (lang === 'NL' && region === 'BE') return 'azerty';
@@ -100,7 +100,7 @@ export function keyLabel(actionOrCode) {
 }
 
 // The four walking keys as the player sees them, e.g. "WASD" or "ZQSD".
-export function moveKeysLabel() {
+function moveKeysLabel() {
   return ['forward', 'left', 'back', 'right'].map((action) => keyLabel(action)).join('');
 }
 

@@ -107,7 +107,7 @@ function resetVisuals() {
   invalidateAttendancePanel();
 }
 
-export function startRound() {
+function startRound() {
   S.game = R.createGame({ difficulty: difficulty() });
   resetVisuals();
   resetPlayer();
@@ -245,7 +245,7 @@ export function endRound(outcome) {
 /* ---------------- the menu, and leaving a period ---------------- */
 
 // Back to the start menu (difficulty, rules, best grade), with a fresh classroom behind it.
-export function backToMenu() {
+function backToMenu() {
   S.running = false;
   S.paused = false;
   S.disciplineTarget = null;

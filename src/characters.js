@@ -62,7 +62,7 @@ export function partsOf(group) {
   return characterData(group).parts;
 }
 
-export const CHAR = {
+const CHAR = {
   scale: 0.95,
   // the rig's model-space forward is +Z; the class faces the board at -Z
   forwardYaw: Math.PI,

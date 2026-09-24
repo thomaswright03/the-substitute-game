@@ -76,7 +76,7 @@ function redrawTexture(tex) {
  * @template {THREE.Object3D} T
  * @param {T} obj
  */
-export function enableShadows(obj) {
+function enableShadows(obj) {
   obj.traverse((o) => {
     if (/** @type {THREE.Mesh} */ (o).isMesh) {
       o.castShadow = true;

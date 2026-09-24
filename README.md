@@ -134,16 +134,36 @@ last good run and choose *Re-run all jobs*, which rebuilds and redeploys that ru
 
 ```bash
 npm install        # dev tools only: ESLint, TypeScript (type checking only), Playwright, glTF tools
-npm test           # lint + unit tests + browser tests
-npm run lint       # ESLint, the import-cycle check and the type check
-npm run typecheck  # tsc on src/ (JSDoc types and @types/three; nothing is compiled)
-npm run test:unit  # rules tests (node:test), a few seconds
-npm run test:e2e   # Playwright tests in headless Chromium with software WebGL
+npm test               # lint + unit tests with the coverage floor + browser tests
+npm run lint           # ESLint, the import-cycle check, the type check and the dead-export check
+npm run typecheck      # tsc on src/ (JSDoc types and @types/three; nothing is compiled)
+npm run deadcode       # knip: fails on an export, file or dependency nothing uses
+npm run test:unit      # rules tests (node:test), a few seconds
+npm run test:coverage  # the unit tests again, failing if src/rules.js falls below its floor
+npm run test:e2e       # Playwright tests in headless Chromium with software WebGL
 ```
 
 The browser tests need Chromium for Playwright. On a fresh machine, install it once with
 `npx playwright install chromium`. CI (`.github/workflows/ci.yml`) runs the whole suite on
 every push and pull request.
+
+**Coverage floor.** `npm run test:coverage` measures `src/rules.js`, the game's rules, with
+Node's built-in coverage and fails below 95% of lines, 85% of branches or 90% of functions. The
+report lists the uncovered lines, so a new rule without a test shows up by line number. CI runs
+this step in place of the plain unit tests.
+
+**Dead exports.** `knip.json` tells knip where the code starts: `src/main.js` and `src/boot.js`
+(the two scripts `index.html` loads), the service worker, the scripts and the tests. Its
+`paths` repeat the page's import map (`three` and `three/addons/` in `lib/three/`), so imports
+of three.js resolve the way the browser resolves them. An export nothing imports fails
+`npm run lint`: unexport it or delete it. Functions the browser tests reach through
+`window.__substitute` count as used because `src/testhooks.js` imports them.
+
+**Protecting `main`.** Pushing to `main` deploys the site, so `main` should only take commits
+that passed CI. That is a repository setting only the owner can turn on: *Settings > Branches >
+Add branch ruleset* (or *branch protection rule*) for `main`, with *Require status checks to
+pass* and the `CI / test` check selected. Until it is on, a pull request with failing tests can
+still be merged: the deploy then stops at its own test run, but `main` holds the broken commit.
 
 The type check (`tsconfig.json`) reads the JavaScript as it is, with `checkJs`: types come from
 three.js's type definitions, from what TypeScript infers and from the JSDoc in `src/` (the

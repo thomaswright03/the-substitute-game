@@ -156,7 +156,7 @@ export function canMisbehave(game, id) {
  * @param {Game} game
  * @param {string} id
  */
-export function seatNeighbours(game, id) {
+function seatNeighbours(game, id) {
   const seat = game.seats[id];
   return game.roster
     .map((s) => s.id)
@@ -194,7 +194,7 @@ export function escalationRate(game, id) {
 }
 
 /** @param {Game} game */
-export function spawnInterval(game) {
+function spawnInterval(game) {
   const t = game.tuning;
   const frac = game.elapsed / t.period;
   const base = t.spawnIntervalStart - frac * t.spawnIntervalShrink;
