@@ -66,6 +66,7 @@
       </div>
       <div class="btnRow">
         <button class="iconBtn" id="pauseBtn" type="button" aria-label="Pause" title="Pause" data-i18n-attr="aria-label:hud.pause;title:hud.pause"><span aria-hidden="true">⏸</span></button>
+        <button class="iconBtn" id="muteBtn" type="button" aria-pressed="false" aria-label="Mute" title="Mute" data-i18n-attr="aria-label:settings.mute;title:settings.mute"><span aria-hidden="true" data-sound-icon>🔊</span></button>
         <button class="iconBtn" id="fullscreenBtn" type="button" aria-label="Fullscreen" title="Fullscreen" data-i18n-attr="aria-label:hud.fullscreen;title:hud.fullscreen"><span aria-hidden="true">⛶</span></button>
       </div>
     </header>
@@ -126,7 +127,11 @@
         <h2 data-i18n="start.controlsTitle">Controls</h2>
         <dl class="controls" data-controls></dl>
         <div class="stats"><div><span data-i18n="start.best">Best grade</span><strong id="bestStart">—</strong></div></div>
-        <button class="btn" id="startBtn" type="button"><span data-i18n="start.start">Start class</span> ▸</button>
+        <div class="settings" data-settings>
+          <label class="toggle"><input type="checkbox" data-sound checked> <span data-i18n="settings.sound">Sound</span></label>
+          <label class="volume"><span data-i18n="settings.volume">Volume</span> <input type="range" min="0" max="100" step="5" value="70" data-volume></label>
+        </div>
+        <div class="panelFooter"><button class="btn" id="startBtn" type="button"><span data-i18n="start.start">Start class</span> ▸</button></div>
       </div>
     </div>
 
@@ -151,7 +156,7 @@
           <div><span data-i18n="end.statPrincipal">Principal</span><strong id="statPrincipal">0</strong></div>
           <div><span data-i18n="end.statZaps">Zaps</span><strong id="statZaps">0</strong></div>
         </div>
-        <button class="btn" id="restartBtn" type="button"><span data-i18n="end.again">Sub again</span> ▸</button>
+        <div class="panelFooter"><button class="btn" id="restartBtn" type="button"><span data-i18n="end.again">Sub again</span> ▸</button></div>
       </div>
     </div>
 
@@ -163,7 +168,11 @@
         <p data-i18n="pause.body">The clock and the kids are frozen. Resume whenever you’re ready.</p>
         <h2 data-i18n="start.controlsTitle">Controls</h2>
         <dl class="controls" data-controls></dl>
-        <div class="btnStack">
+        <div class="settings" data-settings>
+          <label class="toggle"><input type="checkbox" data-sound checked> <span data-i18n="settings.sound">Sound</span></label>
+          <label class="volume"><span data-i18n="settings.volume">Volume</span> <input type="range" min="0" max="100" step="5" value="70" data-volume></label>
+        </div>
+        <div class="btnStack panelFooter">
           <button class="btn" id="resumeBtn" type="button"><span data-i18n="pause.resume">Resume</span> ▸</button>
           <button class="linkBtn" id="restartFromPause" type="button" data-i18n="pause.restart">Restart the period</button>
         </div>

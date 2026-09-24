@@ -12,6 +12,7 @@ import { clearSpeech } from './rollcall.js';
 import { closeSeatChartForRoundEnd } from './seating.js';
 import { clearProjectile } from './effects.js';
 import { releaseLook, requestLook, stopHoverLook } from './input.js';
+import { play } from './audio.js';
 
 const BEST_GRADE_KEY = 'substitute_best_grade';
 const GRADE_ORDER = ['A', 'B', 'C', 'D'];
@@ -76,7 +77,22 @@ export function startRound() {
   }
   el.canvas.focus({ preventScroll: true });
   pushLog(t('log.bell'));
+  play('bell');
+  lastTick = null;
   requestLook();
+}
+
+// A tick for each of the last ten seconds before the bell.
+const COUNTDOWN_SECONDS = 10;
+let lastTick = null;
+export function updateCountdown() {
+  const game = S.game;
+  if (!game || !S.running) return;
+  const left = Math.ceil(game.tuning.period - game.elapsed);
+  if (left > 0 && left <= COUNTDOWN_SECONDS && left !== lastTick) {
+    lastTick = left;
+    play('tick');
+  }
 }
 
 function fillStats(game) {

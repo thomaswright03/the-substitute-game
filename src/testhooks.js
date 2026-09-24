@@ -11,6 +11,7 @@ import { faceColours, faceOffsetFromHead } from './face.js';
 import { currentContext } from './aim.js';
 import { drainEvents } from './events.js';
 import { renderControlsLists } from './input.js';
+import { audioStarted, playedCues } from './audio.js';
 
 let cameraOverride = null; // look at the scene from anywhere
 
@@ -36,6 +37,7 @@ export function exposeTestHooks() {
     camera,
     get scene() { return scene; },
     context: currentContext,
+    audio: { started: audioStarted, cues: () => [...playedCues] },
     // run the rules forward as if `seconds` of unpaused play had passed
     fastForward(seconds, view = {}) {
       const step = 1 / 20;

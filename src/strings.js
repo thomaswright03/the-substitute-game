@@ -63,7 +63,7 @@ const EN = {
       },
       {
         lead: 'Watch your back.',
-        body: 'Face the board and someone may throw something. A hit makes the thrower and the rest of the class rowdier. Turn around in time and you catch them.',
+        body: 'Face the board and someone may throw something: listen for the wind-up. A hit makes the thrower and the rest of the class rowdier. Turn around in time and you catch them.',
       },
       {
         lead: 'Split up friends.',
@@ -89,6 +89,7 @@ const EN = {
       ['Q', 'roll call'],
       ['1–4', 'choose in menus'],
       ['Esc / P', 'pause'],
+      ['M', 'sound on / off'],
     ],
     touch: [
       ['Left stick', 'walk'],
@@ -98,7 +99,13 @@ const EN = {
       ['Seats', 'seating chart'],
       ['Roll call', 'ask who’s here'],
       ['Pause button', 'pause'],
+      ['Speaker button', 'sound on / off'],
     ],
+  },
+  settings: {
+    sound: 'Sound',
+    volume: 'Volume',
+    mute: 'Mute',
   },
   pause: {
     kicker: 'Class Paused',

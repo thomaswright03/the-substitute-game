@@ -9,6 +9,7 @@ import { askRollCall } from './rollcall.js';
 import { setSeatChart, toggleSeatChart } from './seating.js';
 import { chooseDiscipline, closeDiscipline } from './discipline.js';
 import { setPaused } from './round.js';
+import { audioPrefs, setMuted } from './audio.js';
 
 const LOOK_SENS = 0.0034;
 const POINTER_LOCK_SENS = 0.0024;
@@ -213,6 +214,7 @@ function onKeyDown(e) {
     case 'r': toggleSeatChart(true); break; // keyboard users land on the chart's first seat
     case 'q': askRollCall(); break;
     case 'p': setPaused(true); break;
+    case 'm': setMuted(!audioPrefs().muted); break;
     case 'escape':
       if (S.seatChartOpen) setSeatChart(false);
       else if (!justPausedByEsc()) setPaused(true);

@@ -19,7 +19,9 @@ import { setupSeating } from './seating.js';
 import { setupDiscipline } from './discipline.js';
 import { updateProjectile } from './effects.js';
 import { updatePrincipal } from './principal.js';
-import { setupRound, showBest } from './round.js';
+import { setupRound, showBest, updateCountdown } from './round.js';
+import { setupAudio } from './audio.js';
+import { setupSettings } from './settings.js';
 import { applyCameraOverride, exposeTestHooks } from './testhooks.js';
 import { registerServiceWorker } from './offline.js';
 
@@ -63,6 +65,7 @@ function frame(now) {
     updatePromptAndActions();
     updateAttendancePanel();
     updateSpeech(nowS);
+    updateCountdown();
   }
   updateHud();
   render();
@@ -72,6 +75,8 @@ async function init() {
   applyStaticStrings(document);
   setTouch(window.matchMedia('(pointer: coarse)').matches);
   renderControlsLists();
+  setupAudio();
+  setupSettings();
   if (boot.blocked) return;
   try {
     createRenderer();

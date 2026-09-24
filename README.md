@@ -138,6 +138,7 @@ every push and pull request.
 | `src/hud.js`, `src/dialogs.js`, `src/rollcall.js` | HUD, log, prompts and buttons; modal dialogs and focus; roll-call bubble and arrow |
 | `src/seating.js`, `src/discipline.js`, `src/principal.js`, `src/effects.js` | Seating chart, discipline menu, the principal's visit, hit / zap / throw effects |
 | `src/events.js`, `src/round.js`, `src/session.js` | Rule events to log lines and effects; starting, pausing and ending a round; shared UI state |
+| `src/audio.js`, `src/settings.js` | Synthesised sound cues; the sound and volume controls |
 | `src/testhooks.js` | The `?test` API for the browser tests |
 | `src/scene.js`, `src/characters.js` | The classroom, and the character models: seating, arm poses and body language |
 | `src/face.js`, `src/props.js` | The grafted expressive face and its painted features; the props for each behaviour |
@@ -146,6 +147,13 @@ every push and pull request.
 
 The rules advance on real elapsed time, not frames, so a period lasts two minutes of
 unpaused play on any machine. The game pauses itself when the tab is hidden.
+
+**Sound.** `src/audio.js` synthesises every cue with the Web Audio API, so there are no
+audio files: the school bell at the start and end of the period, a tick for each of the last
+ten seconds, a thrower's wind-up (panned toward where they sit), the hit or the catch, the zap
+and the principal's knock. Nothing plays until the first tap, click or key press. Sound can be
+switched off and the volume set on the start and pause screens, with the HUD speaker button or
+with M; the choice is kept in the browser's local storage.
 
 **Text and translation.** Static page text is tagged with `data-i18n` and filled from
 `src/strings.js`, and all text built during play goes through the same table. To translate,

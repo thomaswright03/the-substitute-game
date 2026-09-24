@@ -231,6 +231,16 @@ export function updateStudents(now) {
 
 const tmpV = new THREE.Vector3();
 // Screen position of a world point, in stage pixels.
+// Where a sound from `worldPos` sits in the stereo field for the camera: -1 left to 1 right.
+const _fwd = new THREE.Vector3();
+export function stereoPan(worldPos) {
+  camera.getWorldDirection(_fwd);
+  const dx = worldPos.x - camera.position.x, dz = worldPos.z - camera.position.z;
+  const len = Math.hypot(dx, dz) || 1;
+  // the camera's right is (-forward.z, 0, forward.x)
+  return (dx * -_fwd.z + dz * _fwd.x) / len / (Math.hypot(_fwd.x, _fwd.z) || 1);
+}
+
 export function project(worldPos) {
   const p = tmpV.copy(worldPos).project(camera);
   return {
