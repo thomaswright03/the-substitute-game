@@ -57,6 +57,8 @@
   --friend-2: #d0741c;
   --friend-3: #8a4bb8;
   --friend-4: #2f8f6a;
+  /* the page around the wooden frame; nothing but the frame sits on it */
+  --page: #141c16;
 
   --fs-6: clamp(28px, 5vw, 36px);
 
@@ -66,6 +68,11 @@
 
   /* one design pixel: 1px everywhere except the in-game HUD, which redefines it below */
   --px: 1px;
+}
+/* With the system set to light, only the wall around the frame turns light. The game inside the
+   frame keeps its one look (see "Look and styling" in the README). */
+@media (prefers-color-scheme: light) {
+  :root { --page: #d8cfb8; }
 }
 
 /* Sizes are multiples of --px. They are declared again on each HUD layer so that there they
@@ -104,7 +111,7 @@
 html, body { height: 100%; }
 body {
   margin: 0;
-  background: var(--ink);
+  background: var(--page);
   color: var(--chalk);
   font-family: var(--font-body);
   font-size: var(--fs-3);
@@ -231,7 +238,14 @@ canvas#gl { position: absolute; inset: 0; display: block; width: 100%; height: 1
 .iconBtn[aria-pressed="true"] { background: var(--paper-deep); }
 @container stage (max-width: 620px) {
   .badge.title { display: none; }
+  /* the clock and the chaos meter share the room the buttons leave, and a label that doesn't
+     fit on one line (a long translation, a narrow phone) wraps onto two */
   .badge { min-width: 0; padding: var(--space-2) var(--space-5); }
+  .badge.clock, .badge.chaos { flex: 1 1 0; max-width: calc(170 * var(--px)); justify-content: flex-end; }
+  .badge .label { white-space: normal; text-wrap: balance; line-height: 1.2; letter-spacing: 0.03em; }
+}
+@container stage (max-width: 360px) {
+  .badge .value { font-size: var(--fs-3); }
 }
 
 /* ================= HUD: panels under the top band ================= */
@@ -253,6 +267,11 @@ canvas#gl { position: absolute; inset: 0; display: block; width: 100%; height: 1
 .attAnswer { color: var(--ink); font-weight: 700; }
 @container stage (max-height: 460px) {
   .attHint, .seatChart p { display: none; }
+}
+/* a phone held upright needs the height for the classroom: the panel keeps to its one line */
+@container stage (max-width: 620px) and (orientation: portrait) {
+  .attKicker, .attHint { display: none; }
+  .attendancePanel { padding: var(--space-3) var(--space-6); }
 }
 .banner { padding: var(--space-3) var(--space-6); font-family: var(--font-display); font-weight: 600; font-size: var(--fs-2); background: color-mix(in srgb, var(--notebook-blue) 95%, transparent); color: var(--white); }
 
@@ -499,6 +518,17 @@ body.touch .log div:nth-last-child(n+3) { display: none; }
   display: flex; align-items: center; justify-content: center;
 }
 .rules strong { color: var(--ink); }
+/* the pause screen's rules, folded away until asked for */
+.howTo { text-align: left; margin: 0 0 var(--space-5); border-radius: 10px; background: var(--paper-deep); }
+.howTo summary {
+  display: flex; align-items: center; justify-content: center; gap: var(--space-4); min-height: var(--touch); padding: 0 var(--space-6);
+  cursor: pointer; list-style: none; border-radius: 10px;
+  font-family: var(--font-display); font-weight: 600; font-size: var(--fs-2); letter-spacing: 0.08em; text-transform: uppercase; color: var(--frame-dark);
+}
+.howTo summary::-webkit-details-marker { display: none; }
+.howTo summary::after { content: '▸'; transition: transform 0.15s; }
+.howTo[open] summary::after { transform: rotate(90deg); }
+.howTo .rules { margin: 0; padding: 0 var(--space-6) var(--space-4); }
 .controls { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-3); margin: var(--space-2) 0 var(--space-6); }
 .controls div { background: var(--paper-deep); border-radius: 8px; padding: var(--space-2) var(--space-4); font-size: var(--fs-1); color: var(--muted-ink); }
 .controls dt { font-family: var(--font-mono); font-weight: 700; font-size: var(--fs-1); color: var(--ink); }
@@ -527,6 +557,15 @@ body.touch .log div:nth-last-child(n+3) { display: none; }
 .difficulty input { margin: var(--space-1) 0 0; width: 18px; height: 18px; accent-color: var(--notebook-blue); flex: none; }
 .difficulty small { display: block; font-size: var(--fs-1); color: var(--muted-ink); line-height: 1.35; }
 @container stage (max-width: 380px) { .difficulty { grid-template-columns: 1fr; } }
+/* A phone held upright: how to play comes straight after the title, where a first-time player
+   sees it before the Start button (the difficulty and settings follow, a scroll away). */
+@container stage (max-width: 620px) and (orientation: portrait) {
+  .menuPanel { display: flex; flex-direction: column; }
+  .menuRules { order: 1; }
+  .menuSetup { order: 2; }
+  .menuSetup .difficulty { margin-top: var(--space-6); }
+  .menuPanel .panelFooter { order: 3; }
+}
 .settings { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: var(--space-3) var(--space-7); margin: 0 0 var(--space-6); font-size: var(--fs-2); color: var(--muted-ink); }
 .settings label { display: inline-flex; align-items: center; gap: var(--space-4); min-height: var(--touch); cursor: pointer; }
 .settings input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--notebook-blue); margin: 0; }

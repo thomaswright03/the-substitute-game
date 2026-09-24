@@ -4,14 +4,90 @@
 // the unpaused real time that passed, plus the player's action functions (pickupCard, help,
 // discipline, ...). The rules never produce text: they push semantic events onto
 // game.events, which the UI drains and turns into log lines, sounds and effects.
-import { DIFFICULTY, STUDENTS, TUNING } from './data.js';
+import { DIFFICULTY, STUDENTS, TUNING, isDifficulty } from './data.js';
 
+/** @typedef {import('./data.js').StudentConfig} StudentConfig */
+/** @typedef {import('./data.js').Tuning} Tuning */
+/** @typedef {import('./data.js').Difficulty} Difficulty */
+
+/** @typedef {'talk' | 'detention' | 'principal' | 'zap'} DisciplineOption */
+/** @type {readonly DisciplineOption[]} */
 export const DISCIPLINE_OPTIONS = ['talk', 'detention', 'principal', 'zap'];
 
+/**
+ * @typedef {object} StudentState
+ * @property {number} escalation percent, 0 to TUNING.failAt
+ * @property {boolean} active acting up
+ * @property {boolean} detained
+ * @property {boolean} removed marched out by the principal
+ * @property {number} activatedAt game time they started acting up
+ * @property {number} warnedUntil the phone warning lasts until this game time
+ * @property {boolean} warnedHigh the "about to lose it" warning was given
+ * @property {number} caughtUntil caught throwing: can be disciplined until this game time
+ * @property {number} lastHelpAt
+ * @property {boolean} eggedOnNoted the "egging each other on" message was given
+ */
+
+/** @typedef {{row: number, col: number}} Seat */
+
+/**
+ * How a period ended.
+ * @typedef {{won: true, reason: 'bell'}
+ *   | {won: false, reason: 'attendance', unmarked: number}
+ *   | {won: false, reason: 'student', culpritId: string}} Outcome
+ */
+
+/** @typedef {{id: string, phase: 'windup' | 'flight', t: number}} Throw */
+
+/** @typedef {'warned' | 'calmed' | 'eased' | 'missed'} HelpResult */
+
+/**
+ * What the rules report to the UI, which turns each one into log lines, sounds and effects.
+ * @typedef {{type: 'activate' | 'nearlyLost' | 'cardPicked' | 'cardDelivered' | 'cardResolvedByOffice'
+ *     | 'rollCall' | 'principal' | 'throwWindup' | 'throwLaunched' | 'throwCancelled' | 'caught', id: string}
+ *   | {type: 'eggedOn', id: string, friendId: string}
+ *   | {type: 'wrongStudent', id: string, heldId: string}
+ *   | {type: 'attendanceComplete'}
+ *   | {type: 'help', id: string, result: HelpResult}
+ *   | {type: 'talk', id: string, stillActive: boolean}
+ *   | {type: 'detention', id: string, left: number}
+ *   | {type: 'zap', id: string, setOffId: string | null}
+ *   | {type: 'swap', a: string, b: string, separated: string[][], together: string[][]}
+ *   | {type: 'hit', id: string, first: boolean}
+ *   | {type: 'over', outcome: Outcome}} RuleEvent
+ */
+/** @typedef {RuleEvent & {t: number}} GameEvent a RuleEvent, stamped with the game time */
+
+/**
+ * @typedef {object} Game
+ * @property {StudentConfig[]} roster
+ * @property {Tuning} tuning
+ * @property {Difficulty} difficulty
+ * @property {() => number} rng
+ * @property {'attendance' | 'lesson' | 'over'} phase
+ * @property {Outcome | null} outcome set when phase becomes 'over'
+ * @property {number} elapsed seconds of play
+ * @property {number} spawnTimer
+ * @property {Record<string, Seat>} seats
+ * @property {Record<string, StudentState>} students
+ * @property {{remaining: string[], holding: string | null, delivered: number, asked: boolean}} attendance
+ * @property {{helps: number, talks: number, detentions: number, principalCalls: number, zaps: number, hits: number, catches: number}} counters
+ * @property {number} zapReadyAt
+ * @property {Throw | null} throw
+ * @property {number} maxChaos the highest chaos this period
+ * @property {GameEvent[]} events
+ */
+
+/**
+ * @param {{students?: StudentConfig[], difficulty?: string, tuning?: Partial<Tuning>, rng?: () => number}} [options]
+ * @returns {Game}
+ */
 export function createGame(options = {}) {
   const roster = options.students || STUDENTS;
-  const difficulty = DIFFICULTY[options.difficulty] ? options.difficulty : 'standard';
+  const difficulty = isDifficulty(options.difficulty) ? options.difficulty : 'standard';
+  /** @type {Tuning} */
   const tuning = { ...TUNING, ...DIFFICULTY[difficulty], ...(options.tuning || {}) };
+  /** @type {Game} */
   const game = {
     roster,
     tuning,
@@ -57,18 +133,30 @@ export function createGame(options = {}) {
 
 /* ---------------- queries ---------------- */
 
+/**
+ * @param {Game} game
+ * @param {string} id
+ */
 export function studentConfig(game, id) {
   for (const s of game.roster) if (s.id === id) return s;
   return null;
 }
 
 // Present in the room and free to misbehave (not in detention, not marched out).
+/**
+ * @param {Game} game
+ * @param {string} id
+ */
 export function canMisbehave(game, id) {
   const st = game.students[id];
   return !!st && !st.removed && !st.detained;
 }
 
-export function seatNeighbours(game, id) {
+/**
+ * @param {Game} game
+ * @param {string} id
+ */
+function seatNeighbours(game, id) {
   const seat = game.seats[id];
   return game.roster
     .map((s) => s.id)
@@ -80,6 +168,10 @@ export function seatNeighbours(game, id) {
 }
 
 // The friend sitting right next to this student, if they are in a position to egg them on.
+/**
+ * @param {Game} game
+ * @param {string} id
+ */
 export function adjacentFriend(game, id) {
   const cfg = studentConfig(game, id);
   if (!cfg || !cfg.friend || !canMisbehave(game, cfg.friend)) return null;
@@ -87,8 +179,13 @@ export function adjacentFriend(game, id) {
 }
 
 // Escalation per second for an acting-up student under the current conditions.
+/**
+ * @param {Game} game
+ * @param {string} id
+ */
 export function escalationRate(game, id) {
   const cfg = studentConfig(game, id);
+  if (!cfg) return 0;
   const t = game.tuning;
   let rate = cfg.rate * t.rateScale;
   if (game.phase === 'attendance') rate *= t.attendanceRateScale;
@@ -96,13 +193,15 @@ export function escalationRate(game, id) {
   return rate;
 }
 
-export function spawnInterval(game) {
+/** @param {Game} game */
+function spawnInterval(game) {
   const t = game.tuning;
   const frac = game.elapsed / t.period;
   const base = t.spawnIntervalStart - frac * t.spawnIntervalShrink;
   return game.phase === 'attendance' ? base * t.attendanceSpawnScale : base;
 }
 
+/** @param {Game} game */
 export function chaos(game) {
   let max = 0;
   for (const s of game.roster) {
@@ -113,6 +212,10 @@ export function chaos(game) {
 }
 
 // The arguing student can only be talked down while he pauses for breath.
+/**
+ * @param {Game} game
+ * @param {string} id
+ */
 export function argueReady(game, id) {
   const st = game.students[id];
   const t = game.tuning;
@@ -120,6 +223,10 @@ export function argueReady(game, id) {
   return since % t.argueCycle < t.argueReadyWindow;
 }
 
+/**
+ * @param {Game} game
+ * @param {string} id
+ */
 export function timeUntilArgueReady(game, id) {
   const st = game.students[id];
   const t = game.tuning;
@@ -127,16 +234,35 @@ export function timeUntilArgueReady(game, id) {
   return phase < t.argueReadyWindow ? 0 : t.argueCycle - phase;
 }
 
+/**
+ * @param {Game} game
+ * @param {string} id
+ */
 export function phoneWarned(game, id) {
   return game.elapsed < game.students[id].warnedUntil;
 }
 
 /* ---------------- internal helpers ---------------- */
 
-function emit(game, type, data = {}) {
-  game.events.push({ type, t: game.elapsed, ...data });
+/**
+ * @param {Game} game
+ * @param {RuleEvent} event
+ */
+function emit(game, event) {
+  game.events.push({ ...event, t: game.elapsed });
 }
 
+// Whether the period has ended (asked again after a call that may have ended it).
+/** @param {Game} game */
+function isOver(game) {
+  return game.phase === 'over';
+}
+
+/**
+ * @param {Game} game
+ * @param {string} id
+ * @param {number} [escalation]
+ */
 function activate(game, id, escalation = 0) {
   const st = game.students[id];
   st.active = true;
@@ -145,9 +271,13 @@ function activate(game, id, escalation = 0) {
   st.warnedUntil = -1;
   st.warnedHigh = false;
   st.eggedOnNoted = false;
-  emit(game, 'activate', { id });
+  emit(game, { type: 'activate', id });
 }
 
+/**
+ * @param {Game} game
+ * @param {string} id
+ */
 function calm(game, id) {
   const st = game.students[id];
   st.active = false;
@@ -156,6 +286,10 @@ function calm(game, id) {
   st.warnedHigh = false;
 }
 
+/**
+ * @param {Game} game
+ * @param {Outcome} outcome
+ */
 function finish(game, outcome) {
   if (game.phase === 'over') return;
   // a student reaching 100% ends the tick before the usual update, so record the peak here
@@ -163,9 +297,14 @@ function finish(game, outcome) {
   game.phase = 'over';
   game.outcome = outcome;
   game.throw = null;
-  emit(game, 'over', { outcome });
+  emit(game, { type: 'over', outcome });
 }
 
+/**
+ * @param {Game} game
+ * @param {string} id
+ * @param {number} delta
+ */
 function changeEscalation(game, id, delta) {
   const st = game.students[id];
   st.escalation = Math.max(0, st.escalation + delta);
@@ -173,12 +312,16 @@ function changeEscalation(game, id, delta) {
   checkFail(game, id);
 }
 
+/**
+ * @param {Game} game
+ * @param {string} id
+ */
 function checkFail(game, id) {
   const st = game.students[id];
   if (game.phase === 'over' || !st.active) return;
   if (!st.warnedHigh && st.escalation >= game.tuning.warnAt) {
     st.warnedHigh = true;
-    emit(game, 'nearlyLost', { id });
+    emit(game, { type: 'nearlyLost', id });
   }
   if (st.escalation >= game.tuning.failAt) {
     st.escalation = game.tuning.failAt;
@@ -186,6 +329,11 @@ function checkFail(game, id) {
   }
 }
 
+/**
+ * @param {Game} game
+ * @param {string} exceptId
+ * @param {number} delta
+ */
 function bumpOthers(game, exceptId, delta) {
   for (const s of game.roster) {
     if (s.id === exceptId || !canMisbehave(game, s.id)) continue;
@@ -193,27 +341,45 @@ function bumpOthers(game, exceptId, delta) {
   }
 }
 
+/**
+ * @param {Game} game
+ * @param {StudentConfig[]} list
+ */
 function pick(game, list) {
   return list[Math.floor(game.rng() * list.length)];
 }
 
+// Relaxed's gentle start: until the first name card is handed out, nobody throws anything,
+// and nobody sitting next to a friend is set off by the spawn timer or a zap's commotion.
+/** @param {Game} game */
+function gentleWindow(game) {
+  return game.tuning.gentleStart && game.attendance.delivered === 0;
+}
+
+/** @param {Game} game */
 function calmPool(game) {
   const pool = game.roster.filter((s) => canMisbehave(game, s.id) && !game.students[s.id].active);
-  if (game.tuning.gentleStart && game.attendance.delivered === 0) return pool.filter((s) => !adjacentFriend(game, s.id));
+  if (gentleWindow(game)) return pool.filter((s) => !adjacentFriend(game, s.id));
   return pool;
 }
 
+/** @param {Game} game */
 function completeAttendanceIfDone(game) {
   if (game.phase === 'attendance' && game.attendance.delivered >= game.roster.length) {
     game.phase = 'lesson';
     game.spawnTimer = Math.min(game.spawnTimer, spawnInterval(game));
-    emit(game, 'attendanceComplete');
+    emit(game, { type: 'attendanceComplete' });
   }
 }
 
 /* ---------------- the clock ---------------- */
 
 // view.facingBoard: the teacher is at the chalkboard with their back to the class.
+/**
+ * @param {Game} game
+ * @param {number} dt
+ * @param {{facingBoard?: boolean}} [view]
+ */
 export function tick(game, dt, view = {}) {
   if (game.phase === 'over' || !(dt > 0)) return;
   const t = game.tuning;
@@ -235,15 +401,15 @@ export function tick(game, dt, view = {}) {
       st.eggedOnNoted = true;
       // one message for the pair, even when both of them are acting up
       if (game.students[friend].active) game.students[friend].eggedOnNoted = true;
-      emit(game, 'eggedOn', { id: s.id, friendId: friend });
+      emit(game, { type: 'eggedOn', id: s.id, friendId: friend });
     }
     st.escalation += escalationRate(game, s.id) * dt;
     checkFail(game, s.id);
-    if (game.phase === 'over') return;
+    if (isOver(game)) return;
   }
 
   updateThrow(game, dt, !!view.facingBoard);
-  if (game.phase === 'over') return;
+  if (isOver(game)) return;
 
   game.maxChaos = Math.max(game.maxChaos, chaos(game));
 
@@ -258,46 +424,61 @@ export function tick(game, dt, view = {}) {
 
 /* ---------------- attendance ---------------- */
 
+/**
+ * @param {Game} game
+ * @param {string} id
+ */
 export function pickupCard(game, id) {
   const a = game.attendance;
   if (game.phase !== 'attendance' || a.holding || !a.remaining.includes(id)) return false;
   a.remaining.splice(a.remaining.indexOf(id), 1);
   a.holding = id;
   a.asked = false;
-  emit(game, 'cardPicked', { id });
+  emit(game, { type: 'cardPicked', id });
   return true;
 }
 
 // Returns 'delivered', 'wrong' or null when there is nothing to deliver.
+/**
+ * @param {Game} game
+ * @param {string} targetId
+ */
 export function deliverCard(game, targetId) {
   const a = game.attendance;
   if (game.phase !== 'attendance' || !a.holding || game.students[targetId].removed) return null;
   const heldId = a.holding;
   if (targetId !== heldId) {
-    emit(game, 'wrongStudent', { id: targetId, heldId });
+    emit(game, { type: 'wrongStudent', id: targetId, heldId });
     return 'wrong';
   }
   a.holding = null;
   a.delivered++;
-  emit(game, 'cardDelivered', { id: heldId });
+  emit(game, { type: 'cardDelivered', id: heldId });
   completeAttendanceIfDone(game);
   return 'delivered';
 }
 
+/** @param {Game} game */
 export function canRollCall(game) {
   const a = game.attendance;
   return game.phase === 'attendance' && !!a.holding && !a.asked;
 }
 
 // Asks "Is <name> present?" once per card. Returns the id of the student who answers.
+/** @param {Game} game */
 export function rollCall(game) {
-  if (!canRollCall(game)) return null;
+  const id = game.attendance.holding;
+  if (!canRollCall(game) || !id) return null;
   game.attendance.asked = true;
-  emit(game, 'rollCall', { id: game.attendance.holding });
-  return game.attendance.holding;
+  emit(game, { type: 'rollCall', id });
+  return id;
 }
 
 // A student marched out by the principal can't take their card, so the office marks them.
+/**
+ * @param {Game} game
+ * @param {string} id
+ */
 function resolveAttendanceForRemoved(game, id) {
   const a = game.attendance;
   if (game.phase !== 'attendance') return;
@@ -310,22 +491,27 @@ function resolveAttendanceForRemoved(game, id) {
   } else {
     return;
   }
-  emit(game, 'cardResolvedByOffice', { id });
+  emit(game, { type: 'cardResolvedByOffice', id });
   completeAttendanceIfDone(game);
 }
 
 /* ---------------- helping (E) ---------------- */
 
 // Returns what happened: 'warned', 'calmed', 'eased', 'missed', or null if nothing to do.
+/**
+ * @param {Game} game
+ * @param {string} id
+ */
 export function help(game, id) {
   const st = game.students[id];
   const cfg = studentConfig(game, id);
   const t = game.tuning;
-  if (game.phase === 'over' || !st || !st.active || !canMisbehave(game, id)) return null;
+  if (game.phase === 'over' || !st || !cfg || !st.active || !canMisbehave(game, id)) return null;
   if (game.elapsed - st.lastHelpAt < t.helpRepeatGuard) return null;
   st.lastHelpAt = game.elapsed;
   game.counters.helps++;
 
+  /** @type {HelpResult} */
   let result;
   if (cfg.type === 'phone' && !phoneWarned(game, id)) {
     st.warnedUntil = game.elapsed + t.phoneWarnWindow;
@@ -341,7 +527,7 @@ export function help(game, id) {
     changeEscalation(game, id, cfg.type === 'argue' ? -t.argueCalm : -t.helpCalm);
     result = st.active ? 'eased' : 'calmed';
   }
-  emit(game, 'help', { id, result });
+  emit(game, { type: 'help', id, result });
   return result;
 }
 
@@ -359,7 +545,11 @@ const ELIGIBILITY = {
 };
 
 // Whether `id` can be disciplined now. The UI asks every frame, so the answers are shared constants.
-/** @returns {Eligibility} */
+/**
+ * @param {Game} game
+ * @param {string} id
+ * @returns {Eligibility}
+ */
 export function disciplineEligibility(game, id) {
   const st = game.students[id];
   if (game.phase === 'over' || !st) return ELIGIBILITY.over;
@@ -370,6 +560,10 @@ export function disciplineEligibility(game, id) {
 }
 
 // The state of each option for the menu: whether it can be chosen and what's left of it.
+/**
+ * @param {Game} game
+ * @param {string} id
+ */
 export function disciplineMenu(game, id) {
   const t = game.tuning;
   const c = game.counters;
@@ -385,6 +579,11 @@ export function disciplineMenu(game, id) {
   };
 }
 
+/**
+ * @param {Game} game
+ * @param {string} id
+ * @param {DisciplineOption} option
+ */
 export function discipline(game, id, option) {
   const t = game.tuning;
   const menu = disciplineMenu(game, id);
@@ -396,20 +595,20 @@ export function discipline(game, id, option) {
     case 'talk':
       game.counters.talks++;
       changeEscalation(game, id, -t.talkCalm);
-      emit(game, 'talk', { id, stillActive: st.active });
+      emit(game, { type: 'talk', id, stillActive: st.active });
       break;
     case 'detention':
       game.counters.detentions++;
       calm(game, id);
       st.detained = true;
-      emit(game, 'detention', { id, left: t.detentionsPerPeriod - game.counters.detentions });
+      emit(game, { type: 'detention', id, left: t.detentionsPerPeriod - game.counters.detentions });
       bumpOthers(game, id, t.detentionClassBump);
       break;
     case 'principal':
       game.counters.principalCalls++;
       calm(game, id);
       st.removed = true;
-      emit(game, 'principal', { id });
+      emit(game, { type: 'principal', id });
       bumpOthers(game, id, -t.principalClassCalm);
       resolveAttendanceForRemoved(game, id);
       break;
@@ -419,7 +618,7 @@ export function discipline(game, id, option) {
       game.zapReadyAt = game.elapsed + t.zapCooldown;
       const pool = calmPool(game).filter((s) => s.id !== id);
       const setOff = pool.length ? pick(game, pool).id : null;
-      emit(game, 'zap', { id, setOffId: setOff });
+      emit(game, { type: 'zap', id, setOffId: setOff });
       if (setOff) activate(game, setOff, t.zapCommotionEscalation);
       break;
     }
@@ -429,6 +628,7 @@ export function discipline(game, id, option) {
 
 /* ---------------- seating (R) ---------------- */
 
+/** @param {Game} game */
 function friendPairsSeatedTogether(game) {
   const pairs = new Set();
   for (const s of game.roster) {
@@ -439,6 +639,11 @@ function friendPairsSeatedTogether(game) {
 
 // Swap two students' seats. A removed student's seat is empty, so swapping with them
 // simply moves the other student into the empty desk.
+/**
+ * @param {Game} game
+ * @param {string} idA
+ * @param {string} idB
+ */
 export function swapSeats(game, idA, idB) {
   if (game.phase === 'over' || idA === idB || !game.seats[idA] || !game.seats[idB]) return false;
   if (game.students[idA].removed && game.students[idB].removed) return false;
@@ -452,12 +657,13 @@ export function swapSeats(game, idA, idB) {
   for (const pair of together) {
     for (const id of pair) game.students[id].eggedOnNoted = false;
   }
-  emit(game, 'swap', { a: idA, b: idB, separated, together });
+  emit(game, { type: 'swap', a: idA, b: idB, separated, together });
   return true;
 }
 
 /* ---------------- thrown objects ---------------- */
 
+/** @param {Game} game */
 function throwCandidates(game) {
   return game.roster.filter((s) => {
     if (!canMisbehave(game, s.id)) return false;
@@ -466,31 +672,37 @@ function throwCandidates(game) {
   });
 }
 
+/**
+ * @param {Game} game
+ * @param {number} dt
+ * @param {boolean} facingBoard
+ */
 function updateThrow(game, dt, facingBoard) {
   const t = game.tuning;
   const th = game.throw;
   if (!th) {
-    if (!facingBoard) return;
+    // a hit sets the thrower off and bumps the class, so the gentle start holds all throws
+    if (!facingBoard || gentleWindow(game)) return;
     const chance = game.phase === 'attendance' ? t.throwChanceAttendance : t.throwChanceLesson;
     if (game.rng() < chance * dt) {
       const pool = throwCandidates(game);
       if (!pool.length) return;
       const id = pick(game, pool).id;
       game.throw = { id, phase: 'windup', t: 0 };
-      emit(game, 'throwWindup', { id });
+      emit(game, { type: 'throwWindup', id });
     }
     return;
   }
   if (!canMisbehave(game, th.id)) {
     game.throw = null;
-    emit(game, 'throwCancelled', { id: th.id });
+    emit(game, { type: 'throwCancelled', id: th.id });
     return;
   }
   th.t += dt;
   if (th.phase === 'windup' && th.t >= t.throwWindup) {
     th.phase = 'flight';
     th.t = 0;
-    emit(game, 'throwLaunched', { id: th.id });
+    emit(game, { type: 'throwLaunched', id: th.id });
   } else if (th.phase === 'flight' && th.t >= t.throwFlight) {
     game.throw = null;
     if (facingBoard) throwHit(game, th.id);
@@ -498,30 +710,40 @@ function updateThrow(game, dt, facingBoard) {
   }
 }
 
+/**
+ * @param {Game} game
+ * @param {string} id
+ */
 function throwHit(game, id) {
   const t = game.tuning;
   const st = game.students[id];
   game.counters.hits++;
-  emit(game, 'hit', { id, first: game.counters.hits === 1 });
+  emit(game, { type: 'hit', id, first: game.counters.hits === 1 });
   if (!st.active) activate(game, id, 0);
   bumpOthers(game, id, t.hitClassBump);
   if (game.phase !== 'over') changeEscalation(game, id, t.hitThrowerBump);
 }
 
+/**
+ * @param {Game} game
+ * @param {string} id
+ */
 function throwCaught(game, id) {
   game.counters.catches++;
   game.students[id].caughtUntil = game.elapsed + game.tuning.caughtWindow;
-  emit(game, 'caught', { id });
+  emit(game, { type: 'caught', id });
 }
 
 /* ---------------- end of period ---------------- */
 
+/** @param {Game} game */
 export function interventions(game) {
   const c = game.counters;
   return c.helps + c.talks + c.detentions + c.principalCalls + c.zaps;
 }
 
 // The report card for a round that reached the bell. Every deduction is listed.
+/** @param {Game} game */
 export function report(game) {
   const p = game.tuning.report;
   const c = game.counters;
@@ -530,17 +752,20 @@ export function report(game) {
   if (c.detentions) deductions.push({ kind: 'detentions', count: c.detentions, points: c.detentions * p.detention });
   if (c.principalCalls) deductions.push({ kind: 'principal', count: c.principalCalls, points: c.principalCalls * p.principal });
   if (c.zaps) deductions.push({ kind: 'zaps', count: c.zaps, points: c.zaps * p.zap });
-  if (game.maxChaos >= 90) deductions.push({ kind: 'closeCall', count: 1, points: p.veryCloseCall });
-  else if (game.maxChaos >= 75) deductions.push({ kind: 'closeCall', count: 1, points: p.closeCall });
+  if (game.maxChaos >= p.veryCloseCallAt) deductions.push({ kind: 'closeCall', count: 1, points: p.veryCloseCall });
+  else if (game.maxChaos >= p.closeCallAt) deductions.push({ kind: 'closeCall', count: 1, points: p.closeCall });
   const score = Math.max(0, 100 - deductions.reduce((sum, d) => sum + d.points, 0));
-  const grade = score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : 'D';
+  const g = p.grades;
+  const grade = score >= g.A ? 'A' : score >= g.B ? 'B' : score >= g.C ? 'C' : 'D';
   return { score, grade, deductions };
 }
 
+/** @param {Game} game */
 export function removedStudents(game) {
   return game.roster.filter((s) => game.students[s.id].removed).map((s) => s.id);
 }
 
+/** @param {Game} game */
 export function detainedStudents(game) {
   return game.roster.filter((s) => game.students[s.id].detained).map((s) => s.id);
 }

@@ -1,7 +1,7 @@
 // Rounds: starting, pausing, and the end-of-period screen with its report card.
 import { STUDENTS } from './data.js';
 import * as R from './rules.js';
-import { listNames, plural, t } from './strings.js';
+import { formatPercent, listNames, plural, t } from './strings.js';
 import { $, el } from './dom.js';
 import { S, name } from './session.js';
 import { resetStudentVisuals } from './world.js';
@@ -17,17 +17,27 @@ import { on } from './bus.js';
 import { play } from './audio.js';
 import { difficulty, onDifficultyChange } from './settings.js';
 
+/** @typedef {import('./data.js').Difficulty} Difficulty */
+/** @typedef {import('./rules.js').Game} Game */
+/** @typedef {import('./rules.js').Outcome} Outcome */
+
 // Standard keeps the key best grades were saved under before there was a choice of difficulty.
+/** @type {Record<Difficulty, string>} */
 const BEST_GRADE_KEYS = { standard: 'substitute_best_grade', relaxed: 'substitute_best_grade_relaxed' };
 const GRADE_ORDER = ['A', 'B', 'C', 'D'];
 
 /* ---------------- best grade ---------------- */
 
+/** @param {Difficulty} level */
 function bestGrade(level) {
   try { return localStorage.getItem(BEST_GRADE_KEYS[level]); } catch { return null; }
 }
 
-// Keeps `grade` if it beats the best so far at this difficulty; says whether it did.
+/**
+ * Keeps `grade` if it beats the best so far at this difficulty; says whether it did.
+ * @param {Difficulty} level
+ * @param {string} grade
+ */
 function saveBestGrade(level, grade) {
   const prev = bestGrade(level);
   if (prev && GRADE_ORDER.indexOf(prev) <= GRADE_ORDER.indexOf(grade)) return false;
@@ -39,7 +49,7 @@ function saveBestGrade(level, grade) {
 // difficulty the last period was played at (end screen).
 export function showBest() {
   el.bestStart.textContent = bestGrade(difficulty()) || t('start.bestNone');
-  const level = S.game ? S.game.difficulty : difficulty();
+  const level = S.game.difficulty;
   el.endBestLabel.textContent = t('end.best', { difficulty: t('settings.' + level) });
   el.endBestGrade.textContent = bestGrade(level) || t('start.bestNone');
 }
@@ -48,17 +58,28 @@ export function showBest() {
 
 // The HUD buttons whose label depends on the state (and on the language).
 export function refreshButtonLabels() {
-  el.pauseBtn.firstElementChild.textContent = S.paused ? '▶' : '⏸';
+  iconOf(el.pauseBtn).textContent = S.paused ? '▶' : '⏸';
   const pauseLabel = t(S.paused ? 'hud.resume' : 'hud.pause');
   el.pauseBtn.setAttribute('aria-label', pauseLabel);
   el.pauseBtn.title = pauseLabel;
   const full = !!document.fullscreenElement;
-  el.fullscreenBtn.firstElementChild.textContent = full ? '⤡' : '⛶';
+  iconOf(el.fullscreenBtn).textContent = full ? '⤡' : '⛶';
   const fullLabel = t(full ? 'hud.exitFullscreen' : 'hud.fullscreen');
   el.fullscreenBtn.setAttribute('aria-label', fullLabel);
   el.fullscreenBtn.title = fullLabel;
 }
 
+/**
+ * The icon inside one of the HUD's icon buttons.
+ * @param {HTMLElement} button
+ */
+function iconOf(button) {
+  const icon = button.firstElementChild;
+  if (!icon) throw new Error('#' + button.id + ' has no icon');
+  return icon;
+}
+
+/** @param {boolean} p */
 export function setPaused(p) {
   if (!S.running || S.paused === p) return;
   S.paused = p;
@@ -86,7 +107,7 @@ function resetVisuals() {
   invalidateAttendancePanel();
 }
 
-export function startRound() {
+function startRound() {
   S.game = R.createGame({ difficulty: difficulty() });
   resetVisuals();
   resetPlayer();
@@ -105,10 +126,11 @@ export function startRound() {
 
 // A tick for each of the last ten seconds before the bell.
 const COUNTDOWN_SECONDS = 10;
+/** @type {number | null} */
 let lastTick = null;
 export function updateCountdown() {
   const game = S.game;
-  if (!game || !S.running) return;
+  if (!S.running) return;
   const left = Math.ceil(game.tuning.period - game.elapsed);
   if (left > 0 && left <= COUNTDOWN_SECONDS && left !== lastTick) {
     lastTick = left;
@@ -116,23 +138,35 @@ export function updateCountdown() {
   }
 }
 
+/** @param {Game} game */
 function fillStats(game) {
   const c = game.counters;
-  $('statInterventions').textContent = R.interventions(game);
-  $('statChaos').textContent = Math.round(game.maxChaos) + '%';
-  $('statHits').textContent = c.hits;
-  $('statDetentions').textContent = c.detentions;
-  $('statPrincipal').textContent = c.principalCalls;
-  $('statZaps').textContent = c.zaps;
+  $('statInterventions').textContent = String(R.interventions(game));
+  $('statChaos').textContent = formatPercent(Math.round(game.maxChaos));
+  $('statHits').textContent = String(c.hits);
+  $('statDetentions').textContent = String(c.detentions);
+  $('statPrincipal').textContent = String(c.principalCalls);
+  $('statZaps').textContent = String(c.zaps);
 }
 
+/**
+ * @param {string} id
+ * @returns {import('./data.js').StudentConfig}
+ */
+function student(id) {
+  const s = STUDENTS.find((x) => x.id === id);
+  if (!s) throw new Error('No student ' + id);
+  return s;
+}
+
+/** @param {Game} game */
 function describeWin(game) {
   const c = game.counters;
   const removed = R.removedStudents(game).map(name);
   const detainedIds = R.detainedStudents(game);
   const sentences = [removed.length ? t('end.wonRemoved', { names: listNames(removed) }) : t('end.wonAllStayed')];
   if (detainedIds.length === 1) {
-    const who = STUDENTS.find((x) => x.id === detainedIds[0]);
+    const who = student(detainedIds[0]);
     sentences.push(t('end.wonDetainedOne', { name: name(who.id), possessive: t('pronoun.' + who.pronoun + '.possessive') }));
   } else if (detainedIds.length) {
     sentences.push(t('end.wonDetainedMany', { names: listNames(detainedIds.map(name)) }));
@@ -142,6 +176,7 @@ function describeWin(game) {
   return sentences.join(' ');
 }
 
+/** @param {Game} game */
 function showReportCard(game) {
   const r = R.report(game);
   $('gradeValue').textContent = r.grade;
@@ -157,6 +192,7 @@ function showReportCard(game) {
   return saveBestGrade(game.difficulty, r.grade);
 }
 
+/** @param {Outcome} outcome */
 export function endRound(outcome) {
   const game = S.game;
   S.running = false;
@@ -173,13 +209,13 @@ export function endRound(outcome) {
   const reportCard = $('reportCard');
   fillStats(game);
   // a lost round says what would have helped: for the clock, or for this kind of student
-  const tip = outcome.won ? '' : outcome.reason === 'attendance' ? 'end.tip.attendance'
-    : 'end.tip.' + STUDENTS.find((s) => s.id === outcome.culpritId).type;
+  const tip = outcome.reason === 'bell' ? '' : outcome.reason === 'attendance' ? 'end.tip.attendance'
+    : 'end.tip.' + student(outcome.culpritId).type;
   $('endTip').hidden = !tip;
   $('endTipText').textContent = tip ? t(tip) : '';
 
   let newBest = false;
-  if (outcome.won) {
+  if (outcome.reason === 'bell') {
     emoji.textContent = '🔔';
     kicker.textContent = t('end.wonKicker');
     title.textContent = t('end.wonTitle');
@@ -193,7 +229,7 @@ export function endRound(outcome) {
     text.textContent = t('end.lostAttendanceText', { count: outcome.unmarked, students: plural(outcome.unmarked, 'end.student', 'end.students') });
     reportCard.hidden = true;
   } else {
-    const culprit = STUDENTS.find((s) => s.id === outcome.culpritId);
+    const culprit = student(outcome.culpritId);
     const hurt = culprit.fail === 'HURT';
     emoji.textContent = hurt ? '🚑' : '🚪';
     kicker.textContent = t(hurt ? 'end.lostHurtKicker' : 'end.lostLeftKicker');
@@ -209,7 +245,7 @@ export function endRound(outcome) {
 /* ---------------- the menu, and leaving a period ---------------- */
 
 // Back to the start menu (difficulty, rules, best grade), with a fresh classroom behind it.
-export function backToMenu() {
+function backToMenu() {
   S.running = false;
   S.paused = false;
   S.disciplineTarget = null;
@@ -229,7 +265,12 @@ export function backToMenu() {
 }
 
 // Asks before a period in progress is thrown away; Escape or "Keep this period" says no.
+/** @type {(() => void) | null} */
 let onConfirm = null;
+/**
+ * @param {'restart' | 'menu'} kind
+ * @param {() => void} action what happens on "yes"
+ */
 function confirmLeaving(kind, action) {
   onConfirm = action;
   el.confirmTitle.textContent = t('confirm.' + kind + 'Title');
@@ -272,6 +313,13 @@ export function setupRound() {
   on('pauseRequested', () => setPaused(true));
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) setPaused(true);
+  });
+  // Reloading or leaving the page would throw a period in progress away, as Restart and Back to
+  // menu would, so the browser asks first ("Leave site?"). Not on the start or end screens.
+  window.addEventListener('beforeunload', (e) => {
+    if (!S.running) return;
+    e.preventDefault();
+    e.returnValue = ''; // browsers that ask only when a return value is set
   });
 
   el.fullscreenBtn.addEventListener('click', () => {

@@ -11,14 +11,38 @@ import * as R from './rules.js';
 import { el } from './dom.js';
 import { S } from './session.js';
 import { TEACHER_DESK, buildAttendanceCards, buildDesk, buildRoom, deskPosition, seatPosition } from './scene.js';
-import { buildCharacter, loadAll, loadGLB, modelUrl, poseCharacter } from './characters.js';
+import { buildCharacter, characterData, loadAll, loadGLB, modelUrl, poseCharacter } from './characters.js';
 
-export let renderer = null;
-export let scene = null;
-export let camera = null;
+/** @typedef {import('./characters.js').PoseState} PoseState */
+/** @typedef {import('./data.js').StudentConfig} StudentConfig */
+/** @typedef {import('./rules.js').StudentState} StudentState */
+
+/** @type {THREE.WebGLRenderer | null} created by createRenderer(), once the page knows WebGL works */
+let renderer = null;
+/** @type {EffectComposer | null} */
 let composer = null;
+export const scene = new THREE.Scene();
+export const camera = new THREE.PerspectiveCamera(70, 1, 0.1, 60);
+camera.rotation.order = 'YXZ';
 
-export const world = { students: {}, cards: {}, principal: null, principalPromise: null, deskColliders: [], boxColliders: [] };
+/**
+ * The classroom's contents: the students (by id), the name cards, the principal once his
+ * model has arrived, and what the teacher bumps into.
+ */
+export const world = {
+  /** @type {Record<string, THREE.Object3D>} */
+  students: {},
+  /** @type {Record<string, import('./scene.js').Card>} */
+  cards: {},
+  /** @type {THREE.Object3D | null} */
+  principal: null,
+  /** @type {Promise<THREE.Object3D> | null} */
+  principalPromise: null,
+  /** @type {{x: number, z: number}[]} */
+  deskColliders: [],
+  /** @type {{minX: number, maxX: number, minZ: number, maxZ: number}[]} */
+  boxColliders: [],
+};
 
 // The classroom's look was designed with three.js r128 (see three-setup.js), where the scene was
 // tone-mapped once when rendered into the bloom's buffer and
@@ -58,6 +82,11 @@ class ScreenPass extends Pass {
     this.quad = new FullScreenQuad(this.material);
   }
 
+  /**
+   * @param {THREE.WebGLRenderer} r
+   * @param {THREE.WebGLRenderTarget} writeBuffer
+   * @param {THREE.WebGLRenderTarget} readBuffer
+   */
   render(r, writeBuffer, readBuffer) {
     this.material.map = readBuffer.texture;
     r.setRenderTarget(this.renderToScreen ? null : writeBuffer);
@@ -66,7 +95,10 @@ class ScreenPass extends Pass {
   }
 }
 
-let bloomPass = null, screenPass = null;
+/** @type {UnrealBloomPass | null} */
+let bloomPass = null;
+/** @type {ScreenPass | null} */
+let screenPass = null;
 
 // The graphics levels, from the full look down to the cheapest. A slow device steps down them
 // one at a time (see quality.js): first the pixel ratio, then the glow, then the shadows, and
@@ -81,14 +113,15 @@ export const QUALITY_LEVELS = [
 ];
 let qualityLevel = 0;
 
+/** @param {number} level an index into QUALITY_LEVELS */
 export function setQualityLevel(level) {
   qualityLevel = Math.max(0, Math.min(QUALITY_LEVELS.length - 1, level));
   if (!renderer) return;
   const q = QUALITY_LEVELS[qualityLevel];
   const ratio = Math.min(window.devicePixelRatio || 1, q.pixelRatio);
   renderer.setPixelRatio(ratio);
-  if (composer) {
-    composer.setPixelRatio(ratio);
+  if (composer) composer.setPixelRatio(ratio);
+  if (bloomPass && screenPass) {
     bloomPass.enabled = q.bloom;
     screenPass.enabled = !q.bloom;
   }
@@ -96,8 +129,9 @@ export function setQualityLevel(level) {
     renderer.shadowMap.enabled = q.shadows;
     // materials are compiled for shadows on or off: have them rebuilt
     scene.traverse((o) => {
-      if (!o.material) return;
-      for (const m of Array.isArray(o.material) ? o.material : [o.material]) m.needsUpdate = true;
+      const material = /** @type {THREE.Mesh} */ (o).material;
+      if (!material) return;
+      for (const m of Array.isArray(material) ? material : [material]) m.needsUpdate = true;
     });
   }
   resizeRenderer(stageW, stageH);
@@ -108,42 +142,49 @@ export function renderState() {
   return {
     level: qualityLevel,
     pixelRatio: renderer ? renderer.getPixelRatio() : 1,
-    bloom: !!(composer && bloomPass.enabled),
+    bloom: !!(composer && bloomPass && bloomPass.enabled),
     shadows: !!(renderer && renderer.shadowMap.enabled),
   };
 }
 
 export function createRenderer() {
-  renderer = new THREE.WebGLRenderer({ canvas: el.canvas, antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFShadowMap;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = EXPOSURE;
-  scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(70, 1, 0.1, 60);
-  camera.rotation.order = 'YXZ';
+  const r = new THREE.WebGLRenderer({ canvas: el.canvas, antialias: true });
+  r.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  r.shadowMap.enabled = true;
+  r.shadowMap.type = THREE.PCFShadowMap;
+  r.toneMapping = THREE.ACESFilmicToneMapping;
+  r.toneMappingExposure = EXPOSURE;
+  renderer = r;
   // bloom is a progressive enhancement; without it the loop falls back to a plain render
   try {
-    composer = new EffectComposer(renderer);
-    composer.addPass(new RenderPass(scene, camera));
-    composer.addPass(new ShaderPass(ToneMapOnce));
+    const c = new EffectComposer(r);
+    c.addPass(new RenderPass(scene, camera));
+    c.addPass(new ShaderPass(ToneMapOnce));
     // the last pass: draws the buffer to the screen (tone-mapped, sRGB) and adds the glow on top
-    bloomPass = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.55, 0.55, 0.86);
-    composer.addPass(bloomPass);
+    const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.55, 0.55, 0.86);
+    c.addPass(bloom);
     // or, with the glow switched off, only draws the buffer to the screen
-    screenPass = new ScreenPass();
-    screenPass.enabled = false;
-    composer.addPass(screenPass);
+    const plain = new ScreenPass();
+    plain.enabled = false;
+    c.addPass(plain);
+    composer = c;
+    bloomPass = bloom;
+    screenPass = plain;
   } catch (err) {
     console.warn('Bloom disabled:', err);
     composer = null;
+    bloomPass = null;
+    screenPass = null;
   }
   setQualityLevel(qualityLevel);
 }
 
 let stageW = 1, stageH = 1; // the stage's size in CSS pixels, kept by resizeRenderer
 
+/**
+ * @param {number} w the stage's size in CSS pixels
+ * @param {number} h
+ */
 export function resizeRenderer(w, h) {
   stageW = w;
   stageH = h;
@@ -156,7 +197,7 @@ export function resizeRenderer(w, h) {
 
 export function render() {
   if (composer) composer.render();
-  else renderer.render(scene, camera);
+  else if (renderer) renderer.render(scene, camera);
 }
 
 function waitForFonts() {
@@ -168,7 +209,10 @@ function waitForFonts() {
   return Promise.race([fonts, new Promise((r) => setTimeout(r, 3000))]);
 }
 
-// Downloads the models and builds the room. onProgress(fraction) reports the download.
+/**
+ * Downloads the models and builds the room. onProgress(fraction) reports the download.
+ * @param {(fraction: number) => void} onProgress
+ */
 export async function buildWorld(onProgress) {
   const variants = [...new Set(STUDENTS.map((s) => s.model))];
   const urls = variants.map(modelUrl);
@@ -178,6 +222,7 @@ export async function buildWorld(onProgress) {
   buildRoom(scene);
   world.cards = buildAttendanceCards(scene, STUDENTS);
   const models = await loading;
+  /** @type {Record<string, import('./characters.js').GLTF>} */
   const byVariant = {};
   variants.forEach((v, i) => { byVariant[v] = models[i]; });
 
@@ -203,6 +248,7 @@ export async function buildWorld(onProgress) {
 
 // The principal is only needed if someone gets sent to the office, so the model is fetched
 // after the classroom is ready instead of holding up the first load.
+/** @returns {Promise<THREE.Object3D>} */
 export function ensurePrincipal() {
   if (!world.principalPromise) {
     world.principalPromise = loadGLB(modelUrl(PRINCIPAL_MODEL)).then((gltf) => {
@@ -223,14 +269,22 @@ export function ensurePrincipal() {
 
 /* ---------------- students: seats and poses ---------------- */
 
-// Where a seated student's group goes so that their hips rest on the chair of `seat`.
-export function seatTarget(group, seat) {
+/**
+ * Where a seated student's group goes so that their hips rest on the chair of `seat`.
+ * @param {THREE.Object3D} group
+ * @param {import('./rules.js').Seat} seat
+ */
+function seatTarget(group, seat) {
   const p = seatPosition(seat);
-  const o = group.userData.seatOffset;
+  const o = characterData(group).seatOffset;
   return { x: p.x + o.x, y: p.y + o.y, z: p.z + o.z };
 }
 
-export function placeInSeat(group, seat) {
+/**
+ * @param {THREE.Object3D} group
+ * @param {import('./rules.js').Seat} seat
+ */
+function placeInSeat(group, seat) {
   const p = seatTarget(group, seat);
   group.position.set(p.x, p.y, p.z);
 }
@@ -239,7 +293,13 @@ export function placeInSeat(group, seat) {
 // plays at the same speed at any frame rate, and it stands still while the game is paused.
 let animT = 0;
 
-const flashPoses = {}; // id -> {kind, until}
+/** @type {Record<string, {kind: PoseState['kind'], until: number}>} a short pose, by student id */
+const flashPoses = {};
+/**
+ * @param {string} id
+ * @param {PoseState['kind']} kind
+ * @param {number} seconds
+ */
 export function flashPose(id, kind, seconds) {
   flashPoses[id] = { kind, until: animT + seconds };
 }
@@ -250,25 +310,35 @@ export function resetStudentVisuals() {
     g.visible = true;
     g.rotation.set(0, Math.PI, 0);
     placeInSeat(g, s);
-    delete g.userData.seatAnim;
-    delete g.userData.spinYaw;
+    const data = characterData(g);
+    delete data.seatAnim;
+    delete data.spinYaw;
     world.cards[s.id].mesh.visible = true;
     delete flashPoses[s.id];
   }
   if (world.principal) world.principal.visible = false;
 }
 
-// Slides two students to their new desks after a swap.
+/**
+ * Slides two students to their new desks after a swap.
+ * @param {string[]} ids
+ */
 export function animateSeatSwap(ids) {
   const now = animT;
   for (const id of ids) {
     const g = world.students[id];
     const to = seatTarget(g, S.game.seats[id]);
-    g.userData.seatAnim = { fromX: g.position.x, fromZ: g.position.z, toX: to.x, toZ: to.z, t0: now, dur: 0.6 };
+    characterData(g).seatAnim = { fromX: g.position.x, fromZ: g.position.z, toX: to.x, toZ: to.z, t0: now, dur: 0.6 };
   }
 }
 
+/** @type {PoseState} */
 const poseState = { kind: 'calm', type: null, argueReady: false };
+/**
+ * @param {PoseState['kind']} kind
+ * @param {PoseState['type']} [type]
+ * @param {boolean} [argueReady]
+ */
 function pose(kind, type = null, argueReady = false) {
   poseState.kind = kind;
   poseState.type = type;
@@ -276,7 +346,12 @@ function pose(kind, type = null, argueReady = false) {
   return poseState;
 }
 
-// The pose for one student this frame (one shared object, used at once by poseCharacter).
+/**
+ * The pose for one student this frame (one shared object, used at once by poseCharacter).
+ * @param {StudentConfig} s
+ * @param {StudentState} st
+ * @param {number} now
+ */
 function poseStateFor(s, st, now) {
   const game = S.game;
   const f = flashPoses[s.id];
@@ -289,42 +364,46 @@ function poseStateFor(s, st, now) {
 
 // Poses every student for this frame. dt is the time the frame took, in seconds, or 0 to hold
 // every student still.
+/** @param {number} dt */
 export function updateStudents(dt) {
   animT += dt;
   const now = animT;
   for (const s of STUDENTS) {
     const g = world.students[s.id];
+    const data = characterData(g);
     const st = S.game.students[s.id];
     const beingMarchedOut = S.principalSeq && S.principalSeq.id === s.id;
     if (st.removed && !beingMarchedOut) {
       g.visible = false;
-      g.userData.headWorld = null;
+      data.headWorld = null;
       continue;
     }
     g.visible = true;
     if (!beingMarchedOut) {
-      const an = g.userData.seatAnim;
+      const an = data.seatAnim;
       if (an) {
         const k = Math.min(1, (now - an.t0) / an.dur);
         const ease = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
         g.position.x = an.fromX + (an.toX - an.fromX) * ease;
         g.position.z = an.fromZ + (an.toZ - an.fromZ) * ease;
-        if (k >= 1) delete g.userData.seatAnim;
+        if (k >= 1) delete data.seatAnim;
       } else {
         placeInSeat(g, S.game.seats[s.id]);
-        if (st.active && st.escalation >= 75) g.position.x += Math.sin(now * 20) * 0.02;
+        // close to losing it: the student fidgets, as their ring shakes (hud.js)
+        if (st.active && st.escalation >= S.game.tuning.hud.danger) g.position.x += Math.sin(now * 20) * 0.02;
       }
       poseCharacter(g, poseStateFor(s, st, now), now, dt);
     }
     g.updateMatrixWorld(true);
-    const head = g.userData.parts.head;
-    if (!g.userData.headVec) g.userData.headVec = new THREE.Vector3();
-    g.userData.headWorld = head ? head.getWorldPosition(g.userData.headVec) : null;
+    const head = data.parts.head;
+    if (!data.headVec) data.headVec = new THREE.Vector3();
+    data.headWorld = head ? head.getWorldPosition(data.headVec) : null;
   }
 }
 
 // Where a sound from `worldPos` sits in the stereo field for the camera: -1 left to 1 right.
 const _fwd = new THREE.Vector3();
+/** @param {THREE.Vector3} worldPos */
 export function stereoPan(worldPos) {
   camera.getWorldDirection(_fwd);
   const dx = worldPos.x - camera.position.x, dz = worldPos.z - camera.position.z;
@@ -337,6 +416,7 @@ export function stereoPan(worldPos) {
 // the next call, since it runs for every student every frame.
 const tmpV = new THREE.Vector3();
 const projected = { x: 0, y: 0, onScreen: false };
+/** @param {THREE.Vector3} worldPos */
 export function project(worldPos) {
   const p = tmpV.copy(worldPos).project(camera);
   projected.x = (p.x * 0.5 + 0.5) * stageW;

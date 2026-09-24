@@ -4,37 +4,30 @@
 // data-i18n-attr="attr:key;attr:key" and is filled from this table at start-up by
 // applyStaticStrings(). Text built while playing goes through t(key, params).
 // Translations live in src/i18n/ with exactly the same keys (a unit test checks this); to add
-// one, add its table to LANGUAGES below.
+// one, add its table to LANGUAGES below, and its start-up card text to src/boot-strings.js.
 
+import './boot-strings.js';
 import ES from './i18n/es.js';
 import FR from './i18n/fr.js';
 import { keyNames } from './keys.js';
+
+// the start-up cards' text is shared with src/boot.js, which shows them before this module loads
+const BOOT = globalThis.SubstituteBootStrings;
 
 const EN = {
   common: {
     listSeparator: ', ',
     listAnd: ' and ',
+    // how the HUD and the end screen write a percentage and a time of day
+    percent: '{value}%',
+    clock: '{hours}:{minutes}',
   },
   // keyed by each student's `pronoun` in data.js
   pronoun: {
     he: { possessive: 'his' },
     she: { possessive: 'her' },
   },
-  boot: {
-    loading: 'Chalking up the classroom…',
-    loadingDetail: 'Loading the class ({percent}%)',
-    loadingSlow: 'This is taking longer than usual. A slow connection can take a minute; it will keep trying.',
-    noWebglTitle: 'Your browser can’t show 3D graphics',
-    noWebglBody: 'The Substitute needs WebGL, which is turned off or unavailable in this browser. Try a recent version of Chrome, Firefox, Edge or Safari, and make sure hardware acceleration (graphics acceleration) is switched on in your browser settings.',
-    fileTitle: 'Open the game through a local web server',
-    fileBody: 'Browsers block a game opened straight from a file, so the classroom can’t load this way. In the game’s folder, run the command below, then open http://localhost:8000 in your browser.',
-    fileCommand: 'npm start',
-    loadFailTitle: 'The classroom couldn’t load',
-    loadFailBody: 'Some of the game’s files didn’t arrive. Check your connection and try again.',
-    retry: 'Try again',
-    crashTitle: 'Something went wrong',
-    crashBody: 'The game ran into a problem it can’t recover from. Reloading starts the class again.',
-  },
+  boot: BOOT.en,
   // written on the chalkboard at the front of the room
   board: {
     room: 'Room 204',
@@ -369,18 +362,28 @@ const EN = {
   },
 };
 
+/** @typedef {Record<string, unknown>} StringTable a table of text, nested by key */
+/** @typedef {Record<string, string | number>} Params values for a text's {placeholders} */
+
 // Each language is listed under its own name, so a player can find theirs in any language.
+/** @type {Record<string, {name: string, table: StringTable}>} */
 export const LANGUAGES = {
   en: { name: 'English', table: EN },
   es: { name: 'Español', table: ES },
   fr: { name: 'Français', table: FR },
 };
 
+/** @type {StringTable} */
 let table = EN;
 let language = 'en';
 let touch = false;
+/** @type {((code: string) => void)[]} */
 const languageListeners = [];
 
+/**
+ * Replaces the table the text comes from (the tests use this to check for text that isn't in it).
+ * @param {StringTable | null} next
+ */
 export function setStrings(next) {
   table = next || EN;
 }
@@ -389,7 +392,10 @@ export function currentLanguage() {
   return language;
 }
 
-// Switches every string to another language and tells the page and the modules that draw text.
+/**
+ * Switches every string to another language and tells the page and the modules that draw text.
+ * @param {string} code
+ */
 export function setLanguage(code) {
   if (!LANGUAGES[code]) code = 'en';
   language = code;
@@ -401,16 +407,19 @@ export function setLanguage(code) {
   for (const fn of languageListeners) fn(code);
 }
 
+/** @param {(code: string) => void} fn */
 export function onLanguageChange(fn) {
   languageListeners.push(fn);
 }
 
 // On touch screens a key with a sibling named <key>Touch uses that text instead, so nothing
 // tells a phone player to press a key they do not have.
+/** @param {boolean} on */
 export function setTouchStrings(on) {
   touch = !!on;
 }
 
+/** @param {string} key */
 function variant(key) {
   if (touch) {
     const v = lookup(key + 'Touch');
@@ -421,21 +430,27 @@ function variant(key) {
 
 /**
  * @param {string} key
- * @returns {any} whatever the table holds there (text, a list, a group), or undefined
+ * @returns {unknown} whatever the table holds there (text, a list, a group), or undefined
  */
 export function lookup(key) {
+  /** @type {unknown} */
   let node = table;
   for (const part of key.split('.')) {
     if (node == null || typeof node !== 'object' || !(part in node)) return undefined;
-    node = node[part];
+    node = /** @type {Record<string, unknown>} */ (node)[part];
   }
   return node;
 }
 
 // Fills {placeholders} from `params`, and the keyboard's own key names ({helpKey},
 // {moveKeys}...; see keys.js) wherever they appear.
+/**
+ * @param {string} text
+ * @param {Params} [params]
+ */
 export function fill(text, params) {
   if (text.indexOf('{') < 0) return text;
+  /** @type {Record<string, string> | null} */
   let keys = null;
   return text.replace(/\{(\w+)\}/g, (m, name) => {
     if (params && name in params) return String(params[name]);
@@ -446,29 +461,55 @@ export function fill(text, params) {
 
 // t('attendance.carrying', {name:'Mike Oxlong'}) -> "Carrying Mike Oxlong’s card".
 // A missing key is returned as-is so a gap in a translation is visible, not silent.
+/**
+ * @param {string} key
+ * @param {Params} [params]
+ */
 export function t(key, params) {
   const value = variant(key);
   if (typeof value !== 'string') return key;
   return fill(value, params);
 }
 
+/**
+ * @param {number} count
+ * @param {string} singularKey
+ * @param {string} pluralKey
+ */
 export function plural(count, singularKey, pluralKey) {
   return t(count === 1 ? singularKey : pluralKey);
 }
 
+// A percentage in the current language: 45% in English, 45 % in Spanish and French.
+/** @param {number} value */
+export function formatPercent(value) {
+  return t('common.percent', { value });
+}
+
+// A time of day in the current language: 9:05 in English and Spanish, 9 h 05 in French.
+/**
+ * @param {number} hours
+ * @param {number} minutes
+ */
+export function formatClock(hours, minutes) {
+  return t('common.clock', { hours, minutes: String(minutes).padStart(2, '0') });
+}
+
 // Joins names as "A", "A and B", "A, B and C".
+/** @param {string[]} names */
 export function listNames(names) {
   if (names.length <= 1) return names.join('');
   return names.slice(0, -1).join(t('common.listSeparator')) + t('common.listAnd') + names[names.length - 1];
 }
 
+/** @param {ParentNode} root */
 export function applyStaticStrings(root) {
   root.querySelectorAll('[data-i18n]').forEach((el) => {
-    const value = variant(el.getAttribute('data-i18n'));
+    const value = variant(el.getAttribute('data-i18n') || '');
     if (typeof value === 'string') el.textContent = fill(value);
   });
   root.querySelectorAll('[data-i18n-attr]').forEach((el) => {
-    for (const pair of el.getAttribute('data-i18n-attr').split(';')) {
+    for (const pair of (el.getAttribute('data-i18n-attr') || '').split(';')) {
       const [attr, key] = pair.split(':');
       const value = variant(key);
       if (attr && typeof value === 'string') el.setAttribute(attr, fill(value));

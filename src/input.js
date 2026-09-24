@@ -18,16 +18,12 @@ const POINTER_LOCK_SENS = 0.0024;
 const MAX_LOCKED_DELTA = 250; // browsers sometimes report one huge jump right after locking
 
 let lastPX = 0, lastPY = 0;
+/** @type {number | null} the finger that is turning the view */
 let touchLookId = null;
 
 /* ---------------- device ---------------- */
 
-const touchListeners = [];
-// Called with the new value whenever the player switches between touch and keyboard/mouse.
-export function onInputModeChange(fn) {
-  touchListeners.push(fn);
-}
-
+/** @param {boolean} on the player is using a touch screen */
 export function setTouch(on) {
   if (S.isTouch === on) return;
   S.isTouch = on;
@@ -36,11 +32,12 @@ export function setTouch(on) {
   applyStaticStrings(document);
   refreshButtonLabels();
   renderControlsLists();
-  for (const fn of touchListeners) fn(on);
 }
 
 export function renderControlsLists() {
-  const rows = lookup(S.isTouch ? 'controls.touch' : 'controls.keyboard') || [];
+  const table = lookup(S.isTouch ? 'controls.touch' : 'controls.keyboard');
+  /** @type {[string, string][]} */
+  const rows = Array.isArray(table) ? table : [];
   document.querySelectorAll('[data-controls]').forEach((dl) => {
     dl.textContent = '';
     for (const [key, what] of rows) {
@@ -94,6 +91,7 @@ function setupPointer() {
   el.canvas.addEventListener('pointerleave', stopHoverLook);
   el.canvas.addEventListener('pointerout', stopHoverLook);
   window.addEventListener('blur', stopHoverLook);
+  /** @param {PointerEvent} e */
   const endTouchLook = (e) => {
     if (e.pointerId === touchLookId) touchLookId = null;
   };
@@ -129,8 +127,9 @@ function setupJoystick() {
     joy.x = kx / max;
     joy.y = ky / max;
   });
+  /** @param {PointerEvent} e */
   const joyReset = (e) => {
-    if (e && e.pointerId !== joy.id) return;
+    if (e.pointerId !== joy.id) return;
     joy.active = false;
     joy.x = joy.y = 0;
     el.knob.style.left = '50%';
@@ -142,8 +141,10 @@ function setupJoystick() {
 
 /* ---------------- keyboard ---------------- */
 
+/** @type {Record<number, import('./rules.js').DisciplineOption>} */
 const MENU_OPTIONS = { 1: 'talk', 2: 'detention', 3: 'principal', 4: 'zap' };
 
+/** @param {KeyboardEvent} e */
 function onKeyDown(e) {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
   learnFromKeyEvent(e);

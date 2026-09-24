@@ -2,13 +2,16 @@
 
 interface SubstituteBoot {
   blocked: boolean;
-  reason?: string | null;
+  reason: 'file' | 'no-webgl' | 'load-failed' | 'crashed' | null;
   show(card: string): void;
   progress(fraction: number, detail?: string | null): void;
   fail(err?: unknown): void;
   crash(err?: unknown): void;
   ready(): void;
 }
+
+// The start-up cards' text in each language (src/boot-strings.js).
+declare var SubstituteBootStrings: Record<'en' | 'es' | 'fr', Record<string, string>>;
 
 interface Window {
   SubstituteBoot?: SubstituteBoot;

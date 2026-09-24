@@ -1,29 +1,21 @@
 // Spanish. Same keys as the English table in strings.js (a unit test checks they match).
 // Student names are the characters' names and stay as they are.
+import '../boot-strings.js';
+
+const BOOT = globalThis.SubstituteBootStrings;
+
 export default {
   common: {
     listSeparator: ', ',
     listAnd: ' y ',
+    percent: '{value}\u00a0%',
+    clock: '{hours}:{minutes}',
   },
   pronoun: {
     he: { possessive: 'su' },
     she: { possessive: 'su' },
   },
-  boot: {
-    loading: 'Preparando el aula…',
-    loadingDetail: 'Cargando la clase ({percent} %)',
-    loadingSlow: 'Está tardando más de lo normal. Con una conexión lenta puede tardar un minuto; seguirá intentándolo.',
-    noWebglTitle: 'Tu navegador no puede mostrar gráficos 3D',
-    noWebglBody: 'El Sustituto necesita WebGL, que está desactivado o no disponible en este navegador. Prueba una versión reciente de Chrome, Firefox, Edge o Safari y comprueba que la aceleración por hardware (aceleración gráfica) esté activada en los ajustes del navegador.',
-    fileTitle: 'Abre el juego desde un servidor web local',
-    fileBody: 'Los navegadores bloquean un juego abierto directamente desde un archivo, así que el aula no puede cargarse de esta forma. En la carpeta del juego, ejecuta el comando de abajo y abre http://localhost:8000 en el navegador.',
-    fileCommand: 'npm start',
-    loadFailTitle: 'No se pudo cargar el aula',
-    loadFailBody: 'Algunos archivos del juego no llegaron. Comprueba tu conexión e inténtalo de nuevo.',
-    retry: 'Reintentar',
-    crashTitle: 'Algo ha salido mal',
-    crashBody: 'El juego ha tenido un problema del que no puede recuperarse. Al recargar, la clase empieza de nuevo.',
-  },
+  boot: BOOT.es,
   board: {
     room: 'Aula 204',
     motto: '3.ª hora · Sé amable, rebobina',

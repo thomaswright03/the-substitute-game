@@ -7,6 +7,25 @@
 // `friend` names another student's id. Friends seated next to each other egg each other on
 // (see TUNING.friendBoost). The starting chart deliberately seats three pairs of friends
 // together, so reassigning seats is worth the player's time.
+
+/** @typedef {'notes' | 'phone' | 'plane' | 'tip' | 'argue' | 'sleep' | 'snack' | 'spin'} Behaviour */
+
+/**
+ * One student in the roster.
+ * @typedef {object} StudentConfig
+ * @property {string} id
+ * @property {string} name the name shown in the game
+ * @property {'he' | 'she'} pronoun
+ * @property {string} model the character file in assets/characters/ (without .glb)
+ * @property {Behaviour} type how they act up
+ * @property {number} rate escalation per second while acting up, in percent
+ * @property {'LEAVE' | 'HURT'} fail what happens when they reach 100%
+ * @property {number} row the seat they start in
+ * @property {number} col
+ * @property {string | null} friend the id of the friend who eggs them on, if any
+ */
+
+/** @type {StudentConfig[]} */
 export const STUDENTS = [
   {
     id: 'dixieNormous', name: 'Dixie Normous', pronoun: 'she', model: 'suit-woman',
@@ -65,8 +84,10 @@ export const TEACHER = { speed: 3.1, startZ: ROOM.backZ - 1.7 };
 // Standard period, mostly by running out of time for attendance; Relaxed doubles the period and
 // calms the class so that player wins most rounds. It also starts gently, for a player still
 // learning the controls: the first student acts up later, and until the first name card is
-// handed out nobody sitting next to a friend starts (a friend beside them makes them escalate
-// 60% faster). See test/unit/balance.test.js.
+// handed out nobody throws anything and nobody sitting next to a friend starts (a friend beside
+// them makes them escalate 60% faster). See test/unit/balance.test.js.
+/** @typedef {'relaxed' | 'standard'} Difficulty */
+/** @type {Record<Difficulty, Partial<Tuning>>} */
 export const DIFFICULTY = {
   relaxed: {
     period: 240,
@@ -79,19 +100,31 @@ export const DIFFICULTY = {
   },
   standard: {},
 };
+/** @type {Difficulty} */
 export const DEFAULT_DIFFICULTY = 'relaxed';
 
+/**
+ * @param {unknown} value
+ * @returns {value is Difficulty}
+ */
+export function isDifficulty(value) {
+  return typeof value === 'string' && Object.hasOwn(DIFFICULTY, value);
+}
+
+/** @type {Record<Behaviour, string>} */
 export const ICON = {
   notes: '📝', phone: '📱', plane: '✈️', tip: '🪑', argue: '💬', sleep: '💤', snack: '🍪', spin: '🌀',
 };
 
+/** @typedef {typeof TUNING} Tuning */
 export const TUNING = {
   // One class period, in seconds of unpaused real time (shown as 9:05 -> 9:50).
   period: 120,
 
   // Misbehaviour spawning. The interval shrinks as the period goes on.
   firstSpawnDelay: 7,
-  // true: until the first card is handed out, no one sitting next to a friend starts acting up
+  // true: until the first card is handed out, nobody throws and no one sitting next to a friend
+  // starts acting up (by the spawn timer or a zap's commotion)
   gentleStart: false,
   spawnIntervalStart: 13,
   spawnIntervalShrink: 8.5,
@@ -106,6 +139,13 @@ export const TUNING = {
   // Escalation thresholds (percent).
   warnAt: 80,
   failAt: 100,
+
+  // How the HUD shows escalation (percent): each student's ring and the chaos meter turn yellow
+  // at `warning` and red at `danger`, where the ring also shakes and so does the student.
+  hud: {
+    warning: 40,
+    danger: 75,
+  },
 
   // A misbehaving student escalates this many times faster while their friend sits next to them.
   friendBoost: 1.6,
@@ -138,13 +178,17 @@ export const TUNING = {
   hitClassBump: 8,
   caughtWindow: 6,
 
-  // End-of-period report card for a round that reaches the bell.
+  // End-of-period report card for a round that reaches the bell: points off 100 for each of
+  // these, and the lowest score that earns each grade (below C is a D).
   report: {
     hit: 4,
     detention: 5,
     principal: 15,
     zap: 10,
-    closeCall: 5, // closest call at or above 75%
-    veryCloseCall: 10, // closest call at or above 90%
+    closeCall: 5, // the period's closest call reached closeCallAt
+    closeCallAt: 75,
+    veryCloseCall: 10, // the period's closest call reached veryCloseCallAt
+    veryCloseCallAt: 90,
+    grades: { A: 90, B: 80, C: 70 },
   },
 };

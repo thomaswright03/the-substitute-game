@@ -44,7 +44,8 @@ A round is one 3rd-period class, 9:05 to 9:50 on the clock: two minutes of real 
      Interrupting him makes it worse.
 3. **Watch your back.** While you face the board, someone may throw something. If it hits
    you, the thrower and everyone acting up get rowdier. Turn around in time and you catch
-   the thrower, who you can then discipline.
+   the thrower, who you can then discipline. (On Relaxed, nobody throws until you've handed
+   out the first card.)
 4. **Split up friends.** Three pairs of friends start out sitting side by side, and a friend
    next door makes a misbehaving student escalate 60% faster. Open the **seating chart** (R)
    to swap seats. The log tells you when a swap splits friends up (or puts them together).
@@ -97,9 +98,21 @@ shows the URL too.
 
 **What gets published.** `npm run build` writes `_site/`: `index.html`, `css/`, `src/`, `lib/`
 and `assets/` copied as they are, a `.nojekyll` marker, and `sw.js`, a service worker listing
-a content hash for every file. Every URL in the game is relative, so it works under the
-`/the-substitute-game/` sub-path. To try the published build locally, run `npm run preview`
-and open <http://localhost:8080/the-substitute-game/>.
+a content hash for every file, and `404.html`. Every URL in the game is relative, so it works
+under the `/the-substitute-game/` sub-path. To try the published build locally, run
+`npm run preview` and open <http://localhost:8080/the-substitute-game/>.
+
+**The 404 page.** GitHub Pages answers an address that isn't part of the site with the site's
+`404.html`, from any depth, so that page can't use relative links. `scripts/404.html` is a
+self-contained page in the game's paper-and-chalk look, in English, Spanish and French, and the
+build fills in the site's root path from `--base` (`npm run build -- --base /the-substitute-game/`;
+the Pages workflow passes the path that `actions/configure-pages` reports). `npm run preview`
+and the local server send it with a 404 status, as Pages does.
+
+**First deploy (owner's step).** The deploy has only been exercised locally (`npm run preview`
+and the browser tests run against the built site under the sub-path). After *Source* is set to
+GitHub Actions and the first push to `main`, check that the *Deploy to GitHub Pages* run is green,
+that the game loads at the URL above, and that a made-up address under it shows the 404 page.
 
 **Compression and caching.** GitHub Pages sends `.html`, `.js`, `.css` and `.glb` files
 gzip-compressed (a little over 3 MB for a first visit) with a 10-minute browser cache and ETags. On
@@ -122,21 +135,45 @@ last good run and choose *Re-run all jobs*, which rebuilds and redeploys that ru
 
 ```bash
 npm install        # dev tools only: ESLint, TypeScript (type checking only), Playwright, glTF tools
-npm test           # lint + unit tests + browser tests
-npm run lint       # ESLint, the import-cycle check and the type check
-npm run typecheck  # tsc on src/ (JSDoc types and @types/three; nothing is compiled)
-npm run test:unit  # rules tests (node:test), a few seconds
-npm run test:e2e   # Playwright tests in headless Chromium with software WebGL
+npm test               # lint + unit tests with the coverage floor + browser tests
+npm run lint           # ESLint, the import-cycle check, the type check and the dead-export check
+npm run typecheck      # tsc on src/ (JSDoc types and @types/three; nothing is compiled)
+npm run deadcode       # knip: fails on an export, file or dependency nothing uses
+npm run test:unit      # rules tests (node:test), a few seconds
+npm run test:coverage  # the unit tests again, failing if src/rules.js falls below its floor
+npm run test:e2e       # Playwright tests in headless Chromium with software WebGL
 ```
 
 The browser tests need Chromium for Playwright. On a fresh machine, install it once with
 `npx playwright install chromium`. CI (`.github/workflows/ci.yml`) runs the whole suite on
 every push and pull request.
 
+**Coverage floor.** `npm run test:coverage` measures `src/rules.js`, the game's rules, with
+Node's built-in coverage and fails below 95% of lines, 85% of branches or 90% of functions. The
+report lists the uncovered lines, so a new rule without a test shows up by line number. CI runs
+this step in place of the plain unit tests.
+
+**Dead exports.** `knip.json` tells knip where the code starts: `src/main.js` and `src/boot.js`
+(the two scripts `index.html` loads), the service worker, the scripts and the tests. Its
+`paths` repeat the page's import map (`three` and `three/addons/` in `lib/three/`), so imports
+of three.js resolve the way the browser resolves them. An export nothing imports fails
+`npm run lint`: unexport it or delete it. Functions the browser tests reach through
+`window.__substitute` count as used because `src/testhooks.js` imports them.
+
+**Protecting `main`.** Pushing to `main` deploys the site, so `main` should only take commits
+that passed CI. That is a repository setting only the owner can turn on: *Settings > Branches >
+Add branch ruleset* (or *branch protection rule*) for `main`, with *Require status checks to
+pass* and the `CI / test` check selected. Until it is on, a pull request with failing tests can
+still be merged: the deploy then stops at its own test run, but `main` holds the broken commit.
+
 The type check (`tsconfig.json`) reads the JavaScript as it is, with `checkJs`: types come from
-three.js's type definitions, from what TypeScript infers and from the JSDoc on the functions
-that need it. It runs several of strict mode's checks, but not yet `strictNullChecks` or
-`noImplicitAny`.
+three.js's type definitions, from what TypeScript infers and from the JSDoc in `src/` (the
+rules' `Game`, `GameEvent` and `Outcome` in `rules.js`, the roster's `StudentConfig` in
+`data.js`, a character's `CharacterData` in `characters.js`). It runs in `strict` mode, so null
+checks are on and nothing is implicitly `any`: a page element, a model part or a translation
+that might be missing has to be checked for before it is used. Page elements are looked up
+through `$()` in `src/dom.js`, which names a missing id at start-up, and
+`test/unit/dom.test.js` checks that every id the code asks for is in `index.html`.
 
 ### Project layout
 
@@ -208,7 +245,11 @@ press a key. To add a language, add a table with the same keys to `src/i18n/` an
 **Look and styling.** The game has one art direction on purpose: a dark wooden frame around the
 3D classroom, with the HUD and every dialog drawn as cream paper and chalk. It doesn't switch
 with the system's light or dark setting, because the classroom is lit the same either way and
-the paper panels already read as light on dark. `css/game.css` takes every colour from the
+the paper panels already read as light on dark. Whether to keep a single theme is the project
+owner's call, recorded here so that nobody adds a light theme by accident; changing it means
+changing this paragraph. The one concession is the page around the frame: with the system set to
+light, the `--page` token turns that margin a light paper colour, and nothing inside the frame
+changes. `css/game.css` takes every colour from the
 tokens at its top (translucent shades mix a token with `transparent`) and every margin, padding
 and gap from a ten-step spacing scale; a unit test (`test/unit/css.test.js`) fails on a raw
 colour or an off-scale space anywhere else. Sizes are multiples of `--px`, which is 1px except
