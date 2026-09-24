@@ -47,3 +47,35 @@ test('the green chalkboard is in front of its frame and behind the name cards', 
   });
   expect(hits).toEqual(['chalkboard', 'card-dixieNormous']);
 });
+
+test('every student sits on their chair, with their knees under the desk', async ({ page }) => {
+  await openGame(page);
+  const seated = await hooks(page, (s) => {
+    const T = s.THREE;
+    const out = {};
+    for (const [id, g] of Object.entries(s.world.students)) {
+      g.updateMatrixWorld(true);
+      const bone = (name) => {
+        let found = null;
+        g.traverse((o) => { if (o.isBone && o.name === name) found = o; });
+        return found.getWorldPosition(new T.Vector3());
+      };
+      const seat = s.game.seats[id];
+      const hips = bone('Hips');
+      out[id] = {
+        hipsAboveSeat: hips.y - 0.485,
+        hipsFromSeatCentre: Math.hypot(hips.x - [-2.6, -0.87, 0.87, 2.6][seat.col], hips.z - ([-3.0, -0.75][seat.row] + 0.5)),
+        kneesY: Math.max(bone('LowerLegL').y, bone('LowerLegR').y),
+      };
+    }
+    return out;
+  });
+  expect(Object.keys(seated)).toHaveLength(8);
+  for (const [id, m] of Object.entries(seated)) {
+    expect(m.hipsAboveSeat, id).toBeGreaterThan(0.04);
+    expect(m.hipsAboveSeat, id).toBeLessThan(0.15);
+    expect(m.hipsFromSeatCentre, id).toBeLessThan(0.1);
+    // the desk top is 0.695-0.745 m high: the knee joint stays clear of it
+    expect(m.kneesY, id).toBeLessThan(0.66);
+  }
+});

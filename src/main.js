@@ -166,8 +166,7 @@ async function buildWorld() {
   for (const s of STUDENTS) {
     const group = buildCharacter(byVariant[s.model], world.faceTemplate, { type: s.type, model: s.model });
     group.name = 'student-' + s.id;
-    const p = seatPosition(s);
-    group.position.set(p.x, group.userData.yOffset, p.z);
+    placeInSeat(group, s);
     scene.add(group);
     world.students[s.id] = group;
   }
@@ -643,6 +642,18 @@ function handleEvent(e) {
 
 /* ================= students: poses, seats, tags ================= */
 
+// Where a seated student's group goes so that their hips rest on the chair of `seat`.
+function seatTarget(group, seat) {
+  const p = seatPosition(seat);
+  const o = group.userData.seatOffset;
+  return { x: p.x + o.x, y: p.y + o.y, z: p.z + o.z };
+}
+
+function placeInSeat(group, seat) {
+  const p = seatTarget(group, seat);
+  group.position.set(p.x, p.y, p.z);
+}
+
 const flashPoses = {}; // id -> {kind, until}
 function flashPose(id, kind, seconds) {
   flashPoses[id] = { kind, until: performance.now() / 1000 + seconds };
@@ -652,7 +663,7 @@ function onSwap(e) {
   const now = performance.now() / 1000;
   for (const id of [e.a, e.b]) {
     const g = world.students[id];
-    const to = seatPosition(game.seats[id]);
+    const to = seatTarget(g, game.seats[id]);
     g.userData.seatAnim = { fromX: g.position.x, fromZ: g.position.z, toX: to.x, toZ: to.z, t0: now, dur: 0.6 };
   }
   if (game.students[e.b].removed) pushLog(t('log.moveToEmpty', { a: name(e.a) }));
@@ -692,9 +703,8 @@ function updateStudents(now) {
         g.position.z = an.fromZ + (an.toZ - an.fromZ) * ease;
         if (k >= 1) delete g.userData.seatAnim;
       } else {
-        const p = seatPosition(game.seats[s.id]);
-        g.position.x = p.x + (st.active && st.escalation >= 75 ? Math.sin(now * 20) * 0.02 : 0);
-        g.position.z = p.z;
+        placeInSeat(g, game.seats[s.id]);
+        if (st.active && st.escalation >= 75) g.position.x += Math.sin(now * 20) * 0.02;
       }
       poseCharacter(g, poseStateFor(s, st, now), now);
     }
@@ -1328,10 +1338,9 @@ function showBest() {
 function resetVisuals() {
   for (const s of STUDENTS) {
     const g = world.students[s.id];
-    const p = seatPosition(s);
     g.visible = true;
     g.rotation.set(0, Math.PI, 0);
-    g.position.set(p.x, g.userData.yOffset, p.z);
+    placeInSeat(g, s);
     delete g.userData.seatAnim;
     delete g.userData.spinYaw;
     world.cards[s.id].mesh.visible = true;

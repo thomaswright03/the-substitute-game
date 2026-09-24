@@ -11,9 +11,17 @@ export const ROOM = {
   doorX: -2.6,
 };
 
-// where a student sits for a given seat (the chair is behind the desk)
+// Each desk has its chair behind it (toward the back of the room). Metres, relative to the desk.
+export const CHAIR = {
+  z: 0.5, // centre of the chair seat behind the desk
+  seatY: 0.46, // centre of the seat board, which is 0.05 thick
+  seatTop: 0.485,
+  backZ: 0.72,
+};
+
+// The top-centre of the chair seat for a given seat in the seating chart.
 export function seatPosition(seat) {
-  return { x: ROOM.colsX[seat.col], z: ROOM.rowsZ[seat.row] + 0.75 };
+  return { x: ROOM.colsX[seat.col], y: CHAIR.seatTop, z: ROOM.rowsZ[seat.row] + CHAIR.z };
 }
 
 export function deskPosition(seat) {
@@ -64,13 +72,13 @@ export function buildDesk(scale = 1) {
   g.add(top);
   g.add(legSet(0.7, legMat, 0.36 * scale * 1.3, 0.22 * scale * 1.3));
   const seat = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.05, 0.46), seatMat);
-  seat.position.set(0, 0.46, 0.5);
+  seat.position.set(0, CHAIR.seatY, CHAIR.z);
   g.add(seat);
   const back = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.5, 0.05), seatMat);
-  back.position.set(0, 0.68, 0.72);
+  back.position.set(0, 0.68, CHAIR.backZ);
   g.add(back);
-  const seatLegs = legSet(0.46, legMat, 0.19, 0.19);
-  seatLegs.position.z = 0.5;
+  const seatLegs = legSet(CHAIR.seatY, legMat, 0.19, 0.19);
+  seatLegs.position.z = CHAIR.z;
   g.add(seatLegs);
   return enableShadows(g);
 }

@@ -12,10 +12,14 @@ export const CHAR = {
   scale: 0.95,
   // the rig's model-space forward is +Z; the class faces the board at -Z
   forwardYaw: Math.PI,
-  yOffset: 0.05,
-  sitBend: Math.PI / 2,
-  // the women-pack rigs' hips sit ~0.1 higher in bind pose than the men-pack rigs
-  yCorrection: { 'suit-woman': -0.1, 'worker-woman': -0.1, 'punk-woman': -0.1, 'casual-woman': -0.1 },
+  // Seated pose: the thighs swing forward by this much and the shins swing back by the same
+  // amount, so the shins return to their standing angle. A little under 90 degrees, because the
+  // idle pose already carries the thighs slightly forward: this leaves them level with the seat.
+  sitBend: Math.PI / 2 - 0.28,
+  // Where the hip joint rests relative to the top-centre of the chair seat, in metres: above the
+  // seat by the depth of the pelvis, and a touch toward the backrest.
+  hipAboveSeat: 0.09,
+  hipBehindSeatCentre: 0.03,
 };
 
 // Offsets for the grafted face, in METRES in world space. The Head bone carries a large baked-in
@@ -269,7 +273,18 @@ export function buildCharacter(gltf, faceTemplate, opts) {
     headRest: head ? head.rotation.clone() : new THREE.Euler(),
     armRest: arm ? arm.rotation.clone() : new THREE.Euler(),
   };
-  g.userData.yOffset = CHAR.yOffset + (seated ? CHAR.yCorrection[opts.model] || 0 : 0);
+  // Measured, not tuned per model: the costumes' rigs differ in proportions and bind pose, so
+  // find where this one's hips ended up and offset the whole character to put them on the seat.
+  g.userData.seatOffset = new THREE.Vector3();
+  if (seated) {
+    const hips = bones.Hips || bones.Body || null;
+    if (hips) {
+      g.position.set(0, 0, 0);
+      g.updateMatrixWorld(true);
+      const at = hips.getWorldPosition(new THREE.Vector3());
+      g.userData.seatOffset.set(-at.x, CHAR.hipAboveSeat - at.y, CHAR.hipBehindSeatCentre - at.z);
+    }
+  }
   return g;
 }
 
