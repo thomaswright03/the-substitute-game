@@ -1,5 +1,5 @@
 // Character models: loading, building a seated or standing character, and the per-frame body
-// language. The grafted face is in face.js and the behaviour props in props.js.
+// language. The expressive face is in face.js and the behaviour props in props.js.
 //
 // Bodies are Quaternius "Ultimate Modular Men/Women" rigs. They have no sit clip, so each one is
 // frozen on the first frame of "Idle_Neutral" and the legs are bent into a seated pose by hand.
@@ -54,7 +54,6 @@ export function loadGLB(url, onProgress) {
 export function modelUrl(variant) {
   return 'assets/characters/' + variant + '.glb';
 }
-export const FACE_URL = 'assets/face.glb';
 
 // Downloads several files, reporting combined progress as a 0..1 fraction.
 export function loadAll(urls, onFraction, estimateBytes = 520000) {
@@ -152,7 +151,7 @@ function findClip(animations, name) {
 }
 
 // opts: {type, seated, model}
-export function buildCharacter(gltf, faceTemplate, opts) {
+export function buildCharacter(gltf, opts) {
   const seated = opts.seated !== false;
   const g = cloneSkinned(gltf.scene);
   g.scale.setScalar(CHAR.scale);
@@ -230,7 +229,7 @@ export function buildCharacter(gltf, faceTemplate, opts) {
     prop.visible = false;
   }
 
-  const faceMesh = attachExpressiveFace(g, head, faceTemplate, opts.model || '');
+  const faceMesh = attachExpressiveFace(g, head);
 
   // the direction the face points at rest, in the head bone's own space
   let headForwardLocal = null;
@@ -273,6 +272,15 @@ export function setWalking(group, walking) {
 
 /* ---------------- body language ---------------- */
 
+// A calm student blinks every few seconds, each on their own rhythm: how closed the eyes are
+// at time t (0 open, 1 shut).
+const BLINK_S = 0.16;
+function blinkAt(t, seed) {
+  const every = 3.6 + (seed % 7) * 0.45;
+  const into = (t + seed * 1.37) % every;
+  return into < BLINK_S ? Math.sin((into / BLINK_S) * Math.PI) : 0;
+}
+
 // state: {kind, type, argueReady, windup}. kind is one of
 //  'calm' | 'shake' (wrong card) | 'hand' (marked present) | 'active' | 'detained' | 'throwing'
 export function poseCharacter(group, state, t) {
@@ -307,9 +315,11 @@ export function poseCharacter(group, state, t) {
       return;
     case 'active':
       break;
-    default:
-      applyExpression(face, null);
+    default: {
+      const blink = blinkAt(t, group.id);
+      applyExpression(face, blink ? { eyeBlink_L: blink, eyeBlink_R: blink } : null);
       return;
+    }
   }
 
   switch (state.type) {

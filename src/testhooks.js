@@ -8,7 +8,7 @@ import { camera, ensurePrincipal, renderState, scene, world } from './world.js';
 import { onQualityChange, qualitySetting } from './quality.js';
 import { EYE_HEIGHT, keys, player } from './player.js';
 import { headForward } from './characters.js';
-import { faceColours, faceOffsetFromHead } from './face.js';
+import { applyExpression, faceMeasure, faceOffsetFromHead, faceReport } from './face.js';
 import { currentContext } from './aim.js';
 import { drainEvents } from './events.js';
 import { renderControlsLists } from './input.js';
@@ -67,7 +67,9 @@ export function exposeTestHooks() {
       if (world.principal) out.principal = faceOffsetFromHead(world.principal);
       return out;
     },
-    faceColours: (id) => faceColours(world.students[id] || world.principal),
+    faceReport: (id) => faceReport(world.students[id] || world.principal),
+    faceMeasure: (id) => faceMeasure(world.students[id] || world.principal),
+    setExpression: (id, weights) => applyExpression((world.students[id] || world.principal).userData.parts.faceMesh, weights),
     headForward: (id) => headForward(world.students[id]).toArray(),
     ensurePrincipal,
     // Plays the principal's visit through to its end straight away, in the steps the frame loop

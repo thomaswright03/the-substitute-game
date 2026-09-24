@@ -11,14 +11,14 @@ import * as R from './rules.js';
 import { el } from './dom.js';
 import { S } from './session.js';
 import { TEACHER_DESK, buildAttendanceCards, buildDesk, buildRoom, deskPosition, seatPosition } from './scene.js';
-import { FACE_URL, buildCharacter, loadAll, loadGLB, modelUrl, poseCharacter } from './characters.js';
+import { buildCharacter, loadAll, loadGLB, modelUrl, poseCharacter } from './characters.js';
 
 export let renderer = null;
 export let scene = null;
 export let camera = null;
 let composer = null;
 
-export const world = { students: {}, cards: {}, principal: null, principalPromise: null, faceTemplate: null, deskColliders: [], boxColliders: [] };
+export const world = { students: {}, cards: {}, principal: null, principalPromise: null, deskColliders: [], boxColliders: [] };
 
 // The classroom's look was designed with three.js r128 (see three-setup.js), where the scene was
 // tone-mapped once when rendered into the bloom's buffer and
@@ -171,14 +171,13 @@ function waitForFonts() {
 // Downloads the models and builds the room. onProgress(fraction) reports the download.
 export async function buildWorld(onProgress) {
   const variants = [...new Set(STUDENTS.map((s) => s.model))];
-  const urls = [FACE_URL, ...variants.map(modelUrl)];
+  const urls = variants.map(modelUrl);
   onProgress(0);
   const loading = loadAll(urls, onProgress);
   await waitForFonts();
   buildRoom(scene);
   world.cards = buildAttendanceCards(scene, STUDENTS);
-  const [face, ...models] = await loading;
-  world.faceTemplate = face.scene;
+  const models = await loading;
   const byVariant = {};
   variants.forEach((v, i) => { byVariant[v] = models[i]; });
 
@@ -193,7 +192,7 @@ export async function buildWorld(onProgress) {
   const td = TEACHER_DESK;
   world.boxColliders.push({ minX: td.x - td.halfWidth, maxX: td.x + td.halfWidth, minZ: td.z - td.halfDepth, maxZ: td.z + td.halfDepth });
   for (const s of STUDENTS) {
-    const group = buildCharacter(byVariant[s.model], world.faceTemplate, { type: s.type, model: s.model });
+    const group = buildCharacter(byVariant[s.model], { type: s.type, model: s.model });
     group.name = 'student-' + s.id;
     placeInSeat(group, s);
     scene.add(group);
@@ -207,7 +206,7 @@ export async function buildWorld(onProgress) {
 export function ensurePrincipal() {
   if (!world.principalPromise) {
     world.principalPromise = loadGLB(modelUrl(PRINCIPAL_MODEL)).then((gltf) => {
-      const p = buildCharacter(gltf, world.faceTemplate, { type: null, seated: false, model: PRINCIPAL_MODEL });
+      const p = buildCharacter(gltf, { type: null, seated: false, model: PRINCIPAL_MODEL });
       p.scale.multiplyScalar(1.1);
       p.visible = false;
       p.name = 'principal';

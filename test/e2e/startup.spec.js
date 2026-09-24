@@ -28,8 +28,7 @@ test('the principal model is not part of the first load', async ({ page }) => {
   page.on('request', (r) => { if (r.url().endsWith('.glb')) glbs.push(r.url().split('/').pop()); });
   await page.route('**/business-man.glb', (route) => new Promise(() => { /* never answer */ void route; }));
   await openGame(page);
-  expect(glbs).toContain('face.glb');
-  expect(glbs.filter((g) => g !== 'face.glb' && g !== 'business-man.glb')).toHaveLength(8);
+  expect(glbs.filter((g) => g !== 'business-man.glb')).toHaveLength(8);
 });
 
 test('without WebGL a plain-language message appears instead of a hang', async ({ page }) => {

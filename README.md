@@ -152,7 +152,7 @@ every push and pull request.
 | `src/offline.js` | Registers the service worker on a deployed build only |
 | `src/testhooks.js` | The `?test` API for the browser tests |
 | `src/scene.js`, `src/characters.js` | The classroom, and the character models: seating, arm poses and body language |
-| `src/face.js`, `src/props.js` | The grafted expressive face and its painted features; the props for each behaviour |
+| `src/face.js`, `src/props.js` | The expressive face (blend shapes on each costume's own head, and its mouth); the props for each behaviour |
 | `test/unit`, `test/e2e` | Rules tests and browser tests |
 | `lib/three/` | The vendored three.js modules |
 | `docs/playtests.md` | How to run a playtest, and the notes from each one |
@@ -224,17 +224,16 @@ The look was designed on three.js r128, and `src/three-setup.js` and `src/world.
 colours are used as linear values, lights use r128's intensity scale, and the frame is
 tone-mapped the way r128's bloom pipeline did it.
 
-Characters combine two things at runtime:
-- Body and clothing rigs from Quaternius's low-poly character packs. They have no sit
-  animation, so each character is frozen on its idle pose and its legs are bent into a
-  seated pose in code.
-- A shared expressive head with 52 ARKit blend shapes (smiles, frowns, raised brows, closed
-  eyes), attached to each body's Head bone in place of the original head skin. It is sized
-  and positioned from that character's own posed head, so every costume gets a fitted face
-  whose expression follows the student's behaviour. Brows (in the costume's brow or hair
-  colour), lips and eyes (white, a per-student iris and a pupil) are painted onto it as flat-shaded
-  vertex colours, laid out from the face's own eyeballs and teeth, so they move with the blend
-  shapes.
+Characters are Quaternius's low-poly character rigs, brought to life in code:
+- They have no sit animation, so each character is frozen on its idle pose and its legs are
+  bent into a seated pose in code.
+- Each costume keeps its own head (hair, hat, skin, eyes and brows), and `src/face.js` makes
+  it expressive. When a character is built it finds the eyes and brows on the posed head and
+  adds blend shapes to those meshes (blink, squint, wide, looking down; brows down and
+  worried), and it adds a flat-shaded mouth, placed between the nose and the chin by tracing
+  the face's profile, curved to the face, with its own shapes (smile, frown, open, pulled to
+  one side). The shapes use the ARKit names (`eyeBlink_L`, `mouthSmile_R`, `jawOpen`...), and
+  each behaviour poses the face with them; calm students blink now and then.
 
 The character files were re-packed for the web with `npm run optimize-assets`: unused
 animation clips were removed and the geometry meshopt-compressed (about 520 KB per
@@ -248,9 +247,6 @@ Brotli compression for `.html`, `.js`, `.css` and `.glb` files there too.
 - **Character bodies**: Quaternius "Ultimate Modular Men/Women" packs (CC0 / CC BY per
   model). See `assets/characters/CREDITS.txt` for the exact split, the required attribution
   and the modifications made.
-- **Expressive face**: adapted from the "Face Cap" model bundled with three.js's official
-  examples, re-processed locally to drop its baked-in KTX2 textures (unused, since it's
-  retinted per character at runtime). See `assets/face.glb`.
 - **Fonts**: Fredoka, Nunito and JetBrains Mono, under the SIL Open Font License. The
   licence texts are in `assets/fonts/`.
 

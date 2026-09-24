@@ -30,7 +30,8 @@ test.describe('the deployed build', () => {
     await page.reload();
     await expect(page.locator('#startOverlay')).toBeVisible({ timeout: 90_000 });
     const glbs = Object.entries(sources).filter(([u]) => u.endsWith('.glb'));
-    expect(glbs.length).toBeGreaterThanOrEqual(9);
+    // the eight classroom costumes (the principal's joins them once he has been needed)
+    expect(glbs.length).toBeGreaterThanOrEqual(8);
     for (const [url, fromSw] of Object.entries(sources)) expect(fromSw, url).toBe(true);
   });
 });

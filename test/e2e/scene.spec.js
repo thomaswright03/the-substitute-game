@@ -6,37 +6,57 @@ test('every expressive face sits on its head (students and principal)', async ({
   await hooks(page, (s) => s.ensurePrincipal());
   const offsets = await hooks(page, (s) => s.faceOffsets());
   expect(Object.keys(offsets)).toHaveLength(9);
+  // the mouth sits under the eyes on every head, big or small
   for (const [who, metres] of Object.entries(offsets)) {
     expect(metres, who).not.toBeNull();
-    expect(metres, who).toBeLessThan(0.1);
+    expect(metres, who).toBeGreaterThan(0.05);
+    expect(metres, who).toBeLessThan(0.11);
   }
 });
 
-test('every face has painted brows, lips, eyes and teeth', async ({ page }) => {
+test("every face is the costume's own head, with moving eyes, brows and a mouth under the nose", async ({ page }) => {
   await openGame(page);
   await hooks(page, (s) => s.ensurePrincipal());
   const ids = await hooks(page, (s) => [...Object.keys(s.world.students), 'principal']);
-  const lum = ([r, g, b]) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  expect(ids).toHaveLength(9);
   for (const id of ids) {
-    const c = await hooks(page, (s, id) => s.faceColours(id), id);
-    // skin is the most common colour; brows are far darker than it; lips are redder
-    expect(c.head.length, id).toBeGreaterThan(10);
-    const darkest = c.head[0], lightest = c.head[c.head.length - 1];
-    expect(lum(darkest), id).toBeLessThan(lum(lightest) * 0.5);
-    expect(c.head.some(([r, g]) => r > g * 1.6), id).toBe(true);
-    // two eyeballs, each with a pupil, an iris and a white
-    expect(c.eyes, id).toHaveLength(2);
-    for (const eye of c.eyes) {
-      expect(eye, id).toHaveLength(3);
-      expect(lum(eye[2]), id).toBeGreaterThan(lum(eye[0]) * 5);
-    }
-    expect(lum(c.teeth), id).toBeGreaterThan(lum(lightest));
+    const f = await hooks(page, (s, id) => s.faceReport(id), id);
+    expect(f, id).not.toBeNull();
+    // nothing of the costume's head is hidden: its hair, hat, skin and eyes are all drawn
+    expect(f.hiddenHeadParts, id).toBe(0);
+    expect(f.eyeShapes, id).toEqual(expect.arrayContaining(['eyeBlink_L', 'eyeBlink_R', 'eyeSquint_L', 'eyeWide_R', 'eyeLookDown_L']));
+    expect(f.mouthShapes, id).toEqual(expect.arrayContaining(['mouthSmile_L', 'mouthSmile_R', 'mouthFrown_L', 'mouthFrown_R', 'jawOpen', 'mouthLeft']));
+    // the worker woman's costume has no brows; everyone else's move
+    if (id !== 'mikeHunt') expect(f.browShapes, id).toEqual(['browDown_L', 'browDown_R', 'browInnerUp']);
+    // the mouth sits below the eyes, as far down as a face this size allows
+    expect(f.mouthBelowEyes, id).toBeGreaterThan(0.05);
+    expect(f.mouthBelowEyes, id).toBeLessThan(0.11);
+    if (id !== 'principal') expect(f.mouthOffCentre, id).toBeLessThan(0.01);
   }
+});
+
+test('expressions visibly change the face', async ({ page }) => {
+  await openGame(page);
+  const measure = (weights) => hooks(page, (s, w) => {
+    s.setExpression('benDover', w);
+    return s.faceMeasure('benDover');
+  }, weights);
+  const rest = await measure(null);
+  const open = await measure({ jawOpen: 1 });
+  expect(open.mouth.height).toBeGreaterThan(rest.mouth.height * 2);
+  expect(open.mouth.bottom).toBeLessThan(rest.mouth.bottom);
+  const blink = await measure({ eyeBlink_L: 1, eyeBlink_R: 1 });
+  expect(blink.eyes.height).toBeLessThan(rest.eyes.height * 0.5);
+  const frown = await measure({ browDown_L: 1, browDown_R: 1 });
+  expect(frown.brows.bottom).toBeLessThan(rest.brows.bottom);
+  const smile = await measure({ mouthSmile_L: 1, mouthSmile_R: 1 });
+  expect(smile.mouth.top).toBeGreaterThan(rest.mouth.top);
 });
 
 test('faces stay on the head while it nods, shakes and the chair spins', async ({ page }) => {
   await openGame(page);
   await startRound(page);
+  const rest = await hooks(page, (s) => s.faceOffsets());
   await hooks(page, (s) => {
     s.game.spawnTimer = Infinity;
     s.game.tuning.attendanceRateScale = 0.01;
@@ -50,7 +70,8 @@ test('faces stay on the head while it nods, shakes and the chair spins', async (
   // let a few frames of sleeping, spinning and phone poses play
   await page.waitForTimeout(1500);
   const offsets = await hooks(page, (s) => s.faceOffsets());
-  for (const id of ['mikeHunt', 'mikeOxlong', 'benDover']) expect(offsets[id], id).toBeLessThan(0.1);
+  // the mouth has not drifted from the eyes (beyond what an open mouth or closed eyes move it)
+  for (const id of ['mikeHunt', 'mikeOxlong', 'benDover']) expect(Math.abs(offsets[id] - rest[id]), id).toBeLessThan(0.02);
 });
 
 test('the green chalkboard is in front of its frame and behind the name cards', async ({ page }) => {
@@ -218,9 +239,9 @@ test.describe('behaviour tells', () => {
     // frames can be slow under software rendering: wait for a few to pass
     await page.waitForFunction((y) => window.__substitute.world.students.mikeOxlong.rotation.y !== y, before);
     const r = await hooks(page, (s) => {
-      const face = s.world.students.mikeHunt.userData.parts.faceMesh;
+      const eyes = s.world.students.mikeHunt.userData.parts.faceMesh.eyes;
       return {
-        blink: face.morphTargetInfluences[face.morphTargetDictionary.eyeBlink_L],
+        blink: eyes.morphTargetInfluences[eyes.morphTargetDictionary.eyeBlink_L],
         tip: s.world.students.steve.rotation.x,
         spin: s.world.students.mikeOxlong.rotation.y,
       };

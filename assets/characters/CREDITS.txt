@@ -17,3 +17,6 @@ Modifications: geometry and rig are unchanged. For web delivery the files were r
 scripts/optimize-assets.mjs: animation clips the game never plays were removed (only
 "Idle_Neutral" is kept, plus "Walk" for business-man.glb), and the geometry was
 meshopt-compressed (EXT_meshopt_compression) with normals, UVs and skin weights quantized.
+At runtime the game poses the rigs in code and gives each head an expressive face
+(src/face.js): blend shapes added to the head's own eye and brow meshes, and a generated
+mouth. The files themselves carry no further changes.
