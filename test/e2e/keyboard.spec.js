@@ -113,47 +113,43 @@ test.describe('where the browser cannot tell the layout', () => {
   });
 });
 
-// Holds a key for one frame of the game (this frame callback runs after the game's own), so a
-// test moves in steps of one frame however slowly frames arrive under software rendering.
-async function tapKey(page, key) {
-  await page.keyboard.down(key);
-  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => r())));
-  await page.keyboard.up(key);
-}
-
 test('keyboard only: look up at the board and take a top-row card while the bottom row is full', async ({ page }) => {
-  test.setTimeout(240_000);
-  // small and at the cheapest graphics, so frames come quickly under software rendering
+  // The page's clock is the test's: frames come 16 ms apart however busy the machine is, so a
+  // held key moves the teacher by the same amount every run.
+  await page.clock.install();
+  // small and at the cheapest graphics, so each of those frames draws quickly
   await page.setViewportSize({ width: 480, height: 320 });
   await page.addInitScript(() => localStorage.setItem('substitute.quality', 'minimum'));
   await openGame(page);
   await expect(page.locator('#startOverlay .controls')).toContainText('look up / down');
   await page.keyboard.press('Enter');
-  await page.waitForFunction(() => window.__substitute.running);
+  await page.waitForFunction(() => window.__substitute.running, null, { polling: 100 });
   await freezeRandomness(page);
-  // walk up the middle aisle until the board is in reach, but a step back from it, where the
-  // cards are in view (a slow frame can carry the teacher too far: then step back)
-  const inReach = (z) => z < -3.7 && z > -5.2;
-  let z = await hooks(page, (s) => s.player.z);
-  for (let i = 0; i < 200 && !inReach(z); i++) {
-    await tapKey(page, z >= -3.7 ? 'w' : 's');
-    z = await hooks(page, (s) => s.player.z);
-  }
-  expect(inReach(z), `stopped at z = ${z}`).toBe(true);
-  // level, the crosshair is on the bottom row; look up a little at a time until it is on the top row
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
+  const hold = async (key, done) => {
+    await page.keyboard.down(key);
+    for (let i = 0; i < 200 && !(await done()); i++) await page.clock.runFor(50);
+    await page.keyboard.up(key);
+    await page.clock.runFor(50);
+  };
+  // walk up the middle aisle until the board is in reach, a step back from it, where the cards
+  // are in view
+  await hold('w', () => hooks(page, (s) => s.player.z < -3.7));
+  const z = await hooks(page, (s) => s.player.z);
+  expect(z).toBeLessThan(-3.7);
+  expect(z).toBeGreaterThan(-5.2);
+  // level, the crosshair is on the bottom row; look up until it is on the top row
   const TOP = ['dixieNormous', 'benDover', 'moeLester', 'steve'];
   const topCard = () => page.evaluate((top) => {
     const c = window.__substitute.context();
     return c && c.kind === 'pickup' && top.includes(c.id) ? c.id : null;
   }, TOP);
   expect(await topCard()).toBe(null);
-  // (a slow frame can look past the top row: then look back down a little)
-  for (let i = 0; i < 60 && !(await topCard()); i++) {
-    await tapKey(page, (await hooks(page, (s) => s.player.pitch)) > 0.95 ? 'PageDown' : 'PageUp');
-  }
+  await hold('PageUp', topCard);
   const id = await topCard();
   expect(TOP).toContain(id);
   await page.keyboard.press('e');
+  await page.clock.runFor(100);
   await expect(page.locator('#attQuestion')).toContainText('Carrying');
   const a = await hooks(page, (s) => ({ holding: s.game.attendance.holding, remaining: s.game.attendance.remaining }));
   expect(a.holding).toBe(id);
