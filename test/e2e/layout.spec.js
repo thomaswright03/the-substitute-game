@@ -106,6 +106,18 @@ test('the Start button is in reach without scrolling on a laptop screen', async 
   await expect(page.locator('#startBtn')).toBeInViewport();
 });
 
+for (const [w, h] of [[1440, 900], [1280, 800]]) {
+  test(`the start card's language choice is in view without scrolling at ${w}×${h}`, async ({ page }) => {
+    await page.setViewportSize({ width: w, height: h });
+    await openGame(page);
+    await expect(page.locator('#startOverlay select[data-language]')).toBeInViewport({ ratio: 1 });
+    await expect(page.locator('#startBtn')).toBeInViewport({ ratio: 1 });
+    // in view means on screen, not scrolled into view inside the card either
+    const scrolled = await page.evaluate(() => [...document.querySelectorAll('#startOverlay *')].some((n) => n.scrollTop > 0));
+    expect(scrolled).toBe(false);
+  });
+}
+
 test('the game frame fills most of a large screen', async ({ page }) => {
   await page.setViewportSize({ width: 2560, height: 1440 });
   await openGame(page);
