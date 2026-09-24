@@ -193,7 +193,7 @@ test('a won round reports removals, detentions and every intervention', async ({
   await expect(page.locator('#endTitle')).toHaveText('You Made It');
   const text = page.locator('#endText');
   await expect(text).toContainText('Moe Lester spent the rest of the period in the principal’s office');
-  await expect(text).toContainText('Steve and Mike Oxlong served detention');
+  await expect(text).toContainText('Steve and Mike Oxlong served detention at their desks');
   await expect(text).not.toContainText('Every kid stayed in their seat');
   await expect(page.locator('#statInterventions')).toHaveText('4');
   await expect(page.locator('#statDetentions')).toHaveText('2');

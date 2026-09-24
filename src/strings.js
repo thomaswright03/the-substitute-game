@@ -13,6 +13,11 @@ const EN = {
     listSeparator: ', ',
     listAnd: ' and ',
   },
+  // keyed by each student's `pronoun` in data.js
+  pronoun: {
+    he: { subject: 'he', object: 'him', possessive: 'his' },
+    she: { subject: 'she', object: 'her', possessive: 'her' },
+  },
   boot: {
     loading: 'Chalking up the classroom…',
     loadingDetail: 'Loading the class ({percent}%)',
@@ -111,7 +116,8 @@ const EN = {
     students: 'students',
     wonAllStayed: 'Every kid stayed in their seat and in one piece for the whole period.',
     wonRemoved: '{names} spent the rest of the period in the principal’s office. Everyone else made it through in one piece.',
-    wonDetained: '{names} served detention at their desk.',
+    wonDetainedOne: '{name} served detention at {possessive} desk.',
+    wonDetainedMany: '{names} served detention at their desks.',
     wonHits: 'You took {count} {hits} to the back of the head.',
     hit: 'hit',
     hits: 'hits',

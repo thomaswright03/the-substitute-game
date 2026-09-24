@@ -46,7 +46,7 @@ const el = {
   flash: $('flash'), hitVignette: $('hitVignette'),
   attPanel: $('attendancePanel'), attQuestion: $('attQuestion'), attHint: $('attHint'), attAnswer: $('attAnswer'),
   banner: $('reassignBanner'), seatChart: $('seatChart'), seatGrid: $('seatGrid'), seatClose: $('seatClose'),
-  actPrimary: $('actPrimary'), actDiscipline: $('actDiscipline'), actRollCall: $('actRollCall'), actSeats: $('actSeats'),
+  actions: $('actions'), actPrimary: $('actPrimary'), actDiscipline: $('actDiscipline'), actRollCall: $('actRollCall'), actSeats: $('actSeats'),
   joystick: $('joystick'), knob: $('knob'),
 };
 const discButtons = {
@@ -789,17 +789,13 @@ function renderPrompt(parts) {
   if (sig === lastPromptKey) return;
   lastPromptKey = sig;
   el.prompt.textContent = '';
-  parts.forEach((part, i) => {
-    if (i) {
-      const sep = document.createElement('span');
-      sep.className = 'sep';
-      sep.textContent = '·';
-      el.prompt.append(sep);
-    }
-    const span = document.createElement('span');
-    keyedLabel(span, part.key, part.text);
-    el.prompt.append(span);
-  });
+  // one line per action, so a long hint never wraps into the middle of the next action
+  for (const part of parts) {
+    const line = document.createElement('span');
+    line.className = 'promptLine';
+    keyedLabel(line, part.key, part.text);
+    el.prompt.append(line);
+  }
   el.prompt.classList.toggle('show', parts.length > 0);
 }
 
@@ -946,6 +942,7 @@ function showRollCallAnswer(id) {
   const g = world.students[id];
   const where = directionWords(relativeDirection(g.userData.headWorld || g.position));
   speech = { id, until: performance.now() / 1000 + 9, answer: t('attendance.answered', { name: name(id), where, line }) };
+  pushLog(speech.answer);
   el.bubbleText.textContent = line;
 }
 
@@ -959,25 +956,56 @@ function updateSpeech(now) {
   const head = world.students[speech.id].userData.headWorld;
   if (!head) return;
   const pos = project(tmpV.copy(head).add(new THREE.Vector3(0, 0.3, 0)));
-  if (pos.onScreen) {
-    el.speechBubble.hidden = false;
-    el.speechBubble.style.left = pos.x + 'px';
-    el.speechBubble.style.top = pos.y + 'px';
+  const safe = freeArea();
+  if (seatChartOpen) {
+    // the chart covers the middle of the screen; the answer stays readable in the log
+    el.speechBubble.hidden = true;
     el.dirArrow.hidden = true;
+  } else if (pos.onScreen) {
+    el.dirArrow.hidden = true;
+    el.speechBubble.hidden = false;
+    // keep the whole bubble on screen and below the HUD; the tail still points at the speaker
+    const bw = el.speechBubble.offsetWidth, bh = el.speechBubble.offsetHeight;
+    const x = Math.max(safe.left + bw / 2, Math.min(safe.right - bw / 2, pos.x));
+    const y = Math.max(safe.top + bh, pos.y);
+    el.speechBubble.style.left = x + 'px';
+    el.speechBubble.style.top = y + 'px';
+    const tail = Math.max(-(bw / 2 - 16), Math.min(bw / 2 - 16, pos.x - x));
+    el.speechBubble.style.setProperty('--tail', tail + 'px');
   } else {
     el.speechBubble.hidden = true;
-    // point from the centre of the screen toward the student
+    // an arrow at the edge of the free play area, pointing toward the student
     const ang = relativeDirection(head);
-    const w = el.stage.clientWidth, h = el.stage.clientHeight;
     const dx = Math.sin(ang), dy = -Math.cos(ang);
-    // an ellipse inside the HUD bands, so the arrow never sits on the log or the buttons
-    const rx = Math.max(40, w / 2 - 50), ry = Math.max(40, h / 2 - (dy > 0 ? 170 : 150));
+    const cx = (safe.left + safe.right) / 2, cy = (safe.top + safe.bottom) / 2;
+    const hx = Math.max(0, (safe.right - safe.left) / 2 - 26), hy = Math.max(0, (safe.bottom - safe.top) / 2 - 26);
+    const k = Math.min(dx ? hx / Math.abs(dx) : Infinity, dy ? hy / Math.abs(dy) : Infinity);
     el.dirArrow.hidden = false;
-    el.dirArrow.style.left = w / 2 + dx * rx + 'px';
-    el.dirArrow.style.top = h / 2 + dy * ry + 'px';
+    el.dirArrow.style.left = cx + dx * k + 'px';
+    el.dirArrow.style.top = cy + dy * k + 'px';
     el.dirArrowGlyph.style.display = 'inline-block';
     el.dirArrowGlyph.style.transform = 'rotate(' + Math.atan2(dy, dx) + 'rad)';
   }
+}
+
+// The part of the stage not covered by HUD panels (top band, attendance panel, seating chart,
+// log and buttons), in stage pixels. Floating hints are kept inside it.
+function freeArea() {
+  const stage = el.stage.getBoundingClientRect();
+  const margin = 8;
+  let top = 0, bottom = stage.height;
+  for (const node of [document.getElementById('hud'), el.attPanel, el.banner, el.seatChart]) {
+    if (node.hidden || !node.offsetParent) continue;
+    const r = node.getBoundingClientRect();
+    if (r.height) top = Math.max(top, r.bottom - stage.top);
+  }
+  for (const node of [el.log, el.actions]) {
+    if (!node.offsetParent) continue;
+    const r = node.getBoundingClientRect();
+    if (r.height) bottom = Math.min(bottom, r.top - stage.top);
+  }
+  if (bottom - top < 80) bottom = Math.min(stage.height, top + 80);
+  return { left: margin, right: stage.width - margin, top: top + margin, bottom: bottom - margin };
 }
 
 /* ================= seating chart ================= */
@@ -1408,7 +1436,12 @@ function endRound(outcome) {
     const removed = R.removedStudents(game).map(name);
     const detained = R.detainedStudents(game).map(name);
     const sentences = [removed.length ? t('end.wonRemoved', { names: listNames(removed) }) : t('end.wonAllStayed')];
-    if (detained.length) sentences.push(t('end.wonDetained', { names: listNames(detained) }));
+    if (detained.length === 1) {
+      const who = STUDENTS.find((x) => x.id === R.detainedStudents(game)[0]);
+      sentences.push(t('end.wonDetainedOne', { name: detained[0], possessive: t('pronoun.' + who.pronoun + '.possessive') }));
+    } else if (detained.length) {
+      sentences.push(t('end.wonDetainedMany', { names: listNames(detained) }));
+    }
     if (c.hits) sentences.push(t('end.wonHits', { count: c.hits, hits: plural(c.hits, 'end.hit', 'end.hits') }));
     sentences.push(t('end.wonCoffee'));
     text.textContent = sentences.join(' ');

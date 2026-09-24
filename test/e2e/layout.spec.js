@@ -162,3 +162,26 @@ test.describe('on a phone', () => {
     await expect(page.locator('#pauseOverlay')).toBeVisible();
   });
 });
+
+test('the roll-call direction arrow stays clear of the HUD panels on a phone', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 667 });
+  await openGame(page);
+  await startRound(page);
+  await freezeRandomness(page);
+  await hooks(page, (s) => {
+    const c = s.world.cards.moeLester.position;
+    s.lookAt(c.x, c.y, c.z, c.x * 0.6, -4.4);
+    s.rules.pickupCard(s.game, 'moeLester');
+  });
+  await page.keyboard.press('q');
+  await expect(page.locator('#dirArrow')).toBeVisible();
+  const arrow = await page.locator('#dirArrow').boundingBox();
+  for (const sel of ['#attendancePanel', '#log', '#actions', '#hud']) {
+    const r = await page.locator(sel).boundingBox();
+    const b = { x: r.x, y: r.y, w: r.width, h: r.height };
+    const a = { x: arrow.x, y: arrow.y, w: arrow.width, h: arrow.height };
+    expect(overlaps(a, b), `arrow overlaps ${sel}`).toBe(false);
+  }
+  // the answer is also written to the log
+  await expect(page.locator('#log')).toContainText('Moe Lester answered from');
+});

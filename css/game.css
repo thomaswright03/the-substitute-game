@@ -211,12 +211,15 @@ canvas#gl { position: absolute; inset: 0; display: block; width: 100%; height: 1
 .attHint, .attAnswer { font-family: var(--font-body); font-size: var(--fs-2); color: var(--muted-ink); line-height: 1.35; margin-top: 2px; }
 .attAnswer { color: var(--ink); font-weight: 700; }
 @container stage (max-height: 460px) {
-  .attHint { display: none; }
+  .attHint, .seatChart p { display: none; }
 }
 .banner { padding: 6px 14px; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-2); background: rgba(47, 106, 147, 0.95); color: #fff; }
 
 /* seating chart */
-.seatChart { padding: 10px 12px 12px; text-align: center; width: 460px; }
+.seatChart {
+  padding: 10px 12px 12px; text-align: center; width: 460px;
+  max-height: calc(100cqh - var(--hud-bottom, 64px) - 16px); overflow-y: auto; overscroll-behavior: contain;
+}
 .seatChart h2 { font-family: var(--font-display); font-size: var(--fs-3); margin: 0 0 2px; }
 .seatChart p { font-size: var(--fs-1); line-height: 1.4; color: var(--muted-ink); margin: 0 0 8px; }
 .seatFront { font-family: var(--font-display); font-size: var(--fs-1); font-weight: 600; color: #fff; background: var(--board-green); border-radius: 6px; padding: 3px; margin-bottom: 6px; }
@@ -258,7 +261,8 @@ canvas#gl { position: absolute; inset: 0; display: block; width: 100%; height: 1
   display: inline-block; min-width: 20px; padding: 0 5px; margin-right: 5px; border-radius: 5px;
   background: var(--chalk); color: var(--ink); font-family: var(--font-mono); font-size: var(--fs-1); font-weight: 700; text-align: center;
 }
-.prompt .sep { opacity: 0.6; margin: 0 8px; }
+.prompt .promptLine { display: block; }
+.prompt .promptLine + .promptLine { margin-top: 4px; }
 .threatCue {
   position: absolute; left: 50%; top: 30%; transform: translateX(-50%); z-index: 6; pointer-events: none;
   font-family: var(--font-display); font-weight: 700; font-size: var(--fs-3);
@@ -274,7 +278,7 @@ canvas#gl { position: absolute; inset: 0; display: block; width: 100%; height: 1
   padding: 7px 11px; border-radius: 11px; white-space: nowrap; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
 }
 .speechBubble .bubbleText::after {
-  content: ''; position: absolute; left: 50%; top: 100%; transform: translateX(-50%);
+  content: ''; position: absolute; left: calc(50% + var(--tail, 0px)); top: 100%; transform: translateX(-50%);
   border: 6px solid transparent; border-top-color: #fff;
 }
 .dirArrow {
