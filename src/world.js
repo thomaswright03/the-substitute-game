@@ -5,6 +5,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { FullScreenQuad, Pass } from 'three/addons/postprocessing/Pass.js';
 import { PRINCIPAL_MODEL, STUDENTS } from './data.js';
 import * as R from './rules.js';
 import { el } from './dom.js';
@@ -48,6 +49,70 @@ const ToneMapOnce = {
     }`,
 };
 
+// Draws the finished frame to the screen the way the bloom pass does (through the renderer's
+// tone mapping), without the glow: the last pass when bloom is switched off.
+class ScreenPass extends Pass {
+  constructor() {
+    super();
+    this.material = new THREE.MeshBasicMaterial();
+    this.quad = new FullScreenQuad(this.material);
+  }
+
+  render(r, writeBuffer, readBuffer) {
+    this.material.map = readBuffer.texture;
+    r.setRenderTarget(this.renderToScreen ? null : writeBuffer);
+    r.clear();
+    this.quad.render(r);
+  }
+}
+
+let bloomPass = null, screenPass = null;
+
+// The graphics levels, from the full look down to the cheapest. A slow device steps down them
+// one at a time (see quality.js): first the pixel ratio, then the glow, then the shadows, and
+// last the resolution itself (drawn at 60% and scaled up), since a device that still can't
+// keep up is usually limited by how many pixels it can fill.
+export const QUALITY_LEVELS = [
+  { name: 'high', pixelRatio: 2, bloom: true, shadows: true },
+  { name: 'medium', pixelRatio: 1, bloom: true, shadows: true },
+  { name: 'low', pixelRatio: 1, bloom: false, shadows: true },
+  { name: 'veryLow', pixelRatio: 1, bloom: false, shadows: false },
+  { name: 'minimum', pixelRatio: 0.6, bloom: false, shadows: false },
+];
+let qualityLevel = 0;
+
+export function setQualityLevel(level) {
+  qualityLevel = Math.max(0, Math.min(QUALITY_LEVELS.length - 1, level));
+  if (!renderer) return;
+  const q = QUALITY_LEVELS[qualityLevel];
+  const ratio = Math.min(window.devicePixelRatio || 1, q.pixelRatio);
+  renderer.setPixelRatio(ratio);
+  if (composer) {
+    composer.setPixelRatio(ratio);
+    bloomPass.enabled = q.bloom;
+    screenPass.enabled = !q.bloom;
+  }
+  if (renderer.shadowMap.enabled !== q.shadows) {
+    renderer.shadowMap.enabled = q.shadows;
+    // materials are compiled for shadows on or off: have them rebuilt
+    scene.traverse((o) => {
+      if (!o.material) return;
+      for (const m of Array.isArray(o.material) ? o.material : [o.material]) m.needsUpdate = true;
+    });
+  }
+  resizeRenderer(stageW, stageH);
+}
+
+// What is drawn now (for the settings and the tests).
+export function renderState() {
+  return {
+    level: qualityLevel,
+    pixelRatio: renderer ? renderer.getPixelRatio() : 1,
+    bloom: !!(composer && bloomPass.enabled),
+    shadows: !!(renderer && renderer.shadowMap.enabled),
+  };
+}
+
 export function createRenderer() {
   renderer = new THREE.WebGLRenderer({ canvas: el.canvas, antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -64,11 +129,17 @@ export function createRenderer() {
     composer.addPass(new RenderPass(scene, camera));
     composer.addPass(new ShaderPass(ToneMapOnce));
     // the last pass: draws the buffer to the screen (tone-mapped, sRGB) and adds the glow on top
-    composer.addPass(new UnrealBloomPass(new THREE.Vector2(256, 256), 0.55, 0.55, 0.86));
+    bloomPass = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.55, 0.55, 0.86);
+    composer.addPass(bloomPass);
+    // or, with the glow switched off, only draws the buffer to the screen
+    screenPass = new ScreenPass();
+    screenPass.enabled = false;
+    composer.addPass(screenPass);
   } catch (err) {
     console.warn('Bloom disabled:', err);
     composer = null;
   }
+  setQualityLevel(qualityLevel);
 }
 
 let stageW = 1, stageH = 1; // the stage's size in CSS pixels, kept by resizeRenderer

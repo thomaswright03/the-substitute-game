@@ -104,6 +104,16 @@ export default {
     volume: 'Volumen',
     mute: 'Silenciar',
     language: 'Idioma',
+    graphics: 'Gráficos',
+    quality: {
+      auto: 'Automática',
+      autoNow: 'Automática · {level}',
+      high: 'Alta',
+      medium: 'Media',
+      low: 'Baja',
+      veryLow: 'Muy baja',
+      minimum: 'Mínima',
+    },
   },
   pause: {
     kicker: 'Clase en pausa',

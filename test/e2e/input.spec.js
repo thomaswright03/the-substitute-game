@@ -43,6 +43,8 @@ test.describe('mouse look without pointer lock', () => {
 test('the period clock runs on real time, even at a low frame rate', async ({ page }) => {
   test.setTimeout(240_000);
   await page.setViewportSize({ width: 480, height: 320 });
+  // this is about a slow device: keep the full graphics so the page doesn't speed itself up
+  await page.addInitScript(() => localStorage.setItem('substitute.quality', 'high'));
   await openGame(page);
   await startRound(page);
   await freezeRandomness(page);
@@ -77,6 +79,7 @@ test('the period clock runs on real time, even at a low frame rate', async ({ pa
 test('walking covers the same ground per second of the period at a low frame rate', async ({ page }) => {
   test.setTimeout(240_000);
   await page.setViewportSize({ width: 480, height: 320 });
+  await page.addInitScript(() => localStorage.setItem('substitute.quality', 'high'));
   await openGame(page);
   await startRound(page);
   await freezeRandomness(page);

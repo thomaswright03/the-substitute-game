@@ -2,8 +2,10 @@
 // copy of a control shows the same value.
 import { audioPrefs, onAudioPrefsChange, setMuted, setVolume } from './audio.js';
 import { $ } from './dom.js';
-import { LANGUAGES, currentLanguage, onLanguageChange, setLanguage } from './strings.js';
+import { LANGUAGES, currentLanguage, onLanguageChange, setLanguage, t } from './strings.js';
 import { DEFAULT_DIFFICULTY, DIFFICULTY } from './data.js';
+import { QUALITY_SETTINGS, onQualityChange, qualityLevel, qualitySetting, setQualitySetting } from './quality.js';
+import { QUALITY_LEVELS } from './world.js';
 
 const DIFFICULTY_KEY = 'substitute.difficulty';
 const difficultyListeners = [];
@@ -87,6 +89,26 @@ export function setupLanguage() {
   renderLanguage(currentLanguage());
 }
 
+// The graphics choice on the start and pause screens. Automatic also says where it has got to.
+function renderQuality() {
+  const level = QUALITY_LEVELS[qualityLevel()].name;
+  document.querySelectorAll('[data-quality]').forEach((select) => {
+    if (select.options.length !== QUALITY_SETTINGS.length) {
+      select.textContent = '';
+      for (const value of QUALITY_SETTINGS) {
+        const option = document.createElement('option');
+        option.value = value;
+        select.append(option);
+      }
+    }
+    for (const option of select.options) {
+      option.textContent = option.value !== 'auto' ? t('settings.quality.' + option.value)
+        : t('settings.quality.autoNow', { level: t('settings.quality.' + level) });
+    }
+    select.value = qualitySetting();
+  });
+}
+
 export function setupSettings() {
   document.querySelectorAll('[data-sound]').forEach((box) => {
     box.addEventListener('change', () => setMuted(!box.checked));
@@ -102,4 +124,14 @@ export function setupSettings() {
   });
   onAudioPrefsChange(renderSound);
   renderSound(audioPrefs());
+}
+
+// After the renderer exists: applies the saved graphics choice and wires up its controls.
+export function setupGraphicsSettings() {
+  document.querySelectorAll('[data-quality]').forEach((select) => {
+    select.addEventListener('change', () => setQualitySetting(select.value));
+  });
+  onQualityChange(renderQuality);
+  onLanguageChange(renderQuality);
+  renderQuality();
 }

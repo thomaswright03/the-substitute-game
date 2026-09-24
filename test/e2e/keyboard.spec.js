@@ -63,7 +63,10 @@ test.describe('on a French AZERTY keyboard', () => {
     // and the key printed "A" (the Q position) asks the roll call
     await physicalKey(page, 'keyDown', 'KeyQ', 'a');
     await physicalKey(page, 'keyUp', 'KeyQ', 'a');
-    await expect(page.locator('#attAnswer')).toContainText('Moe Lester');
+    await expect.poll(() => hooks(page, (s) => s.game.attendance.asked)).toBe(true);
+    // the answer is in the log (it leaves the panel after a few seconds of play, which a slow
+    // machine can use up between two looks)
+    await expect(page.locator('#log div').last()).toContainText('Moe Lester');
   });
 
   test('menu choices are the digit keys by position, which type & é " \' on AZERTY', async ({ page }) => {
@@ -120,8 +123,9 @@ async function tapKey(page, key) {
 
 test('keyboard only: look up at the board and take a top-row card while the bottom row is full', async ({ page }) => {
   test.setTimeout(240_000);
-  // small, so frames come quickly under software rendering
+  // small and at the cheapest graphics, so frames come quickly under software rendering
   await page.setViewportSize({ width: 480, height: 320 });
+  await page.addInitScript(() => localStorage.setItem('substitute.quality', 'minimum'));
   await openGame(page);
   await expect(page.locator('#startOverlay .controls')).toContainText('look up / down');
   await page.keyboard.press('Enter');

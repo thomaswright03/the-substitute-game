@@ -142,13 +142,13 @@ every push and pull request.
 | `src/data.js` | The roster, seating, friendships and every tuning number |
 | `src/strings.js`, `src/i18n/` | Every piece of user-facing text in one table, and its Spanish and French translations (see below) |
 | `src/main.js` | Start-up and the frame loop |
-| `src/world.js`, `src/player.js` | The three.js renderer and classroom, the students' poses each frame, and the teacher's movement |
+| `src/world.js`, `src/quality.js`, `src/player.js` | The three.js renderer and classroom, the students' poses each frame; the graphics levels and the automatic step-down; the teacher's movement |
 | `src/input.js`, `src/keys.js`, `src/aim.js` | Keyboard, mouse, touch and stick input; the key bindings and the names of the player's keys; what the teacher is aiming at and what E / F do |
 | `src/hud.js`, `src/dialogs.js`, `src/rollcall.js` | HUD, log, prompts and buttons; modal dialogs and focus; roll-call bubble and arrow |
 | `src/seating.js`, `src/discipline.js`, `src/principal.js`, `src/effects.js` | Seating chart, discipline menu, the principal's visit, hit / zap / throw effects |
 | `src/events.js`, `src/round.js`, `src/session.js`, `src/dom.js` | Rule events to log lines and effects; starting, pausing and ending a round; shared UI state; the page elements the game drives |
 | `src/bus.js`, `src/pointer.js`, `src/log.js` | The small event bus that keeps the UI modules free of import cycles (`npm run lint` checks for cycles); pointer lock; the play log |
-| `src/audio.js`, `src/settings.js` | Synthesised sound cues; the sound, volume, language and difficulty controls |
+| `src/audio.js`, `src/settings.js` | Synthesised sound cues; the sound, volume, language, graphics and difficulty controls |
 | `src/offline.js` | Registers the service worker on a deployed build only |
 | `src/testhooks.js` | The `?test` API for the browser tests |
 | `src/scene.js`, `src/characters.js` | The classroom, and the character models: seating, arm poses and body language |
@@ -169,6 +169,14 @@ grade. `test/unit/balance.test.js` plays many seeded periods with a simulated fi
 that has to find each card's owner by roll call and walking, and sometimes tries the wrong desk,
 and checks the win-rate targets stated there. Notes from real playtests go in
 `docs/playtests.md`.
+
+**Graphics.** The start and pause screens have a Graphics setting, kept in the browser like
+the other settings. Automatic (the default) starts with the full look and, when frames keep
+taking longer than 50 ms (under 20 frames a second) for three seconds, steps down one level
+at a time: a pixel ratio of 1, then no glow, then no shadows, then drawing at 60% of the
+resolution. The setting then reads, for example, "Automatic · Low". Choosing a level fixes it.
+Since the period runs on real time, this keeps a slow device playable rather than letting the
+bell ring while the teacher can barely move.
 
 **Sound.** `src/audio.js` synthesises every cue with the Web Audio API, so there are no
 audio files: the school bell at the start and end of the period, a tick for each of the last

@@ -22,7 +22,8 @@ import { updateProjectile } from './effects.js';
 import { updatePrincipal } from './principal.js';
 import { refreshButtonLabels, setupRound, showBest, updateCountdown } from './round.js';
 import { setupAudio } from './audio.js';
-import { difficulty, setupLanguage, setupSettings } from './settings.js';
+import { difficulty, setupGraphicsSettings, setupLanguage, setupSettings } from './settings.js';
+import { noteFrame, setupQuality } from './quality.js';
 import { applyCameraOverride, exposeTestHooks } from './testhooks.js';
 import { registerServiceWorker } from './offline.js';
 import { onKeyLabelsChange, setupKeyLabels } from './keys.js';
@@ -47,6 +48,7 @@ function frame(now) {
   const nowS = now / 1000;
   const realDt = lastT === null ? 0 : Math.min(MAX_FRAME_DT, nowS - lastT);
   lastT = nowS;
+  noteFrame(realDt);
 
   if (S.running && !frozen()) stepPlayer(realDt);
   syncCamera(camera);
@@ -103,6 +105,8 @@ async function init() {
     boot.show('noWebgl');
     return;
   }
+  setupQuality();
+  setupGraphicsSettings();
   resize();
   const observer = new ResizeObserver(resize);
   observer.observe(el.stage);

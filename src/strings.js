@@ -116,6 +116,17 @@ const EN = {
     volume: 'Volume',
     mute: 'Mute',
     language: 'Language',
+    graphics: 'Graphics',
+    // Automatic starts at High and steps down on a device that can't keep up
+    quality: {
+      auto: 'Automatic',
+      autoNow: 'Automatic · {level}',
+      high: 'High',
+      medium: 'Medium',
+      low: 'Low',
+      veryLow: 'Very low',
+      minimum: 'Minimum',
+    },
   },
   pause: {
     kicker: 'Class Paused',

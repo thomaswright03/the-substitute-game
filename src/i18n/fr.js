@@ -104,6 +104,16 @@ export default {
     volume: 'Volume',
     mute: 'Couper le son',
     language: 'Langue',
+    graphics: 'Graphismes',
+    quality: {
+      auto: 'Automatique',
+      autoNow: 'Automatique · {level}',
+      high: 'Élevée',
+      medium: 'Moyenne',
+      low: 'Basse',
+      veryLow: 'Très basse',
+      minimum: 'Minimale',
+    },
   },
   pause: {
     kicker: 'Cours en pause',

@@ -4,7 +4,8 @@ import { STUDENTS, TEACHER, TUNING } from './data.js';
 import * as R from './rules.js';
 import { applyStaticStrings, setStrings } from './strings.js';
 import { S } from './session.js';
-import { camera, ensurePrincipal, scene, world } from './world.js';
+import { camera, ensurePrincipal, renderState, scene, world } from './world.js';
+import { onQualityChange, qualitySetting } from './quality.js';
 import { EYE_HEIGHT, keys, player } from './player.js';
 import { headForward } from './characters.js';
 import { faceColours, faceOffsetFromHead } from './face.js';
@@ -24,6 +25,9 @@ export function applyCameraOverride() {
 }
 
 export function exposeTestHooks() {
+  // every change of graphics level, in order, as it was drawn right after the change
+  const qualityChanges = [];
+  onQualityChange(() => qualityChanges.push({ setting: qualitySetting(), ...renderState() }));
   window.__substitute = {
     THREE,
     rules: R,
@@ -87,5 +91,8 @@ export function exposeTestHooks() {
       renderControlsLists();
     },
     bestGrade: () => S.lastBestGrade,
+    // the graphics setting and what is drawn: {setting, level, pixelRatio, bloom, shadows}
+    quality: () => ({ setting: qualitySetting(), ...renderState() }),
+    qualityChanges: () => qualityChanges.slice(),
   };
 }
