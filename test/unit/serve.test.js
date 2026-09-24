@@ -61,3 +61,42 @@ describe('the static server (npm start)', () => {
     assert.notEqual((await get('/%2e%2e/%2e%2e/etc/passwd')).status, 200);
   });
 });
+
+describe('the static server caches cheaply', () => {
+  before(async () => {
+    server = spawn(process.execPath, [fileURLToPath(new URL('../../scripts/serve.mjs', import.meta.url)), String(PORT + 1)], { stdio: ['ignore', 'pipe', 'inherit'] });
+    await new Promise((resolve) => server.stdout.once('data', resolve));
+  });
+  after(() => server.kill());
+
+  function getFrom(path, headers = {}) {
+    return new Promise((resolve, reject) => {
+      const req = request({ host: '127.0.0.1', port: PORT + 1, path, headers }, (res) => {
+        const chunks = [];
+        res.on('data', (c) => chunks.push(c));
+        res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, body: Buffer.concat(chunks) }));
+      });
+      req.on('error', reject);
+      req.end();
+    });
+  }
+
+  test('a repeat request for an unchanged file is a 304 with no body', async () => {
+    const first = await getFrom('/assets/characters/punk-man.glb', { 'Accept-Encoding': 'gzip' });
+    assert.equal(first.status, 200);
+    assert.ok(first.headers.etag, 'has an ETag');
+    assert.ok(first.headers['last-modified'], 'has a Last-Modified date');
+    assert.equal(first.headers['cache-control'], 'no-cache');
+    const again = await getFrom('/assets/characters/punk-man.glb', { 'Accept-Encoding': 'gzip', 'If-None-Match': first.headers.etag });
+    assert.equal(again.status, 304);
+    assert.equal(again.body.length, 0);
+    const byDate = await getFrom('/src/main.js', { 'If-Modified-Since': new Date(Date.now() + 60_000).toUTCString() });
+    assert.equal(byDate.status, 304);
+  });
+
+  test('a stale ETag gets the full file', async () => {
+    const res = await getFrom('/src/main.js', { 'If-None-Match': 'W/"not-it"' });
+    assert.equal(res.status, 200);
+    assert.ok(res.body.length > 0);
+  });
+});
