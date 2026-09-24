@@ -70,7 +70,7 @@ test('the green chalkboard is in front of its frame and behind the name cards', 
   expect(hits).toEqual(['chalkboard', 'card-dixieNormous']);
 });
 
-test('every student sits on their chair, with their knees under the desk', async ({ page }) => {
+test('every student sits on their chair, knees under the desk and feet on the floor', async ({ page }) => {
   await openGame(page);
   const seated = await hooks(page, (s) => {
     const T = s.THREE;
@@ -88,6 +88,11 @@ test('every student sits on their chair, with their knees under the desk', async
         hipsAboveSeat: hips.y - 0.485,
         hipsFromSeatCentre: Math.hypot(hips.x - [-2.6, -0.87, 0.87, 2.6][seat.col], hips.z - ([-3.0, -0.75][seat.row] + 0.5)),
         kneesY: Math.max(bone('LowerLegL').y, bone('LowerLegR').y),
+        // each foot, relative to its knee: straight below it, not splayed out or left standing
+        feet: ['L', 'R'].map((side) => {
+          const knee = bone('LowerLeg' + side), foot = bone('Foot' + side);
+          return { y: foot.y, sideways: Math.abs(foot.x - knee.x), below: knee.y - foot.y, forward: Math.abs(foot.z - knee.z) };
+        }),
       };
     }
     return out;
@@ -99,7 +104,40 @@ test('every student sits on their chair, with their knees under the desk', async
     expect(m.hipsFromSeatCentre, id).toBeLessThan(0.1);
     // the desk top is 0.695-0.745 m high: the knee joint stays clear of it
     expect(m.kneesY, id).toBeLessThan(0.66);
+    for (const f of m.feet) {
+      expect(f.y, id + ' foot above the floor').toBeGreaterThan(-0.02);
+      expect(f.y, id + ' foot near the floor').toBeLessThan(0.2);
+      expect(f.sideways, id + ' foot under its knee').toBeLessThan(0.12);
+      expect(f.forward, id + ' shin upright').toBeLessThan(0.15);
+      expect(f.below, id).toBeGreaterThan(0.3);
+    }
   }
+});
+
+test('the teacher has a full-size desk of their own, and can’t walk through it', async ({ page }) => {
+  await openGame(page);
+  await startRound(page);
+  await hooks(page, (s) => { s.game.spawnTimer = Infinity; s.game.tuning.throwChanceAttendance = 0; });
+  const desk = await hooks(page, (s) => {
+    const d = s.scene.getObjectByName('teacherDesk');
+    const box = new s.THREE.Box3().setFromObject(d);
+    let seats = 0;
+    d.traverse((o) => { if (o.isMesh && o.material.color && o.material.color.getHex() === 0x3f5c76) seats++; });
+    return { width: box.max.x - box.min.x, depth: box.max.z - box.min.z, height: box.max.y, x: (box.min.x + box.max.x) / 2, front: box.max.z, seats };
+  });
+  expect(desk.width).toBeGreaterThan(1.4);
+  expect(desk.depth).toBeGreaterThan(0.7);
+  expect(desk.height).toBeGreaterThan(0.75);
+  expect(desk.seats, 'no student chair').toBe(0);
+  // walk straight at its front for a while: the teacher stops at the desk
+  await hooks(page, (s, d) => { Object.assign(s.player, { x: d.x, z: d.front + 1.2, yaw: 0, pitch: 0 }); s.keys.w = true; }, desk);
+  await page.waitForFunction((front) => {
+    const s = window.__substitute;
+    return s.game.elapsed > 0 && s.player.z < front + 0.5;
+  }, desk.front);
+  await page.waitForTimeout(1500);
+  const z = await hooks(page, (s) => { s.keys.w = false; return s.player.z; });
+  expect(z).toBeGreaterThan(desk.front + 0.3);
 });
 
 test.describe('behaviour tells', () => {

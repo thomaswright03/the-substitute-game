@@ -9,7 +9,7 @@ import { PRINCIPAL_MODEL, STUDENTS } from './data.js';
 import * as R from './rules.js';
 import { el } from './dom.js';
 import { S } from './session.js';
-import { buildAttendanceCards, buildDesk, buildRoom, deskPosition, seatPosition } from './scene.js';
+import { TEACHER_DESK, buildAttendanceCards, buildDesk, buildRoom, deskPosition, seatPosition } from './scene.js';
 import { FACE_URL, buildCharacter, loadAll, loadGLB, modelUrl, poseCharacter } from './characters.js';
 
 export let renderer = null;
@@ -17,7 +17,7 @@ export let scene = null;
 export let camera = null;
 let composer = null;
 
-export const world = { students: {}, cards: {}, principal: null, principalPromise: null, faceTemplate: null, deskColliders: [] };
+export const world = { students: {}, cards: {}, principal: null, principalPromise: null, faceTemplate: null, deskColliders: [], boxColliders: [] };
 
 // The classroom's look was designed with three.js r128 (see three-setup.js), where the scene was
 // tone-mapped once when rendered into the bloom's buffer and
@@ -114,11 +114,13 @@ export async function buildWorld(onProgress) {
   // desks stay put; students move between them when seats are swapped
   for (const s of STUDENTS) {
     const d = deskPosition(s);
-    const desk = buildDesk(1);
+    const desk = buildDesk();
     desk.position.set(d.x, 0, d.z);
     scene.add(desk);
     world.deskColliders.push({ x: d.x, z: d.z + 0.25 });
   }
+  const td = TEACHER_DESK;
+  world.boxColliders.push({ minX: td.x - td.halfWidth, maxX: td.x + td.halfWidth, minZ: td.z - td.halfDepth, maxZ: td.z + td.halfDepth });
   for (const s of STUDENTS) {
     const group = buildCharacter(byVariant[s.model], world.faceTemplate, { type: s.type, model: s.model });
     group.name = 'student-' + s.id;

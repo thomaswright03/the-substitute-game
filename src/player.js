@@ -76,6 +76,23 @@ function movePlayer(dt) {
       player.z += (dz / dist) * (minDist - dist);
     }
   }
+  // rectangular furniture (the teacher's desk): push out along the shallowest side
+  for (const b of world.boxColliders) {
+    const cx = Math.max(b.minX, Math.min(b.maxX, player.x)), cz = Math.max(b.minZ, Math.min(b.maxZ, player.z));
+    const dx = player.x - cx, dz = player.z - cz;
+    const dist = Math.hypot(dx, dz);
+    if (dist >= PLAYER_RADIUS) continue;
+    if (dist > 0.0001) {
+      player.x += (dx / dist) * (PLAYER_RADIUS - dist);
+      player.z += (dz / dist) * (PLAYER_RADIUS - dist);
+    } else {
+      // the centre is inside the box: leave by the nearest edge
+      const exits = [[b.minX - PLAYER_RADIUS - player.x, 0], [b.maxX + PLAYER_RADIUS - player.x, 0], [0, b.minZ - PLAYER_RADIUS - player.z], [0, b.maxZ + PLAYER_RADIUS - player.z]];
+      exits.sort((p, q) => Math.hypot(...p) - Math.hypot(...q));
+      player.x += exits[0][0];
+      player.z += exits[0][1];
+    }
+  }
   const margin = PLAYER_RADIUS + 0.3;
   player.x = Math.max(-ROOM.halfWidth + margin, Math.min(ROOM.halfWidth - margin, player.x));
   player.z = Math.max(ROOM.frontZ + margin, Math.min(ROOM.backZ - margin, player.z));

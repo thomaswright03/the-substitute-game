@@ -73,12 +73,12 @@ function legSet(height, mat, hw, hd) {
   return g;
 }
 
-export function buildDesk(scale = 1) {
+export function buildDesk() {
   const g = new THREE.Group();
-  const top = new THREE.Mesh(new THREE.BoxGeometry(0.85 * scale * 1.3, 0.05, 0.55 * scale * 1.3), deskTopMat);
+  const top = new THREE.Mesh(new THREE.BoxGeometry(1.105, 0.05, 0.715), deskTopMat);
   top.position.set(0, 0.72, 0);
   g.add(top);
-  g.add(legSet(0.7, legMat, 0.36 * scale * 1.3, 0.22 * scale * 1.3));
+  g.add(legSet(0.7, legMat, 0.468, 0.286));
   const seat = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.05, 0.46), seatMat);
   seat.position.set(0, CHAIR.seatY, CHAIR.z);
   g.add(seat);
@@ -341,9 +341,67 @@ export function buildRoom(scene) {
   door.receiveShadow = true;
   scene.add(door);
 
-  const teacherDesk = buildDesk(0.55);
-  teacherDesk.position.set(0, 0, ROOM.frontZ + 1.35);
+  const teacherDesk = buildTeacherDesk();
+  teacherDesk.position.set(TEACHER_DESK.x, 0, TEACHER_DESK.z);
   scene.add(teacherDesk);
+}
+
+// The teacher's desk: in the front corner by the door-side wall, clear of the chalkboard, and
+// facing the class. Its footprint (half sizes, metres) is also what the teacher bumps into.
+export const TEACHER_DESK = { x: -3.15, z: ROOM.frontZ + 1.45, halfWidth: 0.75, halfDepth: 0.38 };
+
+const teacherWood = new THREE.MeshStandardMaterial({ color: 0x6e4526, roughness: 0.6 });
+const teacherWoodDark = new THREE.MeshStandardMaterial({ color: 0x54331b, roughness: 0.65 });
+const handleMat = new THREE.MeshStandardMaterial({ color: 0xc9c2b0, roughness: 0.35, metalness: 0.6 });
+
+function box(w, h, d, mat, x, y, z) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  m.position.set(x, y, z);
+  return m;
+}
+
+function buildTeacherDesk() {
+  const { halfWidth: hw, halfDepth: hd } = TEACHER_DESK;
+  const g = new THREE.Group();
+  const topY = 0.76;
+  g.add(box(hw * 2, 0.05, hd * 2, teacherWood, 0, topY - 0.025, 0));
+  // a solid end on the left, a pedestal of drawers on the right, and a modesty panel facing
+  // the class (+z), so no chair or knees show from the room
+  g.add(box(0.04, topY - 0.05, hd * 2 - 0.04, teacherWoodDark, -hw + 0.04, (topY - 0.05) / 2, 0));
+  const pedW = 0.44;
+  g.add(box(pedW, topY - 0.05, hd * 2 - 0.04, teacherWoodDark, hw - pedW / 2 - 0.02, (topY - 0.05) / 2, 0));
+  g.add(box(hw * 2 - 0.08, 0.5, 0.03, teacherWoodDark, 0, topY - 0.3, hd - 0.04));
+  // drawer fronts and handles, on the teacher's side (toward the board, -z)
+  for (let i = 0; i < 3; i++) {
+    const y = 0.14 + i * 0.22;
+    g.add(box(pedW - 0.06, 0.18, 0.015, teacherWood, hw - pedW / 2 - 0.02, y, -hd + 0.01));
+    g.add(box(0.12, 0.02, 0.02, handleMat, hw - pedW / 2 - 0.02, y + 0.04, -hd - 0.005));
+  }
+  // what's on it: a stack of books, a mug of pens and an apple for the teacher
+  const bookColours = [0x2f6a93, 0xc8341f, 0x3f8f44];
+  bookColours.forEach((c, i) => {
+    const book = box(0.26 - i * 0.02, 0.045, 0.19, new THREE.MeshStandardMaterial({ color: c, roughness: 0.7 }), -hw + 0.3, topY + 0.023 + i * 0.045, -0.02);
+    book.rotation.y = (i - 1) * 0.12;
+    g.add(book);
+  });
+  const mug = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.04, 0.1, 14), new THREE.MeshStandardMaterial({ color: 0xf2b93b, roughness: 0.5 }));
+  mug.position.set(0.3, topY + 0.05, -0.12);
+  g.add(mug);
+  for (const [dx, c] of [[-0.012, 0x141c16], [0.014, 0xc8341f]]) {
+    const pen = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.14, 6), new THREE.MeshStandardMaterial({ color: c }));
+    pen.position.set(0.3 + dx, topY + 0.1, -0.12);
+    pen.rotation.z = dx * 8;
+    g.add(pen);
+  }
+  const apple = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 10), new THREE.MeshStandardMaterial({ color: 0xc8341f, roughness: 0.4 }));
+  apple.scale.y = 0.9;
+  apple.position.set(-0.05, topY + 0.042, 0.14);
+  g.add(apple);
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.03, 5), new THREE.MeshStandardMaterial({ color: 0x4e2f18 }));
+  stem.position.set(-0.05, topY + 0.095, 0.14);
+  g.add(stem);
+  g.name = 'teacherDesk';
+  return enableShadows(g);
 }
 
 // Eight name cards pinned to the board in two rows. Returns id -> {mesh, position}.

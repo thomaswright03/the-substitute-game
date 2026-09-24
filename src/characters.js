@@ -107,6 +107,46 @@ function reach(upper, lower, wrist, target, iterations = 16) {
   }
 }
 
+// Rotates a bone by `angle` about an axis given in WORLD space, whatever its own axes are.
+function turnAboutWorldAxis(bone, axis, angle) {
+  bone.parent.getWorldQuaternion(_qp);
+  _q.setFromAxisAngle(axis, angle);
+  // local' = parentWorld^-1 * turn * parentWorld * local
+  bone.quaternion.premultiply(_qb.copy(_qp).invert().multiply(_q).multiply(_qp));
+  bone.updateMatrixWorld(true);
+}
+
+// Bends the legs into a seated pose. The rigs' leg bones don't share a local axis layout (the
+// men's shins bend about a different local axis from the women's), so the bend is made about
+// the character's own left-right axis in world space. The feet are separate bones hanging off
+// the rig's root, not the shins, so each is carried along with its shin.
+function sit(g, bones) {
+  g.updateMatrixWorld(true);
+  const forward = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), g.rotation.y);
+  const across = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+  const feet = [['LowerLegL', 'FootL'], ['LowerLegR', 'FootR']]
+    .filter(([shin, foot]) => bones[shin] && bones[foot] && !bones[shin].getObjectById(bones[foot].id))
+    .map(([shin, foot]) => ({
+      shin: bones[shin],
+      foot: bones[foot],
+      // the foot's pose relative to its shin, standing
+      rel: new THREE.Matrix4().copy(bones[shin].matrixWorld).invert().multiply(bones[foot].matrixWorld),
+    }));
+  for (const side of ['L', 'R']) {
+    const thigh = bones['UpperLeg' + side], shin = bones['LowerLeg' + side];
+    if (thigh) turnAboutWorldAxis(thigh, across, CHAR.sitBend);
+    if (shin) turnAboutWorldAxis(shin, across, -CHAR.sitBend);
+  }
+  g.updateMatrixWorld(true);
+  const m = new THREE.Matrix4();
+  for (const { shin, foot, rel } of feet) {
+    m.multiplyMatrices(shin.matrixWorld, rel).premultiply(_m4.copy(foot.parent.matrixWorld).invert());
+    m.decompose(foot.position, foot.quaternion, foot.scale);
+    foot.updateMatrixWorld(true);
+  }
+}
+const _m4 = new THREE.Matrix4();
+
 function findClip(animations, name) {
   return animations.find((a) => a.name.split('|').pop() === name) || null;
 }
@@ -144,11 +184,7 @@ export function buildCharacter(gltf, faceTemplate, opts) {
   const walk = findClip(gltf.animations, 'Walk');
   if (walk) actions.walk = mixer.clipAction(walk);
 
-  if (seated) {
-    for (const [name, sign] of [['UpperLegL', -1], ['LowerLegL', 1], ['UpperLegR', -1], ['LowerLegR', 1]]) {
-      if (bones[name]) bones[name].rotation.x += sign * CHAR.sitBend;
-    }
-  }
+  if (seated) sit(g, bones);
 
   const head = bones.Head || null;
   const arm = bones.UpperArmR || null;

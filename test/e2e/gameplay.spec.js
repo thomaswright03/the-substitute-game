@@ -62,7 +62,7 @@ test('roll call: the answer is readable without turning around', async ({ page }
 
 test('a lost round keeps its final HUD values; the stats sit three by two', async ({ page }) => {
   await freezeRandomness(page);
-  await activate(page, 'steve', 99);
+  await activate(page, 'steve', 99.95);
   await expect(page.locator('#endOverlay')).toBeVisible();
   await expect(page.locator('#chaosValue')).toHaveText('100%');
   await expect(page.locator('#chaosBadge')).toHaveAttribute('aria-valuenow', '100');
@@ -79,7 +79,7 @@ test('a lost round keeps its final HUD values; the stats sit three by two', asyn
 
 test('a student reaching 100% ends the round with the right copy', async ({ page }) => {
   await freezeRandomness(page);
-  await activate(page, 'steve', 99);
+  await activate(page, 'steve', 99.95);
   await expect(page.locator('#endOverlay')).toBeVisible();
   await expect(page.locator('#endTitle')).toHaveText('Someone Got Hurt');
   await expect(page.locator('#endText')).toContainText('Steve tips too far back');
