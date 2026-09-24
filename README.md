@@ -244,7 +244,11 @@ press a key. To add a language, add a table with the same keys to `src/i18n/` an
 **Look and styling.** The game has one art direction on purpose: a dark wooden frame around the
 3D classroom, with the HUD and every dialog drawn as cream paper and chalk. It doesn't switch
 with the system's light or dark setting, because the classroom is lit the same either way and
-the paper panels already read as light on dark. `css/game.css` takes every colour from the
+the paper panels already read as light on dark. Whether to keep a single theme is the project
+owner's call, recorded here so that nobody adds a light theme by accident; changing it means
+changing this paragraph. The one concession is the page around the frame: with the system set to
+light, the `--page` token turns that margin a light paper colour, and nothing inside the frame
+changes. `css/game.css` takes every colour from the
 tokens at its top (translucent shades mix a token with `transparent`) and every margin, padding
 and gap from a ten-step spacing scale; a unit test (`test/unit/css.test.js`) fails on a raw
 colour or an off-scale space anywhere else. Sizes are multiples of `--px`, which is 1px except
