@@ -158,6 +158,8 @@ function calm(game, id) {
 
 function finish(game, outcome) {
   if (game.phase === 'over') return;
+  // a student reaching 100% ends the tick before the usual update, so record the peak here
+  game.maxChaos = Math.max(game.maxChaos, chaos(game));
   game.phase = 'over';
   game.outcome = outcome;
   game.throw = null;

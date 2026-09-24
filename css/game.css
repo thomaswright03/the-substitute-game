@@ -450,7 +450,12 @@ body.touch .log div:nth-last-child(n+3) { display: none; }
 .stats div { font-size: var(--fs-1); text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted-ink); background: var(--paper-deep); border-radius: 8px; padding: 6px 4px; }
 /* the end screen's six numbers: always three across, two down */
 #endOverlay .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@container stage (max-width: 480px) {
+  /* narrow cells: plain-case labels fit where spaced capitals would not */
+  .stats div { text-transform: none; letter-spacing: 0; padding: 6px 2px; }
+}
 .stats strong { display: block; font-size: var(--fs-4); color: var(--ink); font-weight: 700; }
+.panel p.tip { background: var(--paper-deep); border-radius: 10px; padding: 8px 12px; color: var(--ink); text-align: left; max-width: none; }
 .reportCard { display: flex; gap: 14px; align-items: center; text-align: left; background: var(--paper-deep); border-radius: 12px; padding: 10px 14px; margin: 8px 0 4px; }
 .reportCard .grade { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-6); line-height: 1; color: var(--notebook-blue); min-width: 44px; text-align: center; }
 .reportCard .label { font-family: var(--font-display); font-weight: 600; font-size: var(--fs-1); text-transform: uppercase; letter-spacing: 0.08em; color: var(--frame-dark); }

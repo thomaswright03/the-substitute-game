@@ -83,6 +83,7 @@ test('a student reaching 100% ends the round with the right copy', async ({ page
   await expect(page.locator('#endOverlay')).toBeVisible();
   await expect(page.locator('#endTitle')).toHaveText('Someone Got Hurt');
   await expect(page.locator('#endText')).toContainText('Steve tips too far back');
+  await expect(page.locator('#endTip')).toContainText('The chair-tipper is quick');
   await expect(page.locator('#restartBtn')).toBeFocused();
 });
 
@@ -91,6 +92,7 @@ test('unfinished attendance at the bell is a loss', async ({ page }) => {
   await hooks(page, (s) => s.fastForward(s.game.tuning.period + 1));
   await expect(page.locator('#endTitle')).toHaveText('Attendance Not Taken');
   await expect(page.locator('#endText')).toContainText('8 students still unmarked');
+  await expect(page.locator('#endTip')).toContainText('ask with roll call (Q)');
 });
 
 test('discipline is refused for a student who is behaving', async ({ page }) => {

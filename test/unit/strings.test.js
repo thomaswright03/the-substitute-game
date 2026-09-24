@@ -146,6 +146,10 @@ describe('the string table', () => {
     assert.equal(t('seating.close'), 'Done (R)');
   });
 
+  test('every kind of student has a tip for the round they cost you', () => {
+    for (const s of STUDENTS) assert.equal(typeof lookup('end.tip.' + s.type), 'string', s.type);
+  });
+
   test('the keys built at run time exist too', () => {
     for (const kind of ['hits', 'detentions', 'principal', 'zaps', 'closeCall']) {
       assert.equal(typeof lookup('end.deduction.' + kind), 'string', kind);

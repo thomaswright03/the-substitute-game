@@ -163,6 +163,11 @@ export function endRound(outcome) {
   const emoji = $('endEmoji'), kicker = $('endKicker'), title = $('endTitle'), text = $('endText');
   const reportCard = $('reportCard');
   fillStats(game);
+  // a lost round says what would have helped: for the clock, or for this kind of student
+  const tip = outcome.won ? '' : outcome.reason === 'attendance' ? 'end.tip.attendance'
+    : 'end.tip.' + STUDENTS.find((s) => s.id === outcome.culpritId).type;
+  $('endTip').hidden = !tip;
+  $('endTipText').textContent = tip ? t(tip) : '';
 
   if (outcome.won) {
     emoji.textContent = '🔔';

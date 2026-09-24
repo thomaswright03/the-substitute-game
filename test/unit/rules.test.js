@@ -66,6 +66,17 @@ describe('a round played well', () => {
   });
 });
 
+describe('the closest call', () => {
+  test('a round lost to a student records 100% as its closest call', () => {
+    const game = newGame();
+    noSpawns(game);
+    activateNow(game, 'steve', 99.9);
+    run(game, 1);
+    assert.equal(game.outcome.culpritId, 'steve');
+    assert.equal(game.maxChaos, 100);
+  });
+});
+
 describe('attendance', () => {
   test('a card goes to its owner and marks them present', () => {
     const game = newGame();

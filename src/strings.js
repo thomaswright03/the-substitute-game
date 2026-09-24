@@ -157,6 +157,21 @@ const EN = {
     statZaps: 'Zaps',
     statHits: 'Hits Taken',
     again: 'Sub again',
+    tipLabel: 'Tip:',
+    // shown on a lost round: for running out of time, or for the kind of student who was lost
+    tip: {
+      attendance: 'Take a card every time you pass the board, and when you don’t know whose it is, ask with roll call (Q) instead of searching desk by desk.',
+      attendanceTouch: 'Take a card every time you pass the board, and when you don’t know whose it is, ask with Roll call instead of searching desk by desk.',
+      notes: 'The note-writer builds up slowly but never stops. One Help settles her; go before her ring turns red.',
+      phone: 'The phone takes two presses of Help: a warning, then taking it. Press again before the warning wears off.',
+      phoneTouch: 'The phone takes two taps of Help: a warning, then taking it. Tap again before the warning wears off.',
+      plane: 'The plane-folder winds up faster than anyone. Help him as soon as his ring appears.',
+      tip: 'The chair-tipper is quick, and quicker next to his friend. Swap seats to split them up.',
+      argue: 'The arguer only listens in a pause: wait for the green glow around his ring, then help. Helping mid-rant makes it worse.',
+      sleep: 'The sleeper builds up slowly, which makes her easy to forget. Look around the room between cards.',
+      snack: 'The snacker builds up steadily. A quick Help settles her; don’t let her ring pass half while you carry a card.',
+      spin: 'The spinner is quick, and quicker next to her friend. Swap seats to split them up.',
+    },
   },
   attendance: {
     kicker: 'Taking Attendance',
