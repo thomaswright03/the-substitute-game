@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node scripts/serve.mjs",
     "build": "node scripts/build-site.mjs",
-    "preview": "node scripts/build-site.mjs && node scripts/serve.mjs 8080 --root _site --base /the-substitute-game/",
+    "preview": "node scripts/build-site.mjs --base /the-substitute-game/ && node scripts/serve.mjs 8080 --root _site --base /the-substitute-game/",
     "test": "npm run lint && npm run test:unit && npm run test:e2e",
     "test:unit": "node --test \"test/unit/**/*.test.js\"",
     "test:e2e": "playwright test",

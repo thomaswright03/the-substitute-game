@@ -14,6 +14,23 @@ test.describe('the deployed build', () => {
     expect(problems.external).toEqual([]);
   });
 
+  test('an address that is not part of the game shows the themed 404 page, which leads back', async ({ page }) => {
+    const problems = watchPage(page);
+    for (const path of ['nope', 'a/deeper/path.html']) {
+      const response = await page.goto(SITE_URL + path);
+      expect(response.status(), path).toBe(404);
+      await expect(page.locator('h1')).toHaveText('This page isn’t on the timetable');
+      await expect(page.locator('[lang="es"]')).toContainText('Volver al aula');
+      await expect(page.locator('[lang="fr"]')).toContainText('Retour en classe');
+    }
+    // its fonts and icon load from the site's root, even from a deeper address
+    expect(problems.failed.filter((f) => !/\/(nope|a\/deeper\/path\.html)$/.test(f))).toEqual([]);
+    await page.locator('#home').click();
+    await expect(page).toHaveURL(SITE_URL);
+    await expect(page.locator('#startOverlay')).toBeVisible({ timeout: 90_000 });
+    expect(problems.errors.filter((e) => !/404/.test(e))).toEqual([]);
+  });
+
   test('a repeat visit loads the models and three.js from the offline cache', async ({ page }) => {
     await page.goto(SITE_URL);
     await expect(page.locator('#startOverlay')).toBeVisible({ timeout: 90_000 });

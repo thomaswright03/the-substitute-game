@@ -97,9 +97,21 @@ shows the URL too.
 
 **What gets published.** `npm run build` writes `_site/`: `index.html`, `css/`, `src/`, `lib/`
 and `assets/` copied as they are, a `.nojekyll` marker, and `sw.js`, a service worker listing
-a content hash for every file. Every URL in the game is relative, so it works under the
-`/the-substitute-game/` sub-path. To try the published build locally, run `npm run preview`
-and open <http://localhost:8080/the-substitute-game/>.
+a content hash for every file, and `404.html`. Every URL in the game is relative, so it works
+under the `/the-substitute-game/` sub-path. To try the published build locally, run
+`npm run preview` and open <http://localhost:8080/the-substitute-game/>.
+
+**The 404 page.** GitHub Pages answers an address that isn't part of the site with the site's
+`404.html`, from any depth, so that page can't use relative links. `scripts/404.html` is a
+self-contained page in the game's paper-and-chalk look, in English, Spanish and French, and the
+build fills in the site's root path from `--base` (`npm run build -- --base /the-substitute-game/`;
+the Pages workflow passes the path that `actions/configure-pages` reports). `npm run preview`
+and the local server send it with a 404 status, as Pages does.
+
+**First deploy (owner's step).** The deploy has only been exercised locally (`npm run preview`
+and the browser tests run against the built site under the sub-path). After *Source* is set to
+GitHub Actions and the first push to `main`, check that the *Deploy to GitHub Pages* run is green,
+that the game loads at the URL above, and that a made-up address under it shows the 404 page.
 
 **Compression and caching.** GitHub Pages sends `.html`, `.js`, `.css` and `.glb` files
 gzip-compressed (a little over 3 MB for a first visit) with a 10-minute browser cache and ETags. On

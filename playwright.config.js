@@ -30,7 +30,7 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
     },
     {
-      command: `node scripts/build-site.mjs "${SITE_DIR}" && node scripts/serve.mjs ${SITE_PORT} --root "${SITE_DIR}" --base /the-substitute-game/`,
+      command: `node scripts/build-site.mjs "${SITE_DIR}" --base /the-substitute-game/ && node scripts/serve.mjs ${SITE_PORT} --root "${SITE_DIR}" --base /the-substitute-game/`,
       url: SITE_URL,
       reuseExistingServer: false,
     },
