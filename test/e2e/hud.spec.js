@@ -45,6 +45,8 @@ test('the chaos meter and the rings over the students change colour at the tunin
   const { warning, danger } = await hooks(page, (s) => s.game.tuning.hud);
   const steve = await hooks(page, (s) => Object.keys(s.world.students).indexOf('steve'));
   await faceStudent(page, 'steve');
+  // the clock stops, so an escalation set just under a threshold stays there while it is checked
+  await hooks(page, (s) => s.holdTime());
   const ring = page.locator('#studentLayer .tag').nth(steve);
   const cases = [
     [warning - 1, [], 'var(--calm-green-bright)'],

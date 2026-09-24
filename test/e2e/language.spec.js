@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import ES from '../../src/i18n/es.js';
 import FR from '../../src/i18n/fr.js';
-import { activate, faceCard, faceStudent, freezeRandomness, hooks, openGame, startRound } from './helpers.js';
+import { activate, faceStudent, freezeRandomness, hooks, openGame, startRound } from './helpers.js';
 
 // A French text with its {placeholders} filled.
 function french(text, params) {
@@ -84,6 +84,7 @@ test('the text over the classroom switches language with the rest of the page', 
   // Ben Dover sits next to his friend Dixie Normous at the start, so she eggs him on
   await activate(page, 'benDover', 30);
   await faceStudent(page, 'benDover');
+  await hooks(page, (s) => s.holdTime());
   const note = page.locator('#studentLayer .tag.target .note');
   await expect(note).toBeVisible();
   await expect(note).toHaveText('egged on by Dixie Normous');
@@ -98,11 +99,13 @@ test('a roll-call answer on screen switches language too', async ({ page }) => {
   await openGame(page);
   await startRound(page);
   await freezeRandomness(page);
-  await faceCard(page, 'moeLester');
-  await page.keyboard.press('e');
+  // the clock stops, so the answer stays on screen however slowly the machine draws frames
+  await hooks(page, (s) => {
+    s.holdTime();
+    s.rules.pickupCard(s.game, 'moeLester');
+  });
   await page.keyboard.press('q');
   await expect(page.locator('#attAnswer')).toContainText('Moe Lester answered from');
-  await hooks(page, (s) => { s.speech.until = s.game.elapsed + 600; });
   const line = await hooks(page, (s) => s.speech.line);
 
   await switchLanguageFromPause(page, 'fr');
