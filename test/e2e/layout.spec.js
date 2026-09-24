@@ -74,6 +74,27 @@ test('the chaos bar changes colour at the same thresholds as the number', async 
   expect(new Set(colours.map((c) => c[1])).size).toBe(3);
 });
 
+test('the HUD keeps its share of the screen from a laptop to a large monitor', async ({ page }) => {
+  const shares = [];
+  for (const [w, h] of [[1440, 900], [2560, 1440]]) {
+    await page.setViewportSize({ width: w, height: h });
+    await openGame(page);
+    await startRound(page);
+    await expect(page.locator('#attendancePanel')).toBeVisible();
+    shares.push(await page.evaluate(() => {
+      const stage = document.getElementById('stage').getBoundingClientRect();
+      const clock = document.querySelector('.badge.clock').getBoundingClientRect();
+      const panel = document.getElementById('attendancePanel').getBoundingClientRect();
+      return { clock: clock.height / stage.height, panel: panel.width / stage.width, text: parseFloat(getComputedStyle(document.getElementById('chaosValue')).fontSize) / stage.height };
+    }));
+  }
+  const [laptop, monitor] = shares;
+  for (const key of ['clock', 'panel', 'text']) {
+    expect(monitor[key] / laptop[key], `${key}: ${JSON.stringify(shares)}`).toBeGreaterThan(0.85);
+    expect(monitor[key] / laptop[key], `${key}: ${JSON.stringify(shares)}`).toBeLessThan(1.15);
+  }
+});
+
 test('no text is smaller than 12px', async ({ page }) => {
   await openGame(page);
   await startRound(page);
@@ -93,6 +114,19 @@ test('no text is smaller than 12px', async ({ page }) => {
 
 test.describe('on a phone', () => {
   test.use({ viewport: { width: 375, height: 667 }, hasTouch: true, isMobile: true });
+
+  test('HUD text stays at 12px or more while playing', async ({ page }) => {
+    await openGame(page);
+    await startRound(page);
+    await freezeRandomness(page);
+    await activate(page, 'gabeIches', 50);
+    await faceStudent(page, 'gabeIches');
+    const sizes = await page.evaluate(() => [...document.querySelectorAll('.stage *')]
+      .filter((n) => n.offsetParent && !n.closest('.overlay') && [...n.childNodes].some((c) => c.nodeType === 3 && c.textContent.trim()))
+      .map((n) => parseFloat(getComputedStyle(n).fontSize)));
+    expect(sizes.length).toBeGreaterThan(5);
+    expect(Math.min(...sizes)).toBeGreaterThanOrEqual(12);
+  });
 
   test('the start panel scrolls from its first line, in portrait and landscape', async ({ page }) => {
     await openGame(page);

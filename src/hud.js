@@ -62,7 +62,7 @@ export function updateTags() {
     tag.classList.add('show');
     tag.classList.toggle('target', targeted);
     tag.classList.toggle('calm', !st.active);
-    const x = Math.round(pos.x - 22), y = Math.round(pos.y - 100);
+    const x = Math.round(pos.x), y = Math.round(pos.y); // the stylesheet lifts the tag above this point
     if (x !== tagEl.x || y !== tagEl.y) {
       tagEl.x = x;
       tagEl.y = y;
