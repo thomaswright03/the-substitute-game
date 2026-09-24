@@ -127,7 +127,9 @@ Characters combine two things at runtime:
 The character files were re-packed for the web with `npm run optimize-assets`: unused
 animation clips were removed and the geometry meshopt-compressed (about 520 KB per
 character instead of 1.4 MB). The principal's model only downloads after the classroom is
-ready.
+ready. `npm start` sends scripts, styles and models gzip-compressed, so the first load is
+about 3 MB on the wire (it was 13.6 MB). If you host the game somewhere else, turn on gzip or
+Brotli compression for `.html`, `.js`, `.css` and `.glb` files there too.
 
 ## Asset credits
 
