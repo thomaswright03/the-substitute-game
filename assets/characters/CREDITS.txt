@@ -1,16 +1,79 @@
-Character models: "Ultimate Modular Men Pack" and "Ultimate Modular Women Pack" by Quaternius
-(https://quaternius.com), obtained via poly.pizza.
+CHARACTER MODEL CREDITS
+=======================
 
-Files used and their per-model licence:
-  business-man.glb   (Business Man, men pack)   - CC0 (Public Domain)
-  casual-man.glb     (Casual Character, men)     - CC0 (Public Domain)
-  hoodie-man.glb     (Hoodie Character, men)     - CC0 (Public Domain)
-  worker-man.glb     (Worker, men pack)          - CC0 (Public Domain)
-  punk-man.glb       (Punk, men pack)            - CC0 (Public Domain)
-  suit-woman.glb     (Suit, women pack)          - CC BY (Attribution: Quaternius)
-  worker-woman.glb   (Worker, women pack)        - CC BY (Attribution: Quaternius)
-  punk-woman.glb     (Punk, women pack)          - CC0 (Public Domain)
-  casual-woman.glb   (Animated Woman, women pack)- CC0 (Public Domain)
+Creator:  Quaternius (https://quaternius.com)
+Works:    "Ultimate Modular Men Pack" and "Ultimate Modular Women Pack"
+Obtained: via poly.pizza (https://poly.pizza), as glTF (.glb) downloads
 
-CC BY items require attribution: "Character model by Quaternius (quaternius.com)".
-No modifications made to geometry/rig; used as downloaded (glTF export via poly.pizza).
+Files used and their per-model licence (as recorded when the files were downloaded):
+
+  File               Model name / pack                  Licence
+  -----------------  ---------------------------------  ------------------------------
+  business-man.glb   Business Man, men pack             CC0 1.0 (public domain dedication)
+  casual-man.glb     Casual Character, men pack         CC0 1.0 (public domain dedication)
+  hoodie-man.glb     Hoodie Character, men pack         CC0 1.0 (public domain dedication)
+  worker-man.glb     Worker, men pack                   CC0 1.0 (public domain dedication)
+  punk-man.glb       Punk, men pack                     CC0 1.0 (public domain dedication)
+  suit-woman.glb     Suit, women pack                   CC BY (Creative Commons Attribution)
+  worker-woman.glb   Worker, women pack                 CC BY (Creative Commons Attribution)
+  punk-woman.glb     Punk, women pack                   CC0 1.0 (public domain dedication)
+  casual-woman.glb   Animated Woman, women pack         CC0 1.0 (public domain dedication)
+
+CC0 deed:     https://creativecommons.org/publicdomain/zero/1.0/
+
+
+ATTRIBUTION FOR THE TWO CC BY MODELS
+------------------------------------
+
+  "Suit" and "Worker" (Ultimate Modular Women Pack) by Quaternius
+  (https://quaternius.com), obtained from poly.pizza (https://poly.pizza),
+  licensed under Creative Commons Attribution (CC BY).
+  Used unmodified; see "Changes" below for how the game uses them at runtime.
+  The licensor provides the material as-is, without warranties; see the
+  disclaimer of warranties in the licence.
+
+  Licence version: NOT RECORDED. The original download note says only "CC BY".
+  The version could not be re-checked from this repository's build environment
+  on 2026-09-24 (poly.pizza and quaternius.com were not reachable from it).
+  Licence deeds: CC BY 4.0 https://creativecommons.org/licenses/by/4.0/
+                 CC BY 3.0 https://creativecommons.org/licenses/by/3.0/
+  TODO (owner): confirm the version on the poly.pizza listing and keep only the
+  matching link.
+
+This attribution is also shown in the game itself: start screen or end screen,
+"Credits, licences & privacy".
+
+
+CHANGES
+-------
+
+The .glb files are stored exactly as downloaded. SHA-256 of each file as committed:
+
+  82b81257c1e94cd9ee48cb1dcbe5ff506e81c9ce67cd0c5af542d8712dca546e  business-man.glb
+  fea7e71271203e7073f1a073fa1208de7402df276f87f80e149bf7589b5d46b4  casual-man.glb
+  a2212729826b718e59e698211ed3951c22459b48733b1ee6a24fac0abf74dca8  casual-woman.glb
+  0de1bcd789d409214cf82f66f61daeb53d2f7de6d914b23e7b3660bfb3dee61e  hoodie-man.glb
+  94afa8718093cc7f9e51cdc0b35f4432c1c2f1901177f98fbbbcb4c6fd79b163  punk-man.glb
+  77cbb6838bf207fc948848ddb389ea43d4bb30c52ec62c5a2fc84bbf35c88c52  punk-woman.glb
+  12aece21fecd08fb079d2fa390faa40c705e26ea8f779b5005b8bf6cbe501837  suit-woman.glb
+  9c28614f465b7dc105f908c20c22fc045f4b07caf8c5ef0e9f8049eceb6dd38d  worker-man.glb
+  078e459440ae30ce6aa186f5fc1a5db075f308387c34eec4ada8c8f538ae2646  worker-woman.glb
+
+At runtime (index.html) the game, without changing the files:
+  - freezes each model on its "Idle_Neutral" animation clip and bends the leg,
+    head and arm bones to pose it seated at a desk and to animate "tells";
+  - applies scale, rotation and position offsets to place it in the classroom;
+  - adds simple props (phone, notes, paper plane, snack) as separate meshes;
+  - ONLY IF an optional file assets/face.glb is present locally (it is not
+    shipped in this repository), hides the model's face-plate meshes (materials
+    "Skin", "Skin_Darker", "Eyebrows", "Eye" in the head group) and attaches a
+    separate expressive head in their place.
+
+
+WHAT THE FILES THEMSELVES SAY
+-----------------------------
+
+Checked on 2026-09-24 by reading each file's glTF JSON header: every file has
+asset.generator "FBX2glTF v0.9.7" and asset.version "2.0", and no copyright,
+author, licence or "extras" metadata. The files therefore do not name their
+creator or licence; the information above rests on the download record.

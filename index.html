@@ -4,10 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>The Substitute</title>
+<link rel="icon" href="data:,">
 <style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found]){display:none!important}</style>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  /* Fonts are self-hosted (assets/fonts/, SIL Open Font License 1.1 — see each folder's OFL.txt and
+     THIRD_PARTY_NOTICES.md) so the page makes no third-party network requests. */
+  @font-face{ font-family:'Fredoka'; src:url('assets/fonts/fredoka/Fredoka-Variable.ttf') format('truetype'); font-weight:300 700; font-display:swap; }
+  @font-face{ font-family:'Nunito'; src:url('assets/fonts/nunito/Nunito-Variable.ttf') format('truetype'); font-weight:200 1000; font-display:swap; }
+  @font-face{ font-family:'JetBrains Mono'; src:url('assets/fonts/jetbrains-mono/JetBrainsMono-Variable.ttf') format('truetype'); font-weight:100 800; font-display:swap; }
+</style>
 <style>
   :root{
     --ink:#141c16;
@@ -202,6 +207,18 @@
   .btn:hover{ transform:translateY(1px); box-shadow:0 3px 0 var(--frame-dark); }
   .btn:active{ transform:translateY(4px); box-shadow:0 0 0 var(--frame-dark); }
   .hidden{ display:none !important; }
+  .linkBtn{ display:block; margin:12px auto 0; background:none; border:none; cursor:pointer; font-family:'Nunito',sans-serif;
+    font-size:12.5px; font-weight:700; color:var(--notebook-blue); text-decoration:underline; }
+  .creditsPanel{ max-width:560px; max-height:100%; overflow:auto; text-align:left; }
+  .creditsPanel h1{ text-align:center; }
+  .creditsPanel .kicker{ text-align:center; }
+  .creditsPanel h3{ font-family:'Fredoka',sans-serif; font-weight:600; font-size:15px; margin:14px 0 4px; }
+  .creditsPanel p, .creditsPanel li{ font-family:'Nunito',sans-serif; font-size:12.5px; line-height:1.5; color:#3a4038; max-width:none; margin:0 0 6px; }
+  .creditsPanel ul{ margin:0 0 6px; padding-left:18px; }
+  .creditsPanel a{ color:var(--notebook-blue); }
+  .creditsPanel code{ font-family:'JetBrains Mono',monospace; font-size:11.5px; background:#e4dcc4; border-radius:4px; padding:0 4px; }
+  .creditsPanel .btnLine{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:14px; }
+  .btn.small{ font-size:13px; padding:7px 16px; }
   .apple{ font-size:32px; display:block; margin-bottom:4px; }
   .loading{ position:absolute; inset:0; z-index:7; display:flex; align-items:center; justify-content:center;
     background:#12241a; color:var(--chalk-dim); font-family:'Fredoka',sans-serif; }
@@ -343,6 +360,7 @@
         </div>
         <div class="stats"><div>Best Survived<strong id="bestStart">0:00</strong></div></div>
         <button class="btn" id="startBtn">Start Class ▸</button>
+        <button class="linkBtn" id="creditsBtn" type="button">Credits, licences &amp; privacy</button>
       </div>
     </div>
 
@@ -360,6 +378,7 @@
           <div>Best Survived<strong id="statBest">0:00</strong></div>
         </div>
         <button class="btn" id="restartBtn">Sub Again ▸</button>
+        <button class="linkBtn" id="creditsBtnEnd" type="button">Credits, licences &amp; privacy</button>
       </div>
     </div>
 
@@ -370,6 +389,35 @@
         <h1>Take a Breath</h1>
         <p>The clock and the kids are frozen. Resume whenever you're ready.</p>
         <button class="btn" id="resumeBtn">Resume ▸</button>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="creditsOverlay">
+      <div class="panel creditsPanel" role="dialog" aria-labelledby="creditsTitle">
+        <div class="kicker">About This Game</div>
+        <h1 id="creditsTitle">Credits &amp; Privacy</h1>
+
+        <h3>Your data</h3>
+        <p>The game has no accounts, analytics, ads or tracking, and it makes no requests to any third party. Every script, model and font is a local file in this project, so your browser only fetches the game&rsquo;s own files from the server you loaded the page from (for example your own <code>python3 -m http.server</code>).</p>
+        <p>It stores one thing, in your browser&rsquo;s <code>localStorage</code> on this device: your best survival time, under the key <code>substitute_best</code>. It is never sent anywhere. <span id="creditsBestLine"></span></p>
+
+        <h3>Content note</h3>
+        <p>All characters are fictional. The game uses crude, innuendo-style pun names for students and a cartoon &ldquo;lightning zap&rdquo; discipline option. It is intended for adults and is not designed for or directed at children.</p>
+
+        <h3>Credits</h3>
+        <ul>
+          <li><b>Character models</b> by <a href="https://quaternius.com" target="_blank" rel="noopener noreferrer">Quaternius</a>, from the &ldquo;Ultimate Modular Men&rdquo; and &ldquo;Ultimate Modular Women&rdquo; packs, obtained via poly.pizza. <b>&ldquo;Suit&rdquo;</b> and <b>&ldquo;Worker&rdquo;</b> (women pack) are licensed <b>CC BY</b> (Creative Commons Attribution; the licence version was not recorded at download &mdash; licence deeds: <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">4.0</a>, <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener noreferrer">3.0</a>; see <code>assets/characters/CREDITS.txt</code>). All other character models are CC0 (public domain). The model files are unmodified; the game poses them into a seated position at runtime. They are provided by the licensor as-is, without warranties.</li>
+          <li><b>Fonts:</b> Fredoka (&copy; 2016 The Fredoka Project Authors), Nunito (&copy; 2014 The Nunito Project Authors) and JetBrains Mono (&copy; 2020 The JetBrains Mono Project Authors), each under the <a href="https://scripts.sil.org/OFL" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a>.</li>
+          <li><b>three.js</b> r128 and its example modules &mdash; &copy; 2010&ndash;2021 three.js authors, MIT License.</li>
+          <li><b>meshoptimizer</b> 0.18 decoder &mdash; &copy; 2016&ndash;2022 Arseny Kapoulkine, MIT License.</li>
+          <li><b>Game code</b> &mdash; &copy; 2026 Thomas Wright, MIT License.</li>
+        </ul>
+        <p>Full licence texts: <code>LICENSE</code>, <code>THIRD_PARTY_NOTICES.md</code>, <code>lib/LICENSE-*.txt</code> and <code>assets/fonts/*/OFL.txt</code> in the project files.</p>
+
+        <div class="btnLine">
+          <button class="btn small" id="resetBestBtn" type="button">Reset best time</button>
+          <button class="btn small" id="creditsClose" type="button">Close</button>
+        </div>
       </div>
     </div>
 
@@ -740,7 +788,7 @@
     return enableShadows(g);
   }
 
-  // ================= character models: Quaternius "Ultimate Modular Men/Women" (CC0/CC-BY, via poly.pizza) =================
+  // ================= character models: Quaternius "Ultimate Modular Men/Women" (CC0 / CC BY per model, via poly.pizza; see assets/characters/CREDITS.txt) =================
   // Loaded from local glTF files instead of hand-built primitives. Each model ships a full
   // realistic-proportioned humanoid rig (Hips > Abdomen > Torso > Chest > Neck > Head, plus full
   // arm/finger and leg chains) and a library of combat-game animation clips with no sit pose of
@@ -772,10 +820,14 @@
     return Promise.all(unique.map(loadCharacterModel).concat([loadFaceTemplate()]));
   }
 
-  // ================= facial expressions: "Face Cap" ARKit blend-shape head (three.js example assets, CC0) =================
+  // ================= facial expressions: OPTIONAL ARKit blend-shape head (assets/face.glb) =================
   // The Quaternius body models have no facial blend shapes at all, so a separate expressive head
-  // (52 ARKit morph targets: brows/eyes/jaw/mouth) is grafted onto each character's Head bone,
+  // (52 ARKit morph targets: brows/eyes/jaw/mouth) can be grafted onto each character's Head bone,
   // replacing just the flat face plate. Hair/headwear/ears on the original head are left alone.
+  // assets/face.glb is NOT shipped in this repository: the head previously used here was derived from
+  // three.js's example "facecap.glb" (credited upstream to Bannaflak's Face Cap), and no licence allowing
+  // its redistribution could be found — see THIRD_PARTY_NOTICES.md. If the file is absent, the load
+  // below resolves to null and every character keeps its original Quaternius face (no expressions).
   var FACE_TEMPLATE = null;
   var FACE_HIDE_MATERIALS = ['Skin','Skin_Darker','Eyebrows','Eye'];
   // small forward/up nudge (in the Head bone's OWN local space, after calibrating base position/scale
@@ -787,7 +839,10 @@
       gltfLoader.load('assets/face.glb', function(gltf){
         FACE_TEMPLATE = gltf.scene;
         resolve(FACE_TEMPLATE);
-      }, undefined, reject);
+      }, undefined, function(){
+        console.info('Optional assets/face.glb not found; characters use their original faces (no facial expressions).');
+        resolve(null);
+      });
     });
   }
   // Each Quaternius costume file has its own Head bone bind-pose transform (this rig's bones carry a
@@ -1163,6 +1218,29 @@
   function saveBest(v){ try{ if(v>bestSurvived()) localStorage.setItem('substitute_best', String(v)); }catch(e){} }
   function fmtTime(s){ s=Math.max(0,Math.round(s)); var m=Math.floor(s/60), r=s%60; return m+':'+String(r).padStart(2,'0'); }
   document.getElementById('bestStart').textContent = fmtTime(bestSurvived());
+
+  // ---- credits / licences / privacy overlay (also lets the player clear the one value we store) ----
+  var creditsOverlay = document.getElementById('creditsOverlay');
+  function refreshCreditsBest(){
+    var b = bestSurvived();
+    document.getElementById('creditsBestLine').textContent = b > 0
+      ? 'Currently stored: ' + fmtTime(b) + '.'
+      : 'Nothing is stored right now.';
+  }
+  function openCredits(){ refreshCreditsBest(); creditsOverlay.classList.remove('hidden'); }
+  function closeCredits(){ creditsOverlay.classList.add('hidden'); }
+  document.getElementById('creditsBtn').addEventListener('click', openCredits);
+  document.getElementById('creditsBtnEnd').addEventListener('click', openCredits);
+  document.getElementById('creditsClose').addEventListener('click', closeCredits);
+  document.getElementById('resetBestBtn').addEventListener('click', function(){
+    try{ localStorage.removeItem('substitute_best'); }catch(e){}
+    document.getElementById('bestStart').textContent = fmtTime(0);
+    var statBest = document.getElementById('statBest'); if(statBest) statBest.textContent = fmtTime(0);
+    refreshCreditsBest();
+  });
+  window.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && !creditsOverlay.classList.contains('hidden')) closeCredits();
+  });
 
   var tagEls = {};
   function buildTags(){
