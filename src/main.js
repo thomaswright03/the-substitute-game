@@ -2,7 +2,7 @@
 // imported here turn them into a 3D classroom you can walk around in.
 import './three-setup.js';
 import * as R from './rules.js';
-import { onLanguageChange, t } from './strings.js';
+import { applyStaticStrings, onLanguageChange, t } from './strings.js';
 import { el } from './dom.js';
 import { S, TEST_MODE, frozen } from './session.js';
 import { buildWorld, camera, createRenderer, ensurePrincipal, render, resizeRenderer, updateStudents } from './world.js';
@@ -25,6 +25,7 @@ import { setupAudio } from './audio.js';
 import { difficulty, setupLanguage, setupSettings } from './settings.js';
 import { applyCameraOverride, exposeTestHooks } from './testhooks.js';
 import { registerServiceWorker } from './offline.js';
+import { onKeyLabelsChange, setupKeyLabels } from './keys.js';
 
 const boot = window.SubstituteBoot || { blocked: false, progress() {}, fail() {}, ready() {}, show() {} };
 const MAX_FRAME_DT = 5; // longer gaps are stalls (a hidden tab pauses the game), not play time
@@ -72,7 +73,22 @@ function frame(now) {
   render();
 }
 
+// Text drawn by code, redrawn when the language changes or the keyboard's key names become known
+// (the page's own text is redrawn by applyStaticStrings).
+function refreshDrawnText() {
+  renderControlsLists();
+  refreshButtonLabels();
+  invalidateAttendancePanel();
+  renderSeatChart();
+  showBest();
+}
+
 async function init() {
+  onKeyLabelsChange(() => {
+    applyStaticStrings(document);
+    refreshDrawnText();
+  });
+  setupKeyLabels();
   setupLanguage();
   setTouch(window.matchMedia('(pointer: coarse)').matches);
   renderControlsLists();
@@ -110,13 +126,7 @@ async function init() {
   setupRound();
   buildTags();
   // text drawn by code follows a change of language too (the page's own text already has)
-  onLanguageChange(() => {
-    renderControlsLists();
-    refreshButtonLabels();
-    invalidateAttendancePanel();
-    renderSeatChart();
-    showBest();
-  });
+  onLanguageChange(refreshDrawnText);
   S.game = R.createGame({ difficulty: difficulty() });
   syncCamera(camera);
   boot.ready();

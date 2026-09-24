@@ -66,12 +66,19 @@ discipline and close calls.
 |---|---|---|
 | Walk | WASD or ↑/↓ | left stick |
 | Turn | ←/→ or mouse (click the view to lock the pointer) | drag the view |
+| Look up / down | Shift+↑/↓ or Page Up / Page Down, or the mouse | drag the view |
 | Help / pick up / give card | E | action button |
 | Discipline | F, then 1–4 | Discipline button |
 | Seating chart | R (Tab / Enter to pick seats) | Seats button |
 | Roll call | Q | Roll call button |
 | Pause | Esc or P | pause button |
 | Sound on / off | M, or the speaker button | speaker button (on a narrow phone, the pause screen) |
+
+Keys are bound by where they sit on the keyboard, not by the letter printed on them, so on a
+French AZERTY keyboard you walk with ZQSD, and roll call is the key marked A. The controls
+card, the hint bar and the prompts name the keys as printed on the player's own keyboard: the
+browser reports the layout where it can (Chrome and Edge), a French or Belgian browser starts
+from AZERTY names otherwise, and pressing a key corrects its name.
 
 The whole game can be played with the keyboard alone. Menus take focus when they open and
 give it back when they close.
@@ -136,10 +143,11 @@ every push and pull request.
 | `src/strings.js`, `src/i18n/` | Every piece of user-facing text in one table, and its Spanish and French translations (see below) |
 | `src/main.js` | Start-up and the frame loop |
 | `src/world.js`, `src/player.js` | The three.js renderer and classroom, the students' poses each frame, and the teacher's movement |
-| `src/input.js`, `src/aim.js` | Keyboard, mouse, touch and stick input; what the teacher is aiming at and what E / F do |
+| `src/input.js`, `src/keys.js`, `src/aim.js` | Keyboard, mouse, touch and stick input; the key bindings and the names of the player's keys; what the teacher is aiming at and what E / F do |
 | `src/hud.js`, `src/dialogs.js`, `src/rollcall.js` | HUD, log, prompts and buttons; modal dialogs and focus; roll-call bubble and arrow |
 | `src/seating.js`, `src/discipline.js`, `src/principal.js`, `src/effects.js` | Seating chart, discipline menu, the principal's visit, hit / zap / throw effects |
 | `src/events.js`, `src/round.js`, `src/session.js`, `src/dom.js` | Rule events to log lines and effects; starting, pausing and ending a round; shared UI state; the page elements the game drives |
+| `src/bus.js`, `src/pointer.js`, `src/log.js` | The small event bus that keeps the UI modules free of import cycles (`npm run lint` checks for cycles); pointer lock; the play log |
 | `src/audio.js`, `src/settings.js` | Synthesised sound cues; the sound, volume, language and difficulty controls |
 | `src/offline.js` | Registers the service worker on a deployed build only |
 | `src/testhooks.js` | The `?test` API for the browser tests |

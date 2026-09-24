@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { ROOM, TEACHER } from './data.js';
 import { S } from './session.js';
+import { BINDINGS } from './keys.js';
 import { world } from './world.js';
 
 export const EYE_HEIGHT = 1.62;
@@ -9,6 +10,7 @@ const PLAYER_RADIUS = 0.35;
 const DESK_RADIUS = 0.85;
 const MOVE_SPEED = TEACHER.speed;
 const TURN_SPEED = 2.4; // radians per second for keyboard turning
+const PITCH_SPEED = 1.2; // radians per second for looking up and down from the keyboard
 const EDGE_ASSIST_START = 0.82;
 const EDGE_ASSIST_RATE_YAW = 1.1;
 const EDGE_ASSIST_RATE_PITCH = 0.85;
@@ -17,7 +19,7 @@ const MOVE_STEP = 1 / 30; // movement is integrated in steps no longer than this
 const START = { x: 0, z: TEACHER.startZ, yaw: 0, pitch: -0.05 };
 export const player = { ...START };
 
-// Held movement keys, the on-screen stick, and the mouse's hover-look state (set by input.js).
+// Held keys by physical position (KeyboardEvent.code, see keys.js), the on-screen stick, and the mouse's hover-look state (set by input.js).
 export const keys = {};
 export const joy = { active: false, id: null, x: 0, y: 0 };
 export const look = { pointerLocked: false, hoverInside: false, edgeX: 0, edgeY: 0 };
@@ -49,17 +51,21 @@ function movePlayer(dt) {
     if (ax > EDGE_ASSIST_START) player.yaw -= Math.sign(look.edgeX) * ((ax - EDGE_ASSIST_START) / (1 - EDGE_ASSIST_START)) * EDGE_ASSIST_RATE_YAW * dt;
     if (ay > EDGE_ASSIST_START) player.pitch -= Math.sign(look.edgeY) * ((ay - EDGE_ASSIST_START) / (1 - EDGE_ASSIST_START)) * EDGE_ASSIST_RATE_PITCH * dt;
   }
-  if (keys.arrowleft) player.yaw += TURN_SPEED * dt;
-  if (keys.arrowright) player.yaw -= TURN_SPEED * dt;
+  if (keys.ArrowLeft) player.yaw += TURN_SPEED * dt;
+  if (keys.ArrowRight) player.yaw -= TURN_SPEED * dt;
+  // Shift turns the up and down arrows from walking into looking up and down
+  const lookMode = keys.ShiftLeft || keys.ShiftRight;
+  if (keys.PageUp || (lookMode && keys.ArrowUp)) player.pitch += PITCH_SPEED * dt;
+  if (keys.PageDown || (lookMode && keys.ArrowDown)) player.pitch -= PITCH_SPEED * dt;
   clampPitch();
 
   const fx = -Math.sin(player.yaw), fz = -Math.cos(player.yaw);
   const rx = Math.cos(player.yaw), rz = -Math.sin(player.yaw);
   let mx = 0, mz = 0;
-  if (keys.w || keys.arrowup) { mx += fx; mz += fz; }
-  if (keys.s || keys.arrowdown) { mx -= fx; mz -= fz; }
-  if (keys.a) { mx -= rx; mz -= rz; }
-  if (keys.d) { mx += rx; mz += rz; }
+  if (keys[BINDINGS.forward] || (keys.ArrowUp && !lookMode)) { mx += fx; mz += fz; }
+  if (keys[BINDINGS.back] || (keys.ArrowDown && !lookMode)) { mx -= fx; mz -= fz; }
+  if (keys[BINDINGS.left]) { mx -= rx; mz -= rz; }
+  if (keys[BINDINGS.right]) { mx += rx; mz += rz; }
   mx += fx * -joy.y + rx * joy.x;
   mz += fz * -joy.y + rz * joy.x;
   const len = Math.hypot(mx, mz);

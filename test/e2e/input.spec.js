@@ -87,12 +87,12 @@ test('walking covers the same ground per second of the period at a low frame rat
   const limit = await page.evaluate(() => new Promise((resolve) => {
     const s = window.__substitute;
     let prev = null, still = 0;
-    s.keys.w = true;
+    s.keys.KeyW = true;
     const onFrame = () => {
       still = s.player.x === prev ? still + 1 : 0;
       prev = s.player.x;
       if (still >= 3) {
-        s.keys.w = false;
+        s.keys.KeyW = false;
         resolve(s.player.x);
       } else requestAnimationFrame(onFrame);
     };
@@ -117,7 +117,7 @@ test('walking covers the same ground per second of the period at a low frame rat
     const onFrame = (ts) => {
       if (last === null) {
         t0 = ts;
-        s.keys.w = true;
+        s.keys.KeyW = true;
       } else if (s.player.x >= wallX - 0.05) {
         blocked++;
       } else {
@@ -128,7 +128,7 @@ test('walking covers the same ground per second of the period at a low frame rat
       last = s.game.elapsed;
       s.player.x = startX;
       if ((seconds >= 2 && frames >= 4) || ts - t0 > 60_000) {
-        s.keys.w = false;
+        s.keys.KeyW = false;
         resolve({ seconds, metres, frames, blocked, wall: (ts - t0) / 1000 });
         return;
       }

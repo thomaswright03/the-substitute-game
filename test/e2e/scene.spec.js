@@ -130,13 +130,13 @@ test('the teacher has a full-size desk of their own, and can’t walk through it
   expect(desk.height).toBeGreaterThan(0.75);
   expect(desk.seats, 'no student chair').toBe(0);
   // walk straight at its front for a while: the teacher stops at the desk
-  await hooks(page, (s, d) => { Object.assign(s.player, { x: d.x, z: d.front + 1.2, yaw: 0, pitch: 0 }); s.keys.w = true; }, desk);
+  await hooks(page, (s, d) => { Object.assign(s.player, { x: d.x, z: d.front + 1.2, yaw: 0, pitch: 0 }); s.keys.KeyW = true; }, desk);
   await page.waitForFunction((front) => {
     const s = window.__substitute;
     return s.game.elapsed > 0 && s.player.z < front + 0.5;
   }, desk.front);
   await page.waitForTimeout(1500);
-  const z = await hooks(page, (s) => { s.keys.w = false; return s.player.z; });
+  const z = await hooks(page, (s) => { s.keys.KeyW = false; return s.player.z; });
   expect(z).toBeGreaterThan(desk.front + 0.3);
 });
 

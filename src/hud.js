@@ -9,6 +9,7 @@ import { project, world } from './world.js';
 import { currentContext, disciplineAction, primaryAction } from './aim.js';
 import { askRollCall } from './rollcall.js';
 import { toggleSeatChart } from './seating.js';
+import { keyLabel, keyLabelsVersion } from './keys.js';
 
 /* ---------------- rings and name tags over the students ---------------- */
 
@@ -99,7 +100,7 @@ function helpPromptText(id) {
 }
 
 function setButton(node, key, label) {
-  const sig = label + S.isTouch;
+  const sig = key + ' ' + label + S.isTouch;
   if (node.dataset.label === sig) return;
   node.dataset.label = sig;
   keyedLabel(node, key, label);
@@ -107,7 +108,7 @@ function setButton(node, key, label) {
 
 // Everything the prompt and the buttons depend on, compared field by field each frame so they
 // are only rebuilt when something changed.
-const shown = { kind: null, id: null, seatFirst: null, holding: null, phase: 0, canAsk: false, running: false, chart: false, touch: false, language: null };
+const shown = { kind: null, id: null, seatFirst: null, holding: null, phase: 0, canAsk: false, running: false, chart: false, touch: false, language: null, keys: -1 };
 function samePromptInputs(ctx, game, canAsk) {
   const kind = ctx ? ctx.kind : null, id = ctx ? ctx.id : null;
   // the help prompt for the phone and the arguer changes with their state
@@ -120,9 +121,9 @@ function samePromptInputs(ctx, game, canAsk) {
   const holding = game ? game.attendance.holding : null;
   const same = kind === shown.kind && id === shown.id && S.seatFirst === shown.seatFirst && holding === shown.holding
     && phase === shown.phase && canAsk === shown.canAsk && S.running === shown.running && S.seatChartOpen === shown.chart
-    && S.isTouch === shown.touch && currentLanguage() === shown.language;
+    && S.isTouch === shown.touch && currentLanguage() === shown.language && keyLabelsVersion() === shown.keys;
   if (same) return true;
-  Object.assign(shown, { kind, id, seatFirst: S.seatFirst, holding, phase, canAsk, running: S.running, chart: S.seatChartOpen, touch: S.isTouch, language: currentLanguage() });
+  Object.assign(shown, { kind, id, seatFirst: S.seatFirst, holding, phase, canAsk, running: S.running, chart: S.seatChartOpen, touch: S.isTouch, language: currentLanguage(), keys: keyLabelsVersion() });
   return false;
 }
 
@@ -138,25 +139,25 @@ export function updatePromptAndActions() {
     const n = name(ctx.id);
     switch (ctx.kind) {
       case 'pickup':
-        parts.push({ key: 'E', text: t('prompt.pickUp', { name: n }) });
+        parts.push({ key: keyLabel('help'), text: t('prompt.pickUp', { name: n }) });
         primary = t('actions.pickUp');
         break;
       case 'give':
-        parts.push({ key: 'E', text: t('prompt.give', { held: name(game.attendance.holding), name: n }) });
+        parts.push({ key: keyLabel('help'), text: t('prompt.give', { held: name(game.attendance.holding), name: n }) });
         primary = t('actions.give');
         break;
       case 'help':
-        parts.push({ key: 'E', text: helpPromptText(ctx.id) });
-        parts.push({ key: 'F', text: t('prompt.discipline', { name: n }) });
+        parts.push({ key: keyLabel('help'), text: helpPromptText(ctx.id) });
+        parts.push({ key: keyLabel('discipline'), text: t('prompt.discipline', { name: n }) });
         primary = t('actions.help') + ' ' + n;
         showDiscipline = true;
         break;
       case 'caught':
-        parts.push({ key: 'F', text: t('prompt.discipline', { name: n }) });
+        parts.push({ key: keyLabel('discipline'), text: t('prompt.discipline', { name: n }) });
         showDiscipline = true;
         break;
       case 'swap':
-        parts.push({ key: 'E', text: S.seatFirst ? t('prompt.swapWith', { first: name(S.seatFirst), name: n }) : t('prompt.swapPick', { name: n }) });
+        parts.push({ key: keyLabel('help'), text: S.seatFirst ? t('prompt.swapWith', { first: name(S.seatFirst), name: n }) : t('prompt.swapPick', { name: n }) });
         primary = t('actions.swap') + ' ' + n;
         break;
       case 'detained':
@@ -170,13 +171,13 @@ export function updatePromptAndActions() {
   el.crosshair.classList.toggle('target', !!ctx && ctx.kind !== 'calm' && ctx.kind !== 'detained');
 
   el.actPrimary.hidden = !primary;
-  if (primary) setButton(el.actPrimary, 'E', primary);
+  if (primary) setButton(el.actPrimary, keyLabel('help'), primary);
   el.actDiscipline.hidden = !showDiscipline;
-  if (showDiscipline) setButton(el.actDiscipline, 'F', t('actions.discipline'));
+  if (showDiscipline) setButton(el.actDiscipline, keyLabel('discipline'), t('actions.discipline'));
   el.actRollCall.hidden = !canAsk;
-  if (canAsk) setButton(el.actRollCall, 'Q', t('rollCall.button', { name: name(game.attendance.holding) }));
+  if (canAsk) setButton(el.actRollCall, keyLabel('rollCall'), t('rollCall.button', { name: name(game.attendance.holding) }));
   el.actSeats.hidden = !S.running;
-  setButton(el.actSeats, 'R', t('actions.seats'));
+  setButton(el.actSeats, keyLabel('seats'), t('actions.seats'));
   el.actSeats.setAttribute('aria-pressed', String(S.seatChartOpen));
 }
 

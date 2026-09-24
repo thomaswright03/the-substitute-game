@@ -1,5 +1,5 @@
 // Keyboard, mouse, touch and the on-screen stick, turned into look, walk and action calls.
-import { applyStaticStrings, lookup, setTouchStrings } from './strings.js';
+import { applyStaticStrings, fill, lookup, setTouchStrings } from './strings.js';
 import { el } from './dom.js';
 import { S, frozen } from './session.js';
 import { applyLookDelta, joy, keys, look, releaseKeys } from './player.js';
@@ -11,11 +11,11 @@ import { setSeatChart, toggleSeatChart } from './seating.js';
 import { chooseDiscipline, closeDiscipline } from './discipline.js';
 import { cancelConfirm, refreshButtonLabels, setPaused } from './round.js';
 import { audioPrefs, setMuted } from './audio.js';
+import { DIGITS, HELD_KEYS, actionFor, eventCode, learnFromKeyEvent } from './keys.js';
 
 const LOOK_SENS = 0.0034;
 const POINTER_LOCK_SENS = 0.0024;
 const MAX_LOCKED_DELTA = 250; // browsers sometimes report one huge jump right after locking
-const MOVEMENT_KEYS = new Set(['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright']);
 
 let lastPX = 0, lastPY = 0;
 let touchLookId = null;
@@ -46,9 +46,9 @@ export function renderControlsLists() {
     for (const [key, what] of rows) {
       const item = document.createElement('div');
       const dt = document.createElement('dt');
-      dt.textContent = key;
+      dt.textContent = fill(key); // the keyboard's own key names (keys.js)
       const dd = document.createElement('dd');
-      dd.textContent = what;
+      dd.textContent = fill(what);
       item.append(dt, dd);
       dl.append(item);
     }
@@ -142,46 +142,53 @@ function setupJoystick() {
 
 /* ---------------- keyboard ---------------- */
 
+const MENU_OPTIONS = { 1: 'talk', 2: 'detention', 3: 'principal', 4: 'zap' };
+
 function onKeyDown(e) {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
-  const k = e.key.toLowerCase();
+  learnFromKeyEvent(e);
+  // bindings go by the key's position, not the character it types (see keys.js)
+  const code = eventCode(e);
+  const action = actionFor(code);
   const top = topDialog();
 
   if (top === el.discOverlay) {
-    const option = { 1: 'talk', 2: 'detention', 3: 'principal', 4: 'zap' }[k];
+    const option = MENU_OPTIONS[DIGITS[code]];
     if (option) { e.preventDefault(); chooseDiscipline(option); }
-    else if (k === 'escape') { e.preventDefault(); closeDiscipline(); }
+    else if (code === 'Escape') { e.preventDefault(); closeDiscipline(); }
     return;
   }
   if (top === el.confirmOverlay) {
-    if (k === 'escape') { e.preventDefault(); cancelConfirm(); }
+    if (code === 'Escape') { e.preventDefault(); cancelConfirm(); }
     return;
   }
   if (top === el.pauseOverlay) {
     // some browsers deliver the Esc that released pointer lock (and paused) as a key press too
-    if ((k === 'escape' && !justPausedByEsc()) || k === 'p') { e.preventDefault(); setPaused(false); }
+    if ((code === 'Escape' && !justPausedByEsc()) || action === 'pause') { e.preventDefault(); setPaused(false); }
     return;
   }
   if (top) return; // start / end screens: their buttons handle Enter and Space
 
   if (!S.running) return;
-  if (MOVEMENT_KEYS.has(k)) {
-    keys[k] = true;
-    if (k.startsWith('arrow')) e.preventDefault();
+  if (HELD_KEYS.has(code)) {
+    keys[code] = true;
+    if (code.startsWith('Arrow') || code.startsWith('Page')) e.preventDefault();
     return;
   }
   if (e.repeat) return;
-  switch (k) {
-    case 'e': primaryAction(); break;
-    case 'f': disciplineAction(); break;
-    case 'r': toggleSeatChart(true); break; // keyboard users land on the chart's first seat
-    case 'q': askRollCall(); break;
-    case 'p': setPaused(true); break;
-    case 'm': setMuted(!audioPrefs().muted); break;
-    case 'escape':
-      if (S.seatChartOpen) setSeatChart(false);
-      else if (!justPausedByEsc()) setPaused(true);
-      break;
+  if (code === 'Escape') {
+    if (S.seatChartOpen) setSeatChart(false);
+    else if (!justPausedByEsc()) setPaused(true);
+    e.preventDefault();
+    return;
+  }
+  switch (action) {
+    case 'help': primaryAction(); break;
+    case 'discipline': disciplineAction(); break;
+    case 'seats': toggleSeatChart(true); break; // keyboard users land on the chart's first seat
+    case 'rollCall': askRollCall(); break;
+    case 'pause': setPaused(true); break;
+    case 'mute': setMuted(!audioPrefs().muted); break;
     default: return;
   }
   e.preventDefault();
@@ -191,6 +198,6 @@ export function setupInput() {
   setupPointer();
   setupJoystick();
   window.addEventListener('keydown', onKeyDown);
-  window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+  window.addEventListener('keyup', (e) => { keys[eventCode(e)] = false; });
   window.addEventListener('blur', releaseKeys);
 }

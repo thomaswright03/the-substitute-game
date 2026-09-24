@@ -8,6 +8,7 @@
 
 import ES from './i18n/es.js';
 import FR from './i18n/fr.js';
+import { keyNames } from './keys.js';
 
 const EN = {
   common: {
@@ -47,7 +48,7 @@ const EN = {
     fullscreen: 'Fullscreen',
     exitFullscreen: 'Exit fullscreen',
     canvas: 'The classroom, seen through the substitute teacher’s eyes',
-    hintKeys: 'WASD move · ←/→ or mouse turn · E help · F discipline · R seats · Q roll call · Esc pause',
+    hintKeys: '{moveKeys} move · ←/→ or mouse turn · {helpKey} help · {disciplineKey} discipline · {seatsKey} seats · {rollCallKey} roll call · Esc pause',
   },
   start: {
     kicker: 'First Day Sub Plans',
@@ -83,15 +84,16 @@ const EN = {
   },
   controls: {
     keyboard: [
-      ['WASD / ↑↓', 'walk'],
+      ['{moveKeys} / ↑↓', 'walk'],
       ['←/→ or mouse', 'turn'],
-      ['E', 'help / pick up / give card'],
-      ['F', 'discipline'],
-      ['R', 'seating chart'],
-      ['Q', 'roll call'],
+      ['Shift+↑↓ or PgUp/PgDn', 'look up / down'],
+      ['{helpKey}', 'help / pick up / give card'],
+      ['{disciplineKey}', 'discipline'],
+      ['{seatsKey}', 'seating chart'],
+      ['{rollCallKey}', 'roll call'],
       ['1–4', 'choose in menus'],
-      ['Esc / P', 'pause'],
-      ['M', 'sound on / off'],
+      ['Esc / {pauseKey}', 'pause'],
+      ['{muteKey}', 'sound on / off'],
     ],
     touch: [
       ['Left stick', 'walk'],
@@ -175,7 +177,7 @@ const EN = {
     tipLabel: 'Tip:',
     // shown on a lost round: for running out of time, or for the kind of student who was lost
     tip: {
-      attendance: 'Take a card every time you pass the board, and when you don’t know whose it is, ask with roll call (Q) instead of searching desk by desk.',
+      attendance: 'Take a card every time you pass the board, and when you don’t know whose it is, ask with roll call ({rollCallKey}) instead of searching desk by desk.',
       attendanceTouch: 'Take a card every time you pass the board, and when you don’t know whose it is, ask with Roll call instead of searching desk by desk.',
       notes: 'The note-writer builds up slowly but never stops. One Help settles her; go before her ring turns red.',
       phone: 'The phone takes two presses of Help: a warning, then taking it. Press again before the warning wears off.',
@@ -195,7 +197,8 @@ const EN = {
     cards: 'cards',
     goToBoard: 'Go to the chalkboard and pick up a name card. All cards must be handed out before the bell.',
     carrying: 'Carrying {name}’s card',
-    findStudent: 'Find {name} and hand it over. Not sure who that is? Ask with roll call.',
+    findStudent: 'Find {name} and hand it over. Not sure who that is? Ask with roll call ({rollCallKey}).',
+    findStudentTouch: 'Find {name} and hand it over. Not sure who that is? Ask with Roll call.',
     answered: '{name} answered from {where}: “{line}”',
   },
   where: {
@@ -269,7 +272,7 @@ const EN = {
     front: 'Front of the room · chalkboard',
     empty: 'Empty desk',
     together: 'next to friend',
-    close: 'Done (R)',
+    close: 'Done ({seatsKey})',
     closeTouch: 'Done',
     legend: 'Same colour = friends',
     picked: 'Now pick who swaps with {name}.',
@@ -282,7 +285,7 @@ const EN = {
     cardResolvedByOffice: 'The office marks {name} as present. One less card to deliver.',
     attendanceComplete: 'Attendance complete. Time to teach, and to keep an eye on them.',
     nearlyLost: '{name} is about to lose it!',
-    eggedOn: '{name} and {friend} are egging each other on. Swap seats (R) to split them up.',
+    eggedOn: '{name} and {friend} are egging each other on. Swap seats ({seatsKey}) to split them up.',
     eggedOnTouch: '{name} and {friend} are egging each other on. Swap seats (Seats) to split them up.',
     swap: '{a} and {b} swap seats.',
     swapSeparated: '{a} and {b} are split up. They’ll settle down faster now.',
@@ -410,13 +413,24 @@ export function lookup(key) {
   return node;
 }
 
+// Fills {placeholders} from `params`, and the keyboard's own key names ({helpKey},
+// {moveKeys}...; see keys.js) wherever they appear.
+export function fill(text, params) {
+  if (text.indexOf('{') < 0) return text;
+  let keys = null;
+  return text.replace(/\{(\w+)\}/g, (m, name) => {
+    if (params && name in params) return String(params[name]);
+    keys = keys || keyNames();
+    return name in keys ? keys[name] : m;
+  });
+}
+
 // t('attendance.carrying', {name:'Mike Oxlong'}) -> "Carrying Mike Oxlong’s card".
 // A missing key is returned as-is so a gap in a translation is visible, not silent.
 export function t(key, params) {
   const value = variant(key);
   if (typeof value !== 'string') return key;
-  if (!params) return value;
-  return value.replace(/\{(\w+)\}/g, (m, name) => (name in params ? String(params[name]) : m));
+  return fill(value, params);
 }
 
 export function plural(count, singularKey, pluralKey) {
@@ -432,13 +446,13 @@ export function listNames(names) {
 export function applyStaticStrings(root) {
   root.querySelectorAll('[data-i18n]').forEach((el) => {
     const value = variant(el.getAttribute('data-i18n'));
-    if (typeof value === 'string') el.textContent = value;
+    if (typeof value === 'string') el.textContent = fill(value);
   });
   root.querySelectorAll('[data-i18n-attr]').forEach((el) => {
     for (const pair of el.getAttribute('data-i18n-attr').split(';')) {
       const [attr, key] = pair.split(':');
       const value = variant(key);
-      if (attr && typeof value === 'string') el.setAttribute(attr, value);
+      if (attr && typeof value === 'string') el.setAttribute(attr, fill(value));
     }
   });
 }
