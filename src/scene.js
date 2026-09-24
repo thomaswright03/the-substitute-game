@@ -1,5 +1,6 @@
 // The classroom itself: walls, floor, windows, chalkboard, desks and the attendance cards.
 // Uses the global THREE loaded by the classic <script> tags in index.html.
+import { t } from './strings.js';
 
 export const ROOM = {
   halfWidth: 4.6,
@@ -135,10 +136,10 @@ function buildChalkboard(scene) {
     // the name cards cover the middle of the board, so the heading sits above them
     ctx.fillStyle = '#f6f1e4';
     ctx.font = '600 64px Fredoka, sans-serif';
-    ctx.fillText('Room 204', w / 2, h * 0.14);
+    ctx.fillText(t('board.room'), w / 2, h * 0.14);
     ctx.font = '600 34px Fredoka, sans-serif';
     ctx.fillStyle = '#f2b93b';
-    ctx.fillText('3rd Period · Be Kind, Rewind', w / 2, h * 0.94);
+    ctx.fillText(t('board.motto'), w / 2, h * 0.94);
     ctx.strokeStyle = 'rgba(246,241,228,0.5)';
     ctx.lineWidth = 3;
     ctx.beginPath();

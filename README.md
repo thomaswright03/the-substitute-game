@@ -104,7 +104,8 @@ unpaused play on any machine. The game pauses itself when the tab is hidden.
 
 **Text and translation.** Static page text is tagged with `data-i18n` and filled from
 `src/strings.js`, and all text built during play goes through the same table. To translate,
-provide a table with the same keys and pass it to `setStrings()`.
+provide a table with the same keys and pass it to `setStrings()` before the
+classroom is built (the chalkboard and name cards are drawn once, at start-up).
 
 **Test hooks.** Adding `?test` to the URL exposes `window.__substitute` for the browser
 tests. Nothing is exposed without it.

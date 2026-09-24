@@ -31,6 +31,11 @@ const EN = {
     loadFailBody: 'Some of the game’s files didn’t arrive. Check your connection and try again.',
     retry: 'Try again',
   },
+  // written on the chalkboard at the front of the room
+  board: {
+    room: 'Room 204',
+    motto: '3rd Period · Be Kind, Rewind',
+  },
   hud: {
     clock: 'Bell Schedule',
     title: 'The Substitute',
