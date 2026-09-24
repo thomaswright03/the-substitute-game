@@ -47,18 +47,27 @@ export function updateAim() {
   S.aim.cardId = S.running ? nearestCard() : null;
 }
 
+// What E / F would act on right now, or null. The same object is reused on every call (this
+// runs every frame), so read it straight away.
+const context = { kind: '', id: '' };
+function ctx(kind, id) {
+  context.kind = kind;
+  context.id = id;
+  return context;
+}
+
 export function currentContext() {
   const game = S.game;
   if (!game || !S.running || game.phase === 'over') return null;
   const id = S.aim.studentId;
-  if (S.seatChartOpen && id) return { kind: 'swap', id };
-  if (S.aim.cardId) return { kind: 'pickup', id: S.aim.cardId };
+  if (S.seatChartOpen && id) return ctx('swap', id);
+  if (S.aim.cardId) return ctx('pickup', S.aim.cardId);
   if (!id) return null;
   const st = game.students[id];
-  if (st.active && R.canMisbehave(game, id)) return { kind: 'help', id };
-  if (game.phase === 'attendance' && game.attendance.holding) return { kind: 'give', id };
-  if (R.disciplineEligibility(game, id).ok) return { kind: 'caught', id };
-  return { kind: st.detained ? 'detained' : 'calm', id };
+  if (st.active && R.canMisbehave(game, id)) return ctx('help', id);
+  if (game.phase === 'attendance' && game.attendance.holding) return ctx('give', id);
+  if (R.disciplineEligibility(game, id).ok) return ctx('caught', id);
+  return ctx(st.detained ? 'detained' : 'calm', id);
 }
 
 export function primaryAction() {

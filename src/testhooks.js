@@ -1,11 +1,11 @@
 // Only with ?test in the URL: a small API the browser tests use to set up situations directly.
 import * as THREE from 'three';
-import { STUDENTS, TUNING } from './data.js';
+import { STUDENTS, TEACHER, TUNING } from './data.js';
 import * as R from './rules.js';
 import { applyStaticStrings, setStrings } from './strings.js';
 import { S } from './session.js';
 import { camera, ensurePrincipal, scene, world } from './world.js';
-import { EYE_HEIGHT, player } from './player.js';
+import { EYE_HEIGHT, keys, player } from './player.js';
 import { headForward } from './characters.js';
 import { faceColours, faceOffsetFromHead } from './face.js';
 import { currentContext } from './aim.js';
@@ -27,12 +27,14 @@ export function exposeTestHooks() {
     THREE,
     rules: R,
     tuning: TUNING,
+    teacher: TEACHER,
     get game() { return S.game; },
     get running() { return S.running; },
     get paused() { return S.paused; },
     get seatChartOpen() { return S.seatChartOpen; },
     get disciplineTarget() { return S.disciplineTarget; },
     player,
+    keys,
     world,
     camera,
     get scene() { return scene; },

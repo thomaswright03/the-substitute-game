@@ -41,6 +41,40 @@ test('roll call: the answer is readable without turning around', async ({ page }
   await expect(answer).toBeVisible();
   await expect(answer).toContainText('Moe Lester answered from behind you');
   await expect(page.locator('#dirArrow')).toBeVisible();
+
+  // the arrow counts only time in play: pausing doesn't use it up
+  await page.keyboard.press('Escape');
+  const until = await hooks(page, (s) => s.game.elapsed);
+  await page.waitForTimeout(1500);
+  expect(await hooks(page, (s) => s.game.elapsed)).toBe(until);
+  await page.locator('#resumeBtn').click();
+  await expect(page.locator('#dirArrow')).toBeVisible();
+
+  // and it goes the moment the card is handed over
+  await faceStudent(page, 'moeLester');
+  await expect(page.locator('#speechBubble')).toBeVisible();
+  await page.keyboard.press('e');
+  await expect(lastLog(page)).toContainText('Marked present');
+  await expect(page.locator('#speechBubble')).toBeHidden();
+  await expect(page.locator('#dirArrow')).toBeHidden();
+  expect(await hooks(page, (s) => s.game.elapsed)).toBeLessThan(until + 9);
+});
+
+test('a lost round keeps its final HUD values; the stats sit three by two', async ({ page }) => {
+  await freezeRandomness(page);
+  await activate(page, 'steve', 99);
+  await expect(page.locator('#endOverlay')).toBeVisible();
+  await expect(page.locator('#chaosValue')).toHaveText('100%');
+  await expect(page.locator('#chaosBadge')).toHaveAttribute('aria-valuenow', '100');
+  for (const width of [1280, 375]) {
+    await page.setViewportSize({ width, height: 800 });
+    const boxes = await page.locator('#endOverlay .stats > div').evaluateAll((nodes) => nodes.map((n) => {
+      const r = n.getBoundingClientRect();
+      return [Math.round(r.left), Math.round(r.top)];
+    }));
+    expect(new Set(boxes.map(([, y]) => y)).size, `rows at ${width}px`).toBe(2);
+    expect(new Set(boxes.map(([x]) => x)).size, `columns at ${width}px`).toBe(3);
+  }
 });
 
 test('a student reaching 100% ends the round with the right copy', async ({ page }) => {
@@ -171,9 +205,9 @@ test('Esc pauses the class and freezes the clock; Resume carries on', async ({ p
 test('arrow keys turn the view, so the game needs no mouse', async ({ page }) => {
   const yaw0 = await hooks(page, (s) => s.player.yaw);
   await page.keyboard.down('ArrowLeft');
-  await page.waitForTimeout(800);
+  // on a loaded machine frames can be far apart: hold the key until the view has turned
+  await page.waitForFunction((y0) => window.__substitute.player.yaw > y0 + 0.2, yaw0, { timeout: 30_000 });
   await page.keyboard.up('ArrowLeft');
-  expect(await hooks(page, (s) => s.player.yaw)).toBeGreaterThan(yaw0 + 0.2);
 });
 
 test('a won round reports removals, detentions and every intervention', async ({ page }) => {

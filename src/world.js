@@ -71,7 +71,11 @@ export function createRenderer() {
   }
 }
 
+let stageW = 1, stageH = 1; // the stage's size in CSS pixels, kept by resizeRenderer
+
 export function resizeRenderer(w, h) {
+  stageW = w;
+  stageH = h;
   if (!renderer) return;
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
@@ -188,14 +192,23 @@ export function animateSeatSwap(ids) {
   }
 }
 
+const poseState = { kind: 'calm', type: null, argueReady: false };
+function pose(kind, type = null, argueReady = false) {
+  poseState.kind = kind;
+  poseState.type = type;
+  poseState.argueReady = argueReady;
+  return poseState;
+}
+
+// The pose for one student this frame (one shared object, used at once by poseCharacter).
 function poseStateFor(s, st, now) {
   const game = S.game;
   const f = flashPoses[s.id];
-  if (f && now < f.until) return { kind: f.kind };
-  if (game.throw && game.throw.id === s.id && game.throw.phase === 'windup') return { kind: 'throwing' };
-  if (st.detained) return { kind: 'detained' };
-  if (st.active) return { kind: 'active', type: s.type, argueReady: s.type === 'argue' && R.argueReady(game, s.id) };
-  return { kind: 'calm' };
+  if (f && now < f.until) return pose(f.kind);
+  if (game.throw && game.throw.id === s.id && game.throw.phase === 'windup') return pose('throwing');
+  if (st.detained) return pose('detained');
+  if (st.active) return pose('active', s.type, s.type === 'argue' && R.argueReady(game, s.id));
+  return pose('calm');
 }
 
 export function updateStudents(now) {
@@ -225,12 +238,11 @@ export function updateStudents(now) {
     }
     g.updateMatrixWorld(true);
     const head = g.userData.parts.head;
-    g.userData.headWorld = head ? head.getWorldPosition(g.userData.headWorld || new THREE.Vector3()) : null;
+    if (!g.userData.headVec) g.userData.headVec = new THREE.Vector3();
+    g.userData.headWorld = head ? head.getWorldPosition(g.userData.headVec) : null;
   }
 }
 
-const tmpV = new THREE.Vector3();
-// Screen position of a world point, in stage pixels.
 // Where a sound from `worldPos` sits in the stereo field for the camera: -1 left to 1 right.
 const _fwd = new THREE.Vector3();
 export function stereoPan(worldPos) {
@@ -241,11 +253,14 @@ export function stereoPan(worldPos) {
   return (dx * -_fwd.z + dz * _fwd.x) / len / (Math.hypot(_fwd.x, _fwd.z) || 1);
 }
 
+// Screen position of a world point, in stage pixels. Returns one shared object, overwritten by
+// the next call, since it runs for every student every frame.
+const tmpV = new THREE.Vector3();
+const projected = { x: 0, y: 0, onScreen: false };
 export function project(worldPos) {
   const p = tmpV.copy(worldPos).project(camera);
-  return {
-    x: (p.x * 0.5 + 0.5) * el.stage.clientWidth,
-    y: (-p.y * 0.5 + 0.5) * el.stage.clientHeight,
-    onScreen: p.z < 1 && p.z > -1 && Math.abs(p.x) < 1.05 && Math.abs(p.y) < 1.05,
-  };
+  projected.x = (p.x * 0.5 + 0.5) * stageW;
+  projected.y = (-p.y * 0.5 + 0.5) * stageH;
+  projected.onScreen = p.z < 1 && p.z > -1 && Math.abs(p.x) < 1.05 && Math.abs(p.y) < 1.05;
+  return projected;
 }

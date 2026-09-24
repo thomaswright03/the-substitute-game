@@ -13,7 +13,6 @@ const EDGE_ASSIST_START = 0.82;
 const EDGE_ASSIST_RATE_YAW = 1.1;
 const EDGE_ASSIST_RATE_PITCH = 0.85;
 const MOVE_STEP = 1 / 30; // movement is integrated in steps no longer than this
-const MAX_MOVE_DT = 0.25;
 
 const START = { x: 0, z: TEACHER.startZ, yaw: 0, pitch: -0.05 };
 export const player = { ...START };
@@ -83,8 +82,10 @@ function movePlayer(dt) {
 }
 
 // Advances walking and turning by `dt` seconds, in short steps so it is stable at any frame rate.
+// The frame loop passes the same elapsed time it gives the rules, so on a slow machine the
+// teacher covers as much ground per second of the period as on a fast one.
 export function stepPlayer(dt) {
-  let left = Math.min(dt, MAX_MOVE_DT);
+  let left = dt;
   while (left > 1e-6) {
     const step = Math.min(MOVE_STEP, left);
     movePlayer(step);

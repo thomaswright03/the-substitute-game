@@ -65,7 +65,7 @@ function frame(now) {
     updateTags();
     updatePromptAndActions();
     updateAttendancePanel();
-    updateSpeech(nowS);
+    updateSpeech();
     updateCountdown();
   }
   updateHud();

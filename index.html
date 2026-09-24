@@ -74,13 +74,13 @@
     <div class="studentLayer" id="studentLayer" aria-hidden="true"></div>
 
     <div class="topStack">
-      <section class="attendancePanel" id="attendancePanel" aria-live="polite" hidden>
+      <section class="attendancePanel" id="attendancePanel" hidden>
         <div class="attKicker" data-i18n="attendance.kicker">Taking Attendance</div>
         <div class="attQuestion" id="attQuestion"></div>
         <div class="attHint" id="attHint"></div>
         <div class="attAnswer" id="attAnswer" hidden></div>
       </section>
-      <div class="banner" id="reassignBanner" role="status" hidden></div>
+      <div class="banner" id="reassignBanner" hidden></div>
       <section class="seatChart" id="seatChart" role="dialog" aria-modal="false" aria-labelledby="seatChartTitle" hidden>
         <h2 id="seatChartTitle" data-i18n="seating.title">Seating chart</h2>
         <p id="seatChartHint" data-i18n="seating.hint">Pick two students to swap their seats. Friends (same colour) sitting side by side egg each other on.</p>
@@ -92,8 +92,8 @@
     </div>
 
     <div class="crosshair" id="crosshair" aria-hidden="true"></div>
-    <div class="prompt" id="prompt" aria-live="polite"></div>
-    <div class="threatCue" id="threatCue" role="alert" hidden data-i18n="prompt.throwCue">Something’s coming. Turn around!</div>
+    <div class="prompt" id="prompt"></div>
+    <div class="threatCue" id="threatCue" hidden data-i18n="prompt.throwCue">Something’s coming. Turn around!</div>
     <div class="speechBubble" id="speechBubble" hidden><div class="bubbleText" id="bubbleText"></div></div>
     <div class="dirArrow" id="dirArrow" aria-hidden="true" hidden><span id="dirArrowGlyph">➜</span></div>
 

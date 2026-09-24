@@ -74,6 +74,44 @@ test('the period clock runs on real time, even at a low frame rate', async ({ pa
   expect(Math.abs((b.game - a.game) / seconds - 1), `fps ${fps.toFixed(1)}, ${seconds.toFixed(2)} s`).toBeLessThan(0.05);
 });
 
+test('walking covers the same ground per second of the period at a low frame rate', async ({ page }) => {
+  test.setTimeout(240_000);
+  await page.setViewportSize({ width: 480, height: 320 });
+  await openGame(page);
+  await startRound(page);
+  await freezeRandomness(page);
+  // across the open back of the room, facing +x, with nothing in the way for 7 m
+  await hooks(page, (s) => Object.assign(s.player, { x: -3.5, z: 3, yaw: -Math.PI / 2, pitch: 0 }));
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+  // press and release W between frames, and read the clock and the position at the same moments
+  const run = await page.evaluate(() => new Promise((resolve) => {
+    const s = window.__substitute;
+    const frames = [];
+    let start = null;
+    const onFrame = (ts) => {
+      frames.push(ts);
+      if (!start) {
+        start = { t: s.game.elapsed, x: s.player.x, ts };
+        s.keys.w = true;
+      } else if (ts - start.ts >= 2000) {
+        s.keys.w = false;
+        resolve({ seconds: s.game.elapsed - start.t, metres: s.player.x - start.x, frames: frames.length - 1, wall: (ts - start.ts) / 1000 });
+        return;
+      }
+      requestAnimationFrame(onFrame);
+    };
+    requestAnimationFrame(onFrame);
+  }));
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
+  const speed = await hooks(page, (s) => s.teacher.speed);
+  const fps = run.frames / run.wall;
+  expect(fps, 'the scenario should be a slow machine').toBeLessThan(15);
+  expect(run.seconds).toBeGreaterThan(1.9);
+  const expected = speed * run.seconds;
+  expect(Math.abs(run.metres - expected) / expected, `${run.metres.toFixed(2)} m in ${run.seconds.toFixed(2)} s at ${fps.toFixed(1)} fps`).toBeLessThan(0.1);
+});
+
 test('keyboard only: seating chart, pause and discipline can all be driven from the keyboard', async ({ page }) => {
   await openGame(page);
   await page.keyboard.press('Enter');

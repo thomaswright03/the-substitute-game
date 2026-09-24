@@ -10,7 +10,7 @@ import { player } from './player.js';
 import { drainEvents } from './events.js';
 import { pushLog } from './hud.js';
 
-const ANSWER_SECONDS = 9;
+const ANSWER_SECONDS = 9; // of play: a pause doesn't use them up
 let lastRollLine = null;
 
 // Angle to a world point from where the teacher faces: 0 ahead, +PI/2 right, +-PI behind.
@@ -44,7 +44,7 @@ export function showRollCallAnswer(id) {
   lastRollLine = line;
   const g = world.students[id];
   const where = directionWords(relativeDirection(g.userData.headWorld || g.position));
-  S.speech = { id, until: performance.now() / 1000 + ANSWER_SECONDS, answer: t('attendance.answered', { name: name(id), where, line }) };
+  S.speech = { id, until: S.game.elapsed + ANSWER_SECONDS, answer: t('attendance.answered', { name: name(id), where, line }) };
   pushLog(S.speech.answer);
   el.bubbleText.textContent = line;
 }
@@ -55,10 +55,13 @@ export function clearSpeech() {
   el.dirArrow.hidden = true;
 }
 
+// The bubble (or the arrow toward the speaker) lasts ANSWER_SECONDS of play, and goes as soon
+// as the teacher no longer holds that student's card: delivered, or marked by the office.
 const bubbleAnchor = new THREE.Vector3();
-export function updateSpeech(now) {
+export function updateSpeech() {
   const speech = S.speech;
-  if (!speech || now > speech.until || !S.running) {
+  if (!speech) return;
+  if (!S.running || S.game.elapsed > speech.until || S.game.attendance.holding !== speech.id) {
     clearSpeech();
     return;
   }
@@ -73,14 +76,24 @@ export function updateSpeech(now) {
   } else if (pos.onScreen) {
     el.dirArrow.hidden = true;
     el.speechBubble.hidden = false;
+    // the bubble's size only changes with its text: measure it once, the first frame it shows
+    if (!speech.bw) {
+      speech.bw = el.speechBubble.offsetWidth;
+      speech.bh = el.speechBubble.offsetHeight;
+    }
     // keep the whole bubble on screen and below the HUD; the tail still points at the speaker
-    const bw = el.speechBubble.offsetWidth, bh = el.speechBubble.offsetHeight;
-    const x = Math.max(safe.left + bw / 2, Math.min(safe.right - bw / 2, pos.x));
-    const y = Math.max(safe.top + bh, pos.y);
-    el.speechBubble.style.left = x + 'px';
-    el.speechBubble.style.top = y + 'px';
-    const tail = Math.max(-(bw / 2 - 16), Math.min(bw / 2 - 16, pos.x - x));
-    el.speechBubble.style.setProperty('--tail', tail + 'px');
+    const bw = speech.bw, bh = speech.bh;
+    const x = Math.round(Math.max(safe.left + bw / 2, Math.min(safe.right - bw / 2, pos.x)));
+    const y = Math.round(Math.max(safe.top + bh, pos.y));
+    const tail = Math.round(Math.max(-(bw / 2 - 16), Math.min(bw / 2 - 16, pos.x - x)));
+    if (x !== speech.x || y !== speech.y || tail !== speech.tail) {
+      speech.x = x;
+      speech.y = y;
+      speech.tail = tail;
+      el.speechBubble.style.left = x + 'px';
+      el.speechBubble.style.top = y + 'px';
+      el.speechBubble.style.setProperty('--tail', tail + 'px');
+    }
   } else {
     el.speechBubble.hidden = true;
     // an arrow at the edge of the free play area, pointing toward the student
@@ -98,8 +111,24 @@ export function updateSpeech(now) {
 }
 
 // The part of the stage not covered by HUD panels (top band, attendance panel, seating chart,
-// log and buttons), in stage pixels. Floating hints are kept inside it.
+// log and buttons), in stage pixels. Floating hints are kept inside it. It is measured again
+// only when the stage or one of those panels changes size (including appearing or hiding).
+const free = { left: 0, right: 0, top: 0, bottom: 0 };
+let freeStale = true;
+let freeObserver = null;
 function freeArea() {
+  if (!freeObserver) {
+    freeObserver = new ResizeObserver(() => { freeStale = true; });
+    for (const node of [el.stage, el.hud, el.attPanel, el.banner, el.seatChart, el.log, el.actions]) freeObserver.observe(node);
+  }
+  if (freeStale) {
+    measureFreeArea();
+    freeStale = false;
+  }
+  return free;
+}
+
+function measureFreeArea() {
   const stage = el.stage.getBoundingClientRect();
   const margin = 8;
   let top = 0, bottom = stage.height;
@@ -114,5 +143,8 @@ function freeArea() {
     if (r.height) bottom = Math.min(bottom, r.top - stage.top);
   }
   if (bottom - top < 80) bottom = Math.min(stage.height, top + 80);
-  return { left: margin, right: stage.width - margin, top: top + margin, bottom: bottom - margin };
+  free.left = margin;
+  free.right = stage.width - margin;
+  free.top = top + margin;
+  free.bottom = bottom - margin;
 }

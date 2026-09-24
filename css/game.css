@@ -448,6 +448,8 @@ body.touch .log div:nth-last-child(n+3) { display: none; }
 .controls dd { margin: 0; }
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; margin: 10px 0 16px; font-family: var(--font-mono); }
 .stats div { font-size: var(--fs-1); text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted-ink); background: var(--paper-deep); border-radius: 8px; padding: 6px 4px; }
+/* the end screen's six numbers: always three across, two down */
+#endOverlay .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .stats strong { display: block; font-size: var(--fs-4); color: var(--ink); font-weight: 700; }
 .reportCard { display: flex; gap: 14px; align-items: center; text-align: left; background: var(--paper-deep); border-radius: 12px; padding: 10px 14px; margin: 8px 0 4px; }
 .reportCard .grade { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-6); line-height: 1; color: var(--notebook-blue); min-width: 44px; text-align: center; }

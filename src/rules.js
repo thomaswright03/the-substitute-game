@@ -58,7 +58,8 @@ export function createGame(options = {}) {
 /* ---------------- queries ---------------- */
 
 export function studentConfig(game, id) {
-  return game.roster.find((s) => s.id === id) || null;
+  for (const s of game.roster) if (s.id === id) return s;
+  return null;
 }
 
 // Present in the room and free to misbehave (not in detention, not marched out).
@@ -343,13 +344,22 @@ export function help(game, id) {
 /* ---------------- discipline (F) ---------------- */
 
 // Why the discipline menu can or can't open for this student.
+const ELIGIBILITY = {
+  ok: Object.freeze({ ok: true }),
+  over: Object.freeze({ ok: false, reason: 'over' }),
+  removed: Object.freeze({ ok: false, reason: 'removed' }),
+  detained: Object.freeze({ ok: false, reason: 'detained' }),
+  calm: Object.freeze({ ok: false, reason: 'calm' }),
+};
+
+// Whether `id` can be disciplined now. The UI asks every frame, so the answers are shared constants.
 export function disciplineEligibility(game, id) {
   const st = game.students[id];
-  if (game.phase === 'over' || !st) return { ok: false, reason: 'over' };
-  if (st.removed) return { ok: false, reason: 'removed' };
-  if (st.detained) return { ok: false, reason: 'detained' };
-  if (st.active || game.elapsed < st.caughtUntil) return { ok: true };
-  return { ok: false, reason: 'calm' };
+  if (game.phase === 'over' || !st) return ELIGIBILITY.over;
+  if (st.removed) return ELIGIBILITY.removed;
+  if (st.detained) return ELIGIBILITY.detained;
+  if (st.active || game.elapsed < st.caughtUntil) return ELIGIBILITY.ok;
+  return ELIGIBILITY.calm;
 }
 
 // The state of each option for the menu: whether it can be chosen and what's left of it.
