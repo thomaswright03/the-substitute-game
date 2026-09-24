@@ -1,2 +1,4 @@
 .DS_Store
 *.log
+# Optional expressive head: not redistributed (licence unknown) - see THIRD_PARTY_NOTICES.md
+assets/face.glb
