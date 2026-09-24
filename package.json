@@ -11,7 +11,8 @@
     "test": "npm run lint && npm run test:unit && npm run test:e2e",
     "test:unit": "node --test \"test/unit/**/*.test.js\"",
     "test:e2e": "playwright test",
-    "lint": "eslint . && node scripts/check-cycles.mjs",
+    "lint": "eslint . && node scripts/check-cycles.mjs && npm run typecheck",
+    "typecheck": "tsc -p tsconfig.json",
     "optimize-assets": "node scripts/optimize-assets.mjs",
     "vendor-three": "node scripts/vendor-three.mjs"
   },
@@ -24,10 +25,12 @@
     "@gltf-transform/extensions": "4.3.0",
     "@gltf-transform/functions": "4.3.0",
     "@playwright/test": "1.56.1",
+    "@types/three": "0.186.0",
     "esbuild": "0.28.2",
     "eslint": "9.39.5",
     "globals": "17.12.0",
     "meshoptimizer": "0.25.0",
-    "three": "0.186.0"
+    "three": "0.186.0",
+    "typescript": "5.9.3"
   }
 }

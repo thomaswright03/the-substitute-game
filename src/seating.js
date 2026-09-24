@@ -21,7 +21,8 @@ STUDENTS.forEach((s) => {
 export function renderSeatChart() {
   const game = S.game;
   if (!game || !S.seatChartOpen) return;
-  const hadFocus = el.seatGrid.contains(document.activeElement) ? document.activeElement.dataset.seat : null;
+  const focused = /** @type {HTMLElement} */ (document.activeElement);
+  const hadFocus = el.seatGrid.contains(focused) ? focused.dataset.seat : null;
   el.seatGrid.textContent = '';
   for (let row = 0; row < 2; row++) {
     for (let col = 0; col < 4; col++) {
@@ -54,7 +55,7 @@ export function renderSeatChart() {
     }
   }
   if (hadFocus) {
-    const again = el.seatGrid.querySelector('[data-seat="' + hadFocus + '"]');
+    const again = /** @type {HTMLButtonElement | null} */ (el.seatGrid.querySelector('[data-seat="' + hadFocus + '"]'));
     if (again && !again.disabled) again.focus({ preventScroll: true });
   }
   el.banner.hidden = !S.seatFirst;
@@ -72,7 +73,7 @@ export function setSeatChart(open, focusFirst = false) {
     stopHoverLook();
     renderSeatChart();
     if (focusFirst) {
-      const first = el.seatGrid.querySelector('button:not([disabled])');
+      const first = /** @type {HTMLButtonElement | null} */ (el.seatGrid.querySelector('button:not([disabled])'));
       if (first) first.focus({ preventScroll: true });
     }
   } else {

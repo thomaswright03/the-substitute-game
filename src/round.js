@@ -276,7 +276,7 @@ export function setupRound() {
 
   el.fullscreenBtn.addEventListener('click', () => {
     if (!document.fullscreenElement) {
-      const c = el.cabinet;
+      const c = /** @type {any} */ (el.cabinet); // older Safari has only the prefixed call
       const req = c.requestFullscreen ? c.requestFullscreen() : c.webkitRequestFullscreen ? c.webkitRequestFullscreen() : null;
       if (req && req.catch) req.catch(() => { /* fullscreen unavailable: still playable windowed */ });
     } else if (document.exitFullscreen) {

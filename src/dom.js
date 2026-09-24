@@ -1,7 +1,26 @@
 // The page elements the game drives, and small DOM helpers.
 import { S } from './session.js';
 
+/** @param {string} id */
 export const $ = (id) => document.getElementById(id);
+
+/**
+ * Every form control on the page that matches `selector` (each setting has a copy on the start
+ * and the pause screen).
+ * @param {string} selector
+ * @returns {HTMLInputElement[]}
+ */
+export function allInputs(selector) {
+  return /** @type {HTMLInputElement[]} */ ([...document.querySelectorAll(selector)]);
+}
+
+/**
+ * @param {string} selector
+ * @returns {HTMLSelectElement[]}
+ */
+export function allSelects(selector) {
+  return /** @type {HTMLSelectElement[]} */ ([...document.querySelectorAll(selector)]);
+}
 
 export const el = {
   cabinet: $('cabinet'), stage: $('stage'), canvas: $('gl'), studentLayer: $('studentLayer'), hud: $('hud'),

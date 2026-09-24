@@ -64,7 +64,7 @@ export function audioStarted() {
 
 // Creates (or wakes) the audio graph. Only ever called from a user gesture.
 function unlock() {
-  const Ctor = window.AudioContext || window.webkitAudioContext;
+  const Ctor = window.AudioContext || /** @type {any} */ (window).webkitAudioContext; // older Safari
   if (!Ctor) return;
   if (!ctx) {
     ctx = new Ctor();
@@ -104,6 +104,11 @@ function output(pan) {
   return p;
 }
 
+/**
+ * @param {AudioNode} dest
+ * @param {number} at
+ * @param {{type?: OscillatorType, freq: number, to?: number, dur: number, peak?: number, attack?: number, hold?: number}} options
+ */
 function tone(dest, at, { type = 'sine', freq, to, dur, peak = 0.3, attack = 0.005, hold = 0 }) {
   const o = ctx.createOscillator();
   o.type = type;
@@ -116,6 +121,11 @@ function tone(dest, at, { type = 'sine', freq, to, dur, peak = 0.3, attack = 0.0
   return o;
 }
 
+/**
+ * @param {AudioNode} dest
+ * @param {number} at
+ * @param {{dur: number, peak?: number, filter?: BiquadFilterType, freq?: number, to?: number, q?: number, attack?: number, hold?: number}} options
+ */
 function noise(dest, at, { dur, peak = 0.3, filter = 'bandpass', freq = 1000, to, q = 1, attack = 0.003, hold = 0 }) {
   const src = ctx.createBufferSource();
   src.buffer = noiseBuffer;
@@ -187,6 +197,11 @@ const CUES = {
 
 // Plays a cue. pan runs from -1 (hard left) to 1 (hard right). Before the first gesture, or
 // when muted, this does nothing audible, but the cue is still recorded.
+/**
+ * Plays a cue: `pan` places it from -1 (left) to 1 (right); `long` is the end-of-period bell.
+ * @param {string} name
+ * @param {{pan?: number, long?: boolean}} [options]
+ */
 export function play(name, { pan = 0, ...opts } = {}) {
   playedCues.push(name);
   if (playedCues.length > 50) playedCues.shift();

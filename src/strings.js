@@ -419,6 +419,10 @@ function variant(key) {
   return lookup(key);
 }
 
+/**
+ * @param {string} key
+ * @returns {any} whatever the table holds there (text, a list, a group), or undefined
+ */
 export function lookup(key) {
   let node = table;
   for (const part of key.split('.')) {

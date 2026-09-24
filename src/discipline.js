@@ -19,7 +19,7 @@ export function openDiscipline(id) {
   const game = S.game;
   if (!S.running || S.principalSeq) return;
   const ok = R.disciplineEligibility(game, id);
-  if (!ok.ok) {
+  if (ok.ok === false) {
     if (ok.reason === 'calm') pushLog(t('log.notEligible', { name: name(id) }));
     else if (ok.reason === 'detained') pushLog(t('log.detainedAlready', { name: name(id) }));
     return;

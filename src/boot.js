@@ -91,7 +91,7 @@
   window.SubstituteBoot = boot;
 
   document.addEventListener('click', function (e) {
-    var target = e.target && e.target.closest ? e.target.closest('[data-action="reload"]') : null;
+    var target = e.target instanceof Element ? e.target.closest('[data-action="reload"]') : null;
     if (target) window.location.reload();
   });
 

@@ -348,6 +348,8 @@ export function help(game, id) {
 /* ---------------- discipline (F) ---------------- */
 
 // Why the discipline menu can or can't open for this student.
+/** @typedef {Readonly<{ok: true}> | Readonly<{ok: false, reason: 'over' | 'removed' | 'detained' | 'calm'}>} Eligibility */
+/** @type {Record<string, Eligibility>} */
 const ELIGIBILITY = {
   ok: Object.freeze({ ok: true }),
   over: Object.freeze({ ok: false, reason: 'over' }),
@@ -357,6 +359,7 @@ const ELIGIBILITY = {
 };
 
 // Whether `id` can be disciplined now. The UI asks every frame, so the answers are shared constants.
+/** @returns {Eligibility} */
 export function disciplineEligibility(game, id) {
   const st = game.students[id];
   if (game.phase === 'over' || !st) return ELIGIBILITY.over;

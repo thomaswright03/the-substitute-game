@@ -157,7 +157,7 @@ export function buildCharacter(gltf, opts) {
   g.scale.setScalar(CHAR.scale);
   g.rotation.y = CHAR.forwardYaw;
   g.traverse((o) => {
-    if (o.isMesh) {
+    if (/** @type {THREE.Mesh} */ (o).isMesh) {
       o.castShadow = true;
       o.receiveShadow = true;
       // posed skinned meshes move outside their bind-pose bounds
@@ -167,7 +167,7 @@ export function buildCharacter(gltf, opts) {
 
   const bones = {};
   g.traverse((o) => {
-    if (o.isBone) bones[o.name] = o;
+    if (/** @type {THREE.Bone} */ (o).isBone) bones[o.name] = o;
   });
 
   const mixer = new THREE.AnimationMixer(g);

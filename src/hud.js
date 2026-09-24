@@ -182,12 +182,14 @@ export function updatePromptAndActions() {
 }
 
 export function setupActionButtons() {
-  for (const [btn, fn] of [
+  /** @type {[HTMLElement, () => void][]} */
+  const buttons = [
     [el.actPrimary, primaryAction],
     [el.actDiscipline, disciplineAction],
     [el.actRollCall, askRollCall],
     [el.actSeats, () => toggleSeatChart(false)],
-  ]) {
+  ];
+  for (const [btn, fn] of buttons) {
     btn.addEventListener('click', fn);
     btn.addEventListener('pointerdown', (e) => e.stopPropagation());
   }

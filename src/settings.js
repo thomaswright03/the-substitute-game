@@ -1,7 +1,7 @@
 // The player's settings on the start and pause screens, and the mute button in the HUD. Every
 // copy of a control shows the same value.
 import { audioPrefs, onAudioPrefsChange, setMuted, setVolume } from './audio.js';
-import { $ } from './dom.js';
+import { $, allInputs, allSelects } from './dom.js';
 import { LANGUAGES, currentLanguage, onLanguageChange, setLanguage, t } from './strings.js';
 import { DEFAULT_DIFFICULTY, DIFFICULTY } from './data.js';
 import { QUALITY_SETTINGS, onQualityChange, qualityLevel, qualitySetting, setQualitySetting } from './quality.js';
@@ -36,8 +36,8 @@ function setDifficulty(value) {
 }
 
 function renderSound(prefs) {
-  document.querySelectorAll('[data-sound]').forEach((box) => { box.checked = !prefs.muted; });
-  document.querySelectorAll('[data-volume]').forEach((range) => {
+  allInputs('[data-sound]').forEach((box) => { box.checked = !prefs.muted; });
+  allInputs('[data-volume]').forEach((range) => {
     range.value = String(Math.round(prefs.volume * 100));
     range.disabled = prefs.muted;
   });
@@ -69,12 +69,12 @@ function chooseLanguage(code) {
 }
 
 function renderLanguage(code) {
-  document.querySelectorAll('[data-language]').forEach((select) => { select.value = code; });
+  allSelects('[data-language]').forEach((select) => { select.value = code; });
 }
 
 // Called before anything draws text, so the page starts in the player's language.
 export function setupLanguage() {
-  document.querySelectorAll('[data-language]').forEach((select) => {
+  allSelects('[data-language]').forEach((select) => {
     for (const [code, { name }] of Object.entries(LANGUAGES)) {
       const option = document.createElement('option');
       option.value = code;
@@ -92,7 +92,7 @@ export function setupLanguage() {
 // The graphics choice on the start and pause screens. Automatic also says where it has got to.
 function renderQuality() {
   const level = QUALITY_LEVELS[qualityLevel()].name;
-  document.querySelectorAll('[data-quality]').forEach((select) => {
+  allSelects('[data-quality]').forEach((select) => {
     if (select.options.length !== QUALITY_SETTINGS.length) {
       select.textContent = '';
       for (const value of QUALITY_SETTINGS) {
@@ -110,15 +110,15 @@ function renderQuality() {
 }
 
 export function setupSettings() {
-  document.querySelectorAll('[data-sound]').forEach((box) => {
+  allInputs('[data-sound]').forEach((box) => {
     box.addEventListener('change', () => setMuted(!box.checked));
   });
-  document.querySelectorAll('[data-volume]').forEach((range) => {
+  allInputs('[data-volume]').forEach((range) => {
     range.addEventListener('input', () => setVolume(Number(range.value) / 100));
   });
   $('muteBtn').addEventListener('click', () => setMuted(!audioPrefs().muted));
   current = difficulty();
-  document.querySelectorAll('input[name="difficulty"]').forEach((radio) => {
+  allInputs('input[name="difficulty"]').forEach((radio) => {
     radio.checked = radio.value === current;
     radio.addEventListener('change', () => { if (radio.checked) setDifficulty(radio.value); });
   });
@@ -128,7 +128,7 @@ export function setupSettings() {
 
 // After the renderer exists: applies the saved graphics choice and wires up its controls.
 export function setupGraphicsSettings() {
-  document.querySelectorAll('[data-quality]').forEach((select) => {
+  allSelects('[data-quality]').forEach((select) => {
     select.addEventListener('change', () => setQualitySetting(select.value));
   });
   onQualityChange(renderQuality);

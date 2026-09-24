@@ -121,9 +121,10 @@ last good run and choose *Re-run all jobs*, which rebuilds and redeploys that ru
 ## Development
 
 ```bash
-npm install        # dev tools only: ESLint, Playwright, glTF tools
+npm install        # dev tools only: ESLint, TypeScript (type checking only), Playwright, glTF tools
 npm test           # lint + unit tests + browser tests
-npm run lint
+npm run lint       # ESLint, the import-cycle check and the type check
+npm run typecheck  # tsc on src/ (JSDoc types and @types/three; nothing is compiled)
 npm run test:unit  # rules tests (node:test), a few seconds
 npm run test:e2e   # Playwright tests in headless Chromium with software WebGL
 ```
@@ -131,6 +132,11 @@ npm run test:e2e   # Playwright tests in headless Chromium with software WebGL
 The browser tests need Chromium for Playwright. On a fresh machine, install it once with
 `npx playwright install chromium`. CI (`.github/workflows/ci.yml`) runs the whole suite on
 every push and pull request.
+
+The type check (`tsconfig.json`) reads the JavaScript as it is, with `checkJs`: types come from
+three.js's type definitions, from what TypeScript infers and from the JSDoc on the functions
+that need it. It runs several of strict mode's checks, but not yet `strictNullChecks` or
+`noImplicitAny`.
 
 ### Project layout
 
@@ -155,6 +161,7 @@ every push and pull request.
 | `src/scene.js`, `src/characters.js` | The classroom, and the character models: seating, arm poses and body language |
 | `src/face.js`, `src/props.js` | The expressive face (blend shapes on each costume's own head, and its mouth); the props for each behaviour |
 | `test/unit`, `test/e2e` | Rules tests and browser tests |
+| `tsconfig.json`, `types/` | The type check's settings, and the globals shared with `src/boot.js` |
 | `lib/three/` | The vendored three.js modules |
 | `docs/playtests.md` | How to run a playtest, and the notes from each one |
 | `scripts/` | Static server, site build and service worker, three.js vendoring, and the asset optimizer |
