@@ -139,7 +139,8 @@ every push and pull request.
 | `src/seating.js`, `src/discipline.js`, `src/principal.js`, `src/effects.js` | Seating chart, discipline menu, the principal's visit, hit / zap / throw effects |
 | `src/events.js`, `src/round.js`, `src/session.js` | Rule events to log lines and effects; starting, pausing and ending a round; shared UI state |
 | `src/testhooks.js` | The `?test` API for the browser tests |
-| `src/scene.js`, `src/characters.js` | The classroom, and the character models with their grafted faces |
+| `src/scene.js`, `src/characters.js` | The classroom, and the character models: seating, arm poses and body language |
+| `src/face.js`, `src/props.js` | The grafted expressive face and its painted features; the props for each behaviour |
 | `test/unit`, `test/e2e` | Rules tests and browser tests |
 | `scripts/` | Static server and the asset optimizer |
 
@@ -175,7 +176,10 @@ Characters combine two things at runtime:
 - A shared expressive head with 52 ARKit blend shapes (smiles, frowns, raised brows, closed
   eyes), attached to each body's Head bone in place of the original head skin. It is sized
   and positioned from that character's own posed head, so every costume gets a fitted face
-  whose expression follows the student's behaviour.
+  whose expression follows the student's behaviour. Brows (in the costume's brow or hair
+  colour), lips and eyes (white, a per-student iris and a pupil) are painted onto it as flat-shaded
+  vertex colours, laid out from the face's own eyeballs and teeth, so they move with the blend
+  shapes.
 
 The character files were re-packed for the web with `npm run optimize-assets`: unused
 animation clips were removed and the geometry meshopt-compressed (about 520 KB per

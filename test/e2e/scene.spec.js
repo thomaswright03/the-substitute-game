@@ -12,6 +12,28 @@ test('every expressive face sits on its head (students and principal)', async ({
   }
 });
 
+test('every face has painted brows, lips, eyes and teeth', async ({ page }) => {
+  await openGame(page);
+  await hooks(page, (s) => s.ensurePrincipal());
+  const ids = await hooks(page, (s) => [...Object.keys(s.world.students), 'principal']);
+  const lum = ([r, g, b]) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  for (const id of ids) {
+    const c = await hooks(page, (s, id) => s.faceColours(id), id);
+    // skin is the most common colour; brows are far darker than it; lips are redder
+    expect(c.head.length, id).toBeGreaterThan(10);
+    const darkest = c.head[0], lightest = c.head[c.head.length - 1];
+    expect(lum(darkest), id).toBeLessThan(lum(lightest) * 0.5);
+    expect(c.head.some(([r, g]) => r > g * 1.6), id).toBe(true);
+    // two eyeballs, each with a pupil, an iris and a white
+    expect(c.eyes, id).toHaveLength(2);
+    for (const eye of c.eyes) {
+      expect(eye, id).toHaveLength(3);
+      expect(lum(eye[2]), id).toBeGreaterThan(lum(eye[0]) * 5);
+    }
+    expect(lum(c.teeth), id).toBeGreaterThan(lum(lightest));
+  }
+});
+
 test('faces stay on the head while it nods, shakes and the chair spins', async ({ page }) => {
   await openGame(page);
   await startRound(page);

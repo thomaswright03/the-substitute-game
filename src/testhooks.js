@@ -6,7 +6,8 @@ import { applyStaticStrings, setStrings } from './strings.js';
 import { S } from './session.js';
 import { camera, ensurePrincipal, scene, world } from './world.js';
 import { EYE_HEIGHT, player } from './player.js';
-import { faceOffsetFromHead, headForward } from './characters.js';
+import { headForward } from './characters.js';
+import { faceColours, faceOffsetFromHead } from './face.js';
 import { currentContext } from './aim.js';
 import { drainEvents } from './events.js';
 import { renderControlsLists } from './input.js';
@@ -55,6 +56,7 @@ export function exposeTestHooks() {
       if (world.principal) out.principal = faceOffsetFromHead(world.principal);
       return out;
     },
+    faceColours: (id) => faceColours(world.students[id] || world.principal),
     headForward: (id) => headForward(world.students[id]).toArray(),
     ensurePrincipal,
     // pass null to hand the camera back to the player

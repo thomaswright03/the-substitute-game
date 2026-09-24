@@ -1,19 +1,18 @@
-// Character models: loading, the grafted expressive face, and the per-frame body language.
+// Character models: loading, building a seated or standing character, and the per-frame body
+// language. The grafted face is in face.js and the behaviour props in props.js.
 //
 // Bodies are Quaternius "Ultimate Modular Men/Women" rigs. They have no sit clip, so each one is
 // frozen on the first frame of "Idle_Neutral" and the legs are bent into a seated pose by hand.
 // Gameplay "tells" (nodding off, leaning back, raising a hand...) are applied each frame as
 // OFFSETS from that frozen rest pose.
-//
-// The bodies have no facial blend shapes, so a separate expressive head (52 ARKit morph targets,
-// assets/face.glb) is attached to each character's Head bone in place of the original head skin.
 
 import * as THREE from 'three';
 import './three-setup.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
-import { CHAIR, DESK, canvasTexture } from './scene.js';
+import { PROP_BUILDERS, TELL_POSES } from './props.js';
+import { applyExpression, attachExpressiveFace } from './face.js';
 
 export const CHAR = {
   scale: 0.95,
@@ -28,12 +27,6 @@ export const CHAR = {
   hipAboveSeat: 0.09,
   hipBehindSeatCentre: 0.03,
 };
-
-// Offsets for the grafted face, in METRES in world space. The Head bone carries a large baked-in
-// scale (about 95x in world space), so these must never be added in the bone's local units.
-const FACE_FORWARD_M = 0.012; // pokes the face just clear of hair that droops over the forehead
-const FACE_UP_M = 0.0;
-const FACE_HIDE_MATERIALS = ['Skin', 'Skin_Darker', 'Eyebrows', 'Eye'];
 
 const loader = new GLTFLoader();
 loader.setMeshoptDecoder(MeshoptDecoder);
@@ -85,218 +78,6 @@ export function loadAll(urls, onFraction, estimateBytes = 520000) {
     return gltf;
   })));
 }
-
-/* ---------------- the expressive face ---------------- */
-
-const _v = new THREE.Vector3();
-const _p = new THREE.Vector3();
-const _m = new THREE.Matrix4();
-const _idx = new THREE.Vector4();
-const _w = new THREE.Vector4();
-
-// World-space bounds of a skinned mesh AS POSED, computed from its skinned vertex positions
-// (Box3.setFromObject only sees the bind-pose geometry of a skinned mesh).
-function skinnedWorldBox(mesh) {
-  const box = new THREE.Box3();
-  const geo = mesh.geometry;
-  const pos = geo.attributes.position;
-  const si = geo.attributes.skinIndex, sw = geo.attributes.skinWeight;
-  if (!mesh.isSkinnedMesh || !si || !sw) return box.setFromObject(mesh);
-  const bones = mesh.skeleton.bones, inverses = mesh.skeleton.boneInverses;
-  for (let i = 0; i < pos.count; i++) {
-    _p.fromBufferAttribute(pos, i).applyMatrix4(mesh.bindMatrix);
-    _idx.fromBufferAttribute(si, i);
-    _w.fromBufferAttribute(sw, i);
-    // weights may be stored quantized; normalise them so they always sum to one
-    const sum = _w.x + _w.y + _w.z + _w.w || 1;
-    const out = new THREE.Vector3();
-    for (let k = 0; k < 4; k++) {
-      const weight = _w.getComponent(k) / sum;
-      if (!weight) continue;
-      const b = _idx.getComponent(k);
-      _m.multiplyMatrices(bones[b].matrixWorld, inverses[b]);
-      out.addScaledVector(_v.copy(_p).applyMatrix4(_m), weight);
-    }
-    out.applyMatrix4(mesh.bindMatrixInverse).applyMatrix4(mesh.matrixWorld);
-    box.expandByPoint(out);
-  }
-  return box;
-}
-
-function findHeadGroup(root) {
-  let headGroup = null;
-  root.traverse((o) => {
-    if (o.type === 'Group' && /_Head$/.test(o.name)) headGroup = o;
-  });
-  return headGroup;
-}
-
-// Replaces the character's own head skin with an instance of the expressive face, sized and
-// placed from THIS character's head (the costumes' heads differ in size and bind pose).
-export function attachExpressiveFace(root, headBone, faceTemplate) {
-  const headGroup = findHeadGroup(root);
-  if (!headGroup || !headBone || !faceTemplate) return null;
-  const skinMesh = headGroup.children.find((c) => c.isMesh && c.material && c.material.name === 'Skin');
-  if (!skinMesh) return null;
-
-  root.updateMatrixWorld(true);
-  const skinBox = skinnedWorldBox(skinMesh);
-  const skinCenter = skinBox.getCenter(new THREE.Vector3());
-  const skinHeight = skinBox.max.y - skinBox.min.y;
-
-  for (const c of headGroup.children) {
-    if (c.isMesh && c.material && FACE_HIDE_MATERIALS.includes(c.material.name)) c.visible = false;
-  }
-
-  const faceRoot = faceTemplate.children[0].clone(true);
-  faceRoot.name = 'expressiveFace';
-  headBone.add(faceRoot);
-  headBone.updateMatrixWorld(true);
-
-  let faceMesh = null, faceHead = null;
-  faceRoot.traverse((o) => {
-    if (o.morphTargetDictionary) faceMesh = o;
-    if (o.name === 'head') faceHead = o;
-  });
-  if (!faceMesh || !faceHead) {
-    headBone.remove(faceRoot);
-    return null;
-  }
-
-  // scale relative to the face file's own baked-in root scale, to match this head's height
-  const rawBox = new THREE.Box3().setFromObject(faceHead);
-  const rawHeight = rawBox.max.y - rawBox.min.y;
-  faceRoot.scale.setScalar(faceRoot.scale.x * (skinHeight / rawHeight));
-  faceRoot.updateMatrixWorld(true);
-
-  // centre the face on the head skin it replaces: first measure where the scaled face's own
-  // centre lands, then move it by the world-space difference (converted into bone space)
-  const forward = root.getWorldDirection(new THREE.Vector3());
-  const target = skinCenter.clone()
-    .addScaledVector(forward, FACE_FORWARD_M)
-    .add(new THREE.Vector3(0, FACE_UP_M, 0));
-  const current = new THREE.Box3().setFromObject(faceHead).getCenter(new THREE.Vector3());
-  const localTarget = headBone.worldToLocal(target.clone());
-  const localCurrent = headBone.worldToLocal(current.clone());
-  faceRoot.position.add(localTarget.sub(localCurrent));
-  faceRoot.updateMatrixWorld(true);
-
-  const bodySkin = skinMesh.material;
-  faceMesh.material = bodySkin.clone();
-  faceMesh.material.side = THREE.DoubleSide;
-  faceMesh.castShadow = true;
-  return faceMesh;
-}
-
-// Sets the face's blend shapes to one expression (all others back to 0).
-export function applyExpression(faceMesh, weights) {
-  if (!faceMesh) return;
-  const infl = faceMesh.morphTargetInfluences, dict = faceMesh.morphTargetDictionary;
-  for (let i = 0; i < infl.length; i++) infl[i] = 0;
-  if (!weights) return;
-  for (const name in weights) {
-    if (dict[name] !== undefined) infl[dict[name]] = weights[name];
-  }
-}
-
-/* ---------------- building a character ---------------- */
-
-// Where each behaviour's prop sits, and where the wrists go to hold it, in metres from the
-// top-centre of the chair seat: +x is the student's right, +y up, -z toward the desk (and the
-// board). Everything is on or above the desk top, so the teacher can see it from the front of
-// the room and from the aisles.
-const DESK_Y = DESK.topY - CHAIR.seatTop;
-const DESK_MID_Z = -CHAIR.z + DESK.halfDepth / 2; // halfway between the desk's centre and its near edge
-const REST_L = [-0.15, DESK_Y + 0.05, DESK_MID_Z + 0.05];
-export const TELL_POSES = {
-  notes: { prop: [0.05, DESK_Y + 0.004, DESK_MID_Z - 0.04], R: [0.07, DESK_Y + 0.06, DESK_MID_Z + 0.02], L: REST_L },
-  phone: { prop: [0, DESK_Y + 0.17, DESK_MID_Z + 0.01], R: [0.1, DESK_Y + 0.12, DESK_MID_Z + 0.07], L: [-0.1, DESK_Y + 0.12, DESK_MID_Z + 0.07] },
-  plane: { prop: [0.2, DESK_Y + 0.46, DESK_MID_Z - 0.02], R: [0.2, DESK_Y + 0.39, DESK_MID_Z + 0.06], L: REST_L },
-  snack: { prop: [0.16, DESK_Y + 0.09, DESK_MID_Z - 0.04], R: [0.13, DESK_Y + 0.16, DESK_MID_Z + 0.04], L: REST_L },
-};
-
-const paperMat = new THREE.MeshStandardMaterial({ color: 0xf7f3e8, roughness: 0.55, side: THREE.DoubleSide });
-
-function notesTexture() {
-  return canvasTexture((ctx, w, h) => {
-    ctx.fillStyle = '#f7f3e8';
-    ctx.fillRect(0, 0, w, h);
-    ctx.strokeStyle = 'rgba(47,106,147,0.55)';
-    ctx.lineWidth = 2;
-    for (let y = 26; y < h; y += 16) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(w, y);
-      ctx.stroke();
-    }
-    ctx.strokeStyle = 'rgba(200,52,31,0.6)';
-    ctx.beginPath();
-    ctx.moveTo(18, 0);
-    ctx.lineTo(18, h);
-    ctx.stroke();
-    // a scribbled message and a heart: unmistakably not class notes
-    ctx.strokeStyle = '#2b2b3a';
-    ctx.lineWidth = 3;
-    for (let row = 0; row < 5; row++) {
-      ctx.beginPath();
-      for (let x = 26; x < w - 20 - row * 12; x += 6) ctx.lineTo(x, 22 + row * 16 + Math.sin(x * 0.7 + row) * 3);
-      ctx.stroke();
-    }
-    ctx.fillStyle = '#d9457a';
-    ctx.beginPath();
-    ctx.arc(w * 0.62, h * 0.8, 9, Math.PI, 0);
-    ctx.arc(w * 0.62 + 18, h * 0.8, 9, Math.PI, 0);
-    ctx.lineTo(w * 0.62 + 9, h * 0.8 + 20);
-    ctx.closePath();
-    ctx.fill();
-  }, 128, 160);
-}
-
-function paperPlaneGeometry() {
-  // nose at -z; two wings folded up a little from a centre keel
-  const nose = [0, 0, -0.19], tail = [0, 0, 0.13], keel = [0, -0.045, 0.11];
-  const wingL = [-0.13, 0.02, 0.13], wingR = [0.13, 0.02, 0.13];
-  const v = [...nose, ...wingL, ...tail, ...nose, ...tail, ...wingR, ...nose, ...keel, ...tail];
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
-  geo.computeVertexNormals();
-  return geo;
-}
-
-// Each builder returns a prop in seat-space orientation (see TELL_POSES), centred on its anchor.
-const PROP_BUILDERS = {
-  notes: () => {
-    const sheet = new THREE.Mesh(new THREE.PlaneGeometry(0.17, 0.21), new THREE.MeshStandardMaterial({ map: notesTexture(), roughness: 0.6 }));
-    sheet.rotation.x = -Math.PI / 2;
-    sheet.rotation.z = 0.25;
-    return sheet;
-  },
-  phone: () => {
-    const g = new THREE.Group();
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.17, 0.014), new THREE.MeshStandardMaterial({ color: 0x241d18, roughness: 0.45 }));
-    const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.078, 0.15), new THREE.MeshBasicMaterial({ color: 0xb8ecff }));
-    screen.position.z = 0.0075;
-    g.add(body, screen);
-    // held up in front of the chest, screen tipped toward the student's face
-    g.rotation.x = -0.5;
-    g.rotation.y = Math.PI;
-    return g;
-  },
-  plane: () => {
-    const m = new THREE.Mesh(paperPlaneGeometry(), paperMat);
-    m.rotation.set(0.35, 0.8, 0); // nose up and angled across the body, ready to launch
-    return m;
-  },
-  snack: () => {
-    const g = new THREE.Group();
-    const bag = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.18, 0.05), new THREE.MeshStandardMaterial({ color: 0xe0452b, roughness: 0.35, metalness: 0.2 }));
-    const band = new THREE.Mesh(new THREE.BoxGeometry(0.132, 0.05, 0.052), new THREE.MeshStandardMaterial({ color: 0xf2b93b, roughness: 0.4 }));
-    band.position.y = 0.01;
-    g.add(bag, band);
-    g.rotation.y = 0.4;
-    return g;
-  },
-};
 
 /* ---------------- arm poses ---------------- */
 
@@ -413,7 +194,7 @@ export function buildCharacter(gltf, faceTemplate, opts) {
     prop.visible = false;
   }
 
-  const faceMesh = attachExpressiveFace(g, head, faceTemplate);
+  const faceMesh = attachExpressiveFace(g, head, faceTemplate, opts.model || '');
 
   // the direction the face points at rest, in the head bone's own space
   let headForwardLocal = null;
@@ -533,12 +314,3 @@ export function poseCharacter(group, state, t) {
   }
 }
 
-// For tests and diagnostics: how far the face's centre sits from the head bone, in metres.
-export function faceOffsetFromHead(group) {
-  const p = group.userData.parts;
-  if (!p.faceMesh || !p.head) return null;
-  group.updateMatrixWorld(true);
-  const headPos = p.head.getWorldPosition(new THREE.Vector3());
-  const faceCenter = new THREE.Box3().setFromObject(p.faceMesh).getCenter(new THREE.Vector3());
-  return faceCenter.distanceTo(headPos);
-}
