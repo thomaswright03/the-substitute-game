@@ -146,7 +146,10 @@ test('calling the principal marches the student out', async ({ page }) => {
   await faceStudent(page, 'hughJass');
   await page.keyboard.press('f');
   await page.keyboard.press('3');
-  await expect(lastLog(page)).toContainText('marched out by the principal', { timeout: 60_000 });
+  await page.waitForFunction(() => window.__substitute.principalSeq !== null);
+  // the walk is played by its own clock, not by frames, so a busy machine can't time it out
+  expect(await hooks(page, (s) => s.runCutscene())).toBe(true);
+  await expect(lastLog(page)).toContainText('marched out by the principal');
   expect(await hooks(page, (s) => ({ removed: s.game.students.hughJass.removed, visible: s.world.students.hughJass.visible })))
     .toEqual({ removed: true, visible: false });
 });
@@ -224,7 +227,8 @@ test('a won round reports removals, detentions and every intervention', async ({
     act('mikeOxlong'); R.discipline(g, 'mikeOxlong', 'detention');
     act('gabeIches'); R.help(g, 'gabeIches');
   });
-  await expect(page.locator('#log')).toContainText('marched out', { timeout: 60_000 });
+  expect(await hooks(page, (s) => s.runCutscene())).toBe(true);
+  await expect(page.locator('#log')).toContainText('marched out');
   await freezeRandomness(page);
   await hooks(page, (s) => s.fastForward(s.game.tuning.period + 1));
   await expect(page.locator('#endTitle')).toHaveText('You Made It');

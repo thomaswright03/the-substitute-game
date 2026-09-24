@@ -12,6 +12,7 @@ import { currentContext } from './aim.js';
 import { drainEvents } from './events.js';
 import { renderControlsLists } from './input.js';
 import { audioStarted, playedCues } from './audio.js';
+import { updatePrincipal } from './principal.js';
 
 let cameraOverride = null; // look at the scene from anywhere
 
@@ -33,6 +34,7 @@ export function exposeTestHooks() {
     get paused() { return S.paused; },
     get seatChartOpen() { return S.seatChartOpen; },
     get disciplineTarget() { return S.disciplineTarget; },
+    get principalSeq() { return S.principalSeq; },
     get speech() { return S.speech; },
     player,
     keys,
@@ -64,6 +66,17 @@ export function exposeTestHooks() {
     faceColours: (id) => faceColours(world.students[id] || world.principal),
     headForward: (id) => headForward(world.students[id]).toArray(),
     ensurePrincipal,
+    // Plays the principal's visit through to its end straight away, in the steps the frame loop
+    // would take, so a test doesn't depend on how quickly frames arrive. Resolves to true when
+    // the visit is over.
+    async runCutscene() {
+      drainEvents(); // a principal call made through the rules starts its visit here
+      if (!S.principalSeq) return true;
+      await ensurePrincipal();
+      await new Promise((r) => setTimeout(r, 0)); // let the visit begin its walk
+      for (let i = 0; i < 400 && S.principalSeq; i++) updatePrincipal(1 / 20);
+      return S.principalSeq === null;
+    },
     // pass null to hand the camera back to the player
     setCameraOverride(pos, target) {
       cameraOverride = pos ? { position: new THREE.Vector3(...pos), target: new THREE.Vector3(...target) } : null;
