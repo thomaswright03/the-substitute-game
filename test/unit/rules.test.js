@@ -80,6 +80,48 @@ describe('the gentle start on Relaxed', () => {
     assert.ok(seen.size >= 4, `only ${[...seen]} started next to a friend`);
   });
 
+  test('facing the board for the whole first minute sets off no friend and loses nothing', () => {
+    for (let seed = 1; seed <= 100; seed++) {
+      const game = newGame({ seed, difficulty: 'relaxed' });
+      for (let t = 0; t < 60 && game.phase !== 'over'; t += 0.1) {
+        run(game, 0.1, { facingBoard: true });
+        for (const s of game.roster) {
+          const st = game.students[s.id];
+          assert.ok(!st.active || !adjacentFriend(game, s.id), `seed ${seed}: ${s.id} acting up beside a friend at ${game.elapsed.toFixed(1)} s`);
+        }
+      }
+      assert.equal(game.attendance.delivered, 0);
+      assert.equal(game.phase, 'attendance', `seed ${seed}: lost at ${game.elapsed.toFixed(1)} s`);
+      assert.equal(game.counters.hits, 0, `seed ${seed}: hit before the first card`);
+    }
+  });
+
+  test('throws start once the first card is handed out', () => {
+    let throws = 0;
+    for (let seed = 1; seed <= 20; seed++) {
+      const game = newGame({ seed, difficulty: 'relaxed' });
+      run(game, 20, { facingBoard: true });
+      assert.equal(eventsOf(game, 'throwWindup').length, 0, `seed ${seed}`);
+      pickupCard(game, 'hughJass');
+      deliverCard(game, 'hughJass');
+      run(game, 20, { facingBoard: true });
+      throws += eventsOf(game, 'throwWindup').length;
+    }
+    assert.ok(throws >= 10, `only ${throws} throws in 20 periods`);
+  });
+
+  test('a zap during the gentle start sets off nobody who sits next to a friend', () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      const game = newGame({ seed, difficulty: 'relaxed' });
+      noSpawns(game);
+      activateNow(game, 'mikeHunt', 30);
+      assert.ok(discipline(game, 'mikeHunt', 'zap'));
+      const [zap] = eventsOf(game, 'zap');
+      assert.ok(zap.setOffId, `seed ${seed}: the zap set nobody off`);
+      assert.equal(adjacentFriend(game, zap.setOffId), null, `seed ${seed}: set off ${zap.setOffId}`);
+    }
+  });
+
   test('Standard starts as it always did', () => {
     const game = newGame({ seed: 3, difficulty: 'standard' });
     assert.equal(game.tuning.gentleStart, false);

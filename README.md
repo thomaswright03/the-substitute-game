@@ -44,7 +44,8 @@ A round is one 3rd-period class, 9:05 to 9:50 on the clock: two minutes of real 
      Interrupting him makes it worse.
 3. **Watch your back.** While you face the board, someone may throw something. If it hits
    you, the thrower and everyone acting up get rowdier. Turn around in time and you catch
-   the thrower, who you can then discipline.
+   the thrower, who you can then discipline. (On Relaxed, nobody throws until you've handed
+   out the first card.)
 4. **Split up friends.** Three pairs of friends start out sitting side by side, and a friend
    next door makes a misbehaving student escalate 60% faster. Open the **seating chart** (R)
    to swap seats. The log tells you when a swap splits friends up (or puts them together).

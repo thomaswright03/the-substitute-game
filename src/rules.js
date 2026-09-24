@@ -349,10 +349,17 @@ function pick(game, list) {
   return list[Math.floor(game.rng() * list.length)];
 }
 
+// Relaxed's gentle start: until the first name card is handed out, nobody throws anything,
+// and nobody sitting next to a friend is set off by the spawn timer or a zap's commotion.
+/** @param {Game} game */
+function gentleWindow(game) {
+  return game.tuning.gentleStart && game.attendance.delivered === 0;
+}
+
 /** @param {Game} game */
 function calmPool(game) {
   const pool = game.roster.filter((s) => canMisbehave(game, s.id) && !game.students[s.id].active);
-  if (game.tuning.gentleStart && game.attendance.delivered === 0) return pool.filter((s) => !adjacentFriend(game, s.id));
+  if (gentleWindow(game)) return pool.filter((s) => !adjacentFriend(game, s.id));
   return pool;
 }
 
@@ -674,7 +681,8 @@ function updateThrow(game, dt, facingBoard) {
   const t = game.tuning;
   const th = game.throw;
   if (!th) {
-    if (!facingBoard) return;
+    // a hit sets the thrower off and bumps the class, so the gentle start holds all throws
+    if (!facingBoard || gentleWindow(game)) return;
     const chance = game.phase === 'attendance' ? t.throwChanceAttendance : t.throwChanceLesson;
     if (game.rng() < chance * dt) {
       const pool = throwCandidates(game);

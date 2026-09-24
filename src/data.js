@@ -84,8 +84,8 @@ export const TEACHER = { speed: 3.1, startZ: ROOM.backZ - 1.7 };
 // Standard period, mostly by running out of time for attendance; Relaxed doubles the period and
 // calms the class so that player wins most rounds. It also starts gently, for a player still
 // learning the controls: the first student acts up later, and until the first name card is
-// handed out nobody sitting next to a friend starts (a friend beside them makes them escalate
-// 60% faster). See test/unit/balance.test.js.
+// handed out nobody throws anything and nobody sitting next to a friend starts (a friend beside
+// them makes them escalate 60% faster). See test/unit/balance.test.js.
 /** @typedef {'relaxed' | 'standard'} Difficulty */
 /** @type {Record<Difficulty, Partial<Tuning>>} */
 export const DIFFICULTY = {
@@ -123,7 +123,8 @@ export const TUNING = {
 
   // Misbehaviour spawning. The interval shrinks as the period goes on.
   firstSpawnDelay: 7,
-  // true: until the first card is handed out, no one sitting next to a friend starts acting up
+  // true: until the first card is handed out, nobody throws and no one sitting next to a friend
+  // starts acting up (by the spawn timer or a zap's commotion)
   gentleStart: false,
   spawnIntervalStart: 13,
   spawnIntervalShrink: 8.5,
