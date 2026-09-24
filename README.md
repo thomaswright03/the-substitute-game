@@ -94,7 +94,13 @@ every push and pull request.
 | `src/rules.js` | The rules of a period, as pure functions with no DOM or three.js. Unit-tested. |
 | `src/data.js` | The roster, seating, friendships and every tuning number |
 | `src/strings.js` | Every piece of user-facing text in one table (see below) |
-| `src/main.js` | Rendering, input, HUD, dialogs and the main loop |
+| `src/main.js` | Start-up and the frame loop |
+| `src/world.js`, `src/player.js` | The three.js renderer and classroom, the students' poses each frame, and the teacher's movement |
+| `src/input.js`, `src/aim.js` | Keyboard, mouse, touch and stick input; what the teacher is aiming at and what E / F do |
+| `src/hud.js`, `src/dialogs.js`, `src/rollcall.js` | HUD, log, prompts and buttons; modal dialogs and focus; roll-call bubble and arrow |
+| `src/seating.js`, `src/discipline.js`, `src/principal.js`, `src/effects.js` | Seating chart, discipline menu, the principal's visit, hit / zap / throw effects |
+| `src/events.js`, `src/round.js`, `src/session.js` | Rule events to log lines and effects; starting, pausing and ending a round; shared UI state |
+| `src/testhooks.js` | The `?test` API for the browser tests |
 | `src/scene.js`, `src/characters.js` | The classroom, and the character models with their grafted faces |
 | `test/unit`, `test/e2e` | Rules tests and browser tests |
 | `scripts/` | Static server and the asset optimizer |
