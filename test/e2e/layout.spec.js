@@ -44,6 +44,12 @@ for (const [w, h] of [[375, 667], [390, 844], [768, 1024], [1440, 900], [2560, 1
   });
 }
 
+test('the Start button is in reach without scrolling on a laptop screen', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await openGame(page);
+  await expect(page.locator('#startBtn')).toBeInViewport();
+});
+
 test('the game frame fills most of a large screen', async ({ page }) => {
   await page.setViewportSize({ width: 2560, height: 1440 });
   await openGame(page);
@@ -98,9 +104,29 @@ test.describe('on a phone', () => {
       const heading = await page.locator('#startTitle').boundingBox();
       expect(apple.y).toBeGreaterThanOrEqual(overlay.y);
       expect(heading.y).toBeGreaterThanOrEqual(overlay.y);
-      await page.locator('#startBtn').scrollIntoViewIfNeeded();
+      // the Start button is in reach without scrolling
       await expect(page.locator('#startBtn')).toBeInViewport();
     }
+  });
+
+  test('no text on a phone names a keyboard key, and the seating chart explains its colours', async ({ page }) => {
+    await openGame(page);
+    await startRound(page);
+    await freezeRandomness(page);
+    const keyed = /\((E|F|R|Q|Esc)\)|\bpress E\b|\bEsc\b/;
+    await page.locator('#actSeats').tap();
+    await expect(page.locator('#seatChart')).toBeVisible();
+    await expect(page.locator('#seatClose')).toHaveText('Done');
+    await expect(page.locator('.seatLegend')).toBeVisible();
+    await expect(page.locator('.seatLegend')).toHaveText('Same colour = friends');
+    await page.locator('#seatClose').tap();
+    await hooks(page, (s) => { s.game.events.push({ type: 'eggedOn', id: 'mikeOxlong', friendId: 'gabeIches' }); });
+    await expect(page.locator('#log')).toContainText('egging each other on');
+    const visibleText = await page.evaluate(() => [...document.querySelectorAll('#stage *')]
+      .filter((n) => n.checkVisibility && n.checkVisibility() && n.childElementCount === 0)
+      .map((n) => n.textContent).join(' | '));
+    expect(visibleText).not.toMatch(keyed);
+    expect(await page.locator('#discCancel').textContent()).toBe('Never mind');
   });
 
   test('touch controls are shown instead of keyboard help', async ({ page }) => {

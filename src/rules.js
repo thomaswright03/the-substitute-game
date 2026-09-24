@@ -128,10 +128,6 @@ export function phoneWarned(game, id) {
   return game.elapsed < game.students[id].warnedUntil;
 }
 
-export function isOver(game) {
-  return game.phase === 'over';
-}
-
 /* ---------------- internal helpers ---------------- */
 
 function emit(game, type, data = {}) {

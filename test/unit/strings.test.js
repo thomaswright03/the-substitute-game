@@ -2,7 +2,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { STUDENTS } from '../../src/data.js';
-import { ENGLISH, listNames, lookup, setStrings, t } from '../../src/strings.js';
+import { ENGLISH, listNames, lookup, setStrings, setTouchStrings, t } from '../../src/strings.js';
 
 const root = new URL('../../', import.meta.url);
 const read = (path) => readFileSync(new URL(path, root), 'utf8');
@@ -69,6 +69,54 @@ describe('the string table', () => {
       }
     }
     assert.deepEqual(missing, []);
+  });
+
+  test('every key in the table is used by the game', () => {
+    // leaves of the table; a list of strings (controls, roll-call answers) counts as one leaf
+    const keys = [];
+    const walk = (node, path) => {
+      if (typeof node === 'string' || (Array.isArray(node) && node.every((v) => typeof v !== 'object' || Array.isArray(v)))) {
+        keys.push(path.join('.'));
+      } else {
+        for (const k of Object.keys(node)) walk(node[k], [...path, k]);
+      }
+    };
+    walk(ENGLISH, []);
+    const corpus = readdirSync(new URL('src/', root)).filter((f) => f.endsWith('.js') && f !== 'strings.js')
+      .map((f) => read('src/' + f)).join('\n') + read('index.html')
+      + read('src/strings.js').split('let table = EN;')[1]; // the helpers after the table
+    const quoted = new Set([...corpus.matchAll(/['"`]([\w.]+)['"`]/g)].map((m) => m[1]));
+    for (const m of corpus.matchAll(/data-i18n-attr="([^"]+)"/g)) {
+      for (const pair of m[1].split(';')) quoted.add(pair.split(':')[1]);
+    }
+    // literals a key is built from at run time: 'students.' + id + '.active', 'where.ahead' + side
+    const prefixes = [...corpus.matchAll(/['"`]([\w.]+)['"`]\s*\+/g)].map((m) => m[1]);
+    const used = (key) => {
+      if (quoted.has(key)) return true;
+      const parts = key.split('.');
+      for (let i = 2; i < parts.length; i++) if (quoted.has(parts.slice(0, i).join('.'))) return true; // a whole sub-table
+      return prefixes.some((p) => {
+        if (!key.startsWith(p) || key === p) return false;
+        const rest = key.slice(p.length);
+        const dot = rest.indexOf('.', 1);
+        return dot === -1 || quoted.has(rest.slice(dot));
+      });
+    };
+    const unused = keys.filter((k) => !used(k.replace(/Touch$/, '')));
+    assert.deepEqual(unused, []);
+  });
+
+  test('touch screens get text that names no keyboard keys', () => {
+    setTouchStrings(true);
+    try {
+      assert.equal(t('seating.close'), 'Done');
+      assert.equal(t('discipline.cancel'), 'Never mind');
+      assert.doesNotMatch(t('log.eggedOn', { name: 'A', friend: 'B' }), /\(R\)/);
+      assert.doesNotMatch(t('prompt.helpPhoneSecond', { name: 'A' }), /Press/);
+    } finally {
+      setTouchStrings(false);
+    }
+    assert.equal(t('seating.close'), 'Done (R)');
   });
 
   test('the keys built at run time exist too', () => {

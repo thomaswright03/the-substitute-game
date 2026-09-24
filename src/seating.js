@@ -9,7 +9,7 @@ import { drainEvents } from './events.js';
 import { invalidateAttendancePanel, pushLog } from './hud.js';
 import { releaseLook, stopHoverLook } from './input.js';
 
-const FRIEND_COLORS = ['#2f6a93', '#d0741c', '#8a4bb8', '#2f8f6a'];
+const FRIEND_COLORS = ['var(--friend-1)', 'var(--friend-2)', 'var(--friend-3)', 'var(--friend-4)'];
 const friendColor = {};
 STUDENTS.forEach((s) => {
   if (!s.friend || friendColor[s.id]) return;

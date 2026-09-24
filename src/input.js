@@ -1,5 +1,5 @@
 // Keyboard, mouse, touch and the on-screen stick, turned into look, walk and action calls.
-import { lookup } from './strings.js';
+import { applyStaticStrings, lookup, setTouchStrings } from './strings.js';
 import { el } from './dom.js';
 import { S, frozen } from './session.js';
 import { applyLookDelta, joy, keys, look, releaseKeys } from './player.js';
@@ -34,6 +34,8 @@ export function setTouch(on) {
   if (S.isTouch === on) return;
   S.isTouch = on;
   document.body.classList.toggle('touch', on);
+  setTouchStrings(on);
+  applyStaticStrings(document);
   renderControlsLists();
   for (const fn of touchListeners) fn(on);
 }

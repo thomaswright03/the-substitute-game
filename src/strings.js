@@ -6,17 +6,14 @@
 // To translate the game, provide another table with the same keys and pass it to setStrings().
 
 const EN = {
-  meta: {
-    title: 'The Substitute',
-  },
   common: {
     listSeparator: ', ',
     listAnd: ' and ',
   },
   // keyed by each student's `pronoun` in data.js
   pronoun: {
-    he: { subject: 'he', object: 'him', possessive: 'his' },
-    she: { subject: 'she', object: 'her', possessive: 'her' },
+    he: { possessive: 'his' },
+    she: { possessive: 'her' },
   },
   boot: {
     loading: 'Chalking up the classroom…',
@@ -189,7 +186,9 @@ const EN = {
     give: 'Give {held}’s card to {name}',
     help: 'Help {name}',
     helpPhoneFirst: 'Tell {name} to put the phone away. It takes two presses: warn, then take it.',
+    helpPhoneFirstTouch: 'Tell {name} to put the phone away. It takes two taps: warn, then take it.',
     helpPhoneSecond: 'Press again now to take {name}’s phone',
+    helpPhoneSecondTouch: 'Tap Help again now to take {name}’s phone',
     helpArgueWait: '{name} is mid-rant. Wait for the green glow, then help.',
     helpArgueReady: '{name} paused. Help now!',
     discipline: 'Discipline {name}',
@@ -197,8 +196,6 @@ const EN = {
     detainedStudent: '{name} is in detention',
     swapPick: 'Pick {name} to move',
     swapWith: 'Swap {first} with {name}',
-    keyE: 'E',
-    keyF: 'F',
     throwCue: 'Something’s coming. Turn around!',
     friendNear: 'egged on by {name}',
   },
@@ -208,7 +205,6 @@ const EN = {
     help: 'Help',
     discipline: 'Discipline',
     seats: 'Seats',
-    rollCall: 'Roll call',
     swap: 'Choose',
   },
   discipline: {
@@ -225,8 +221,7 @@ const EN = {
     zapNote: 'Instant calm, but the commotion sets another student off. {cooldown}s cooldown.',
     zapCooling: 'Recharging: ready in {seconds}s.',
     cancel: 'Never mind (Esc)',
-    notEligibleCalm: '{name} isn’t acting up, so there’s nothing to discipline.',
-    notEligibleDetained: '{name} is already in detention.',
+    cancelTouch: 'Never mind',
   },
   seating: {
     title: 'Seating chart',
@@ -235,8 +230,9 @@ const EN = {
     empty: 'Empty desk',
     together: 'next to friend',
     close: 'Done (R)',
+    closeTouch: 'Done',
+    legend: 'Same colour = friends',
     picked: 'Now pick who swaps with {name}.',
-    banner: 'Seating chart open: aim at a student and press E, or use the chart.',
   },
   log: {
     bell: 'The bell rings. Take attendance: the class is already restless.',
@@ -247,6 +243,7 @@ const EN = {
     attendanceComplete: 'Attendance complete. Time to teach, and to keep an eye on them.',
     nearlyLost: '{name} is about to lose it!',
     eggedOn: '{name} and {friend} are egging each other on. Swap seats (R) to split them up.',
+    eggedOnTouch: '{name} and {friend} are egging each other on. Swap seats (Seats) to split them up.',
     swap: '{a} and {b} swap seats.',
     swapSeparated: '{a} and {b} are split up. They’ll settle down faster now.',
     swapTogether: 'Careful: {a} and {b} are friends, and now they sit side by side.',
@@ -315,13 +312,24 @@ const EN = {
 };
 
 let table = EN;
+let touch = false;
 
 export function setStrings(next) {
   table = next || EN;
 }
 
-export function getStrings() {
-  return table;
+// On touch screens a key with a sibling named <key>Touch uses that text instead, so nothing
+// tells a phone player to press a key they do not have.
+export function setTouchStrings(on) {
+  touch = !!on;
+}
+
+function variant(key) {
+  if (touch) {
+    const v = lookup(key + 'Touch');
+    if (v !== undefined) return v;
+  }
+  return lookup(key);
 }
 
 export function lookup(key) {
@@ -336,7 +344,7 @@ export function lookup(key) {
 // t('attendance.carrying', {name:'Mike Oxlong'}) -> "Carrying Mike Oxlong’s card".
 // A missing key is returned as-is so a gap in a translation is visible, not silent.
 export function t(key, params) {
-  const value = lookup(key);
+  const value = variant(key);
   if (typeof value !== 'string') return key;
   if (!params) return value;
   return value.replace(/\{(\w+)\}/g, (m, name) => (name in params ? String(params[name]) : m));
@@ -354,13 +362,13 @@ export function listNames(names) {
 
 export function applyStaticStrings(root) {
   root.querySelectorAll('[data-i18n]').forEach((el) => {
-    const value = lookup(el.getAttribute('data-i18n'));
+    const value = variant(el.getAttribute('data-i18n'));
     if (typeof value === 'string') el.textContent = value;
   });
   root.querySelectorAll('[data-i18n-attr]').forEach((el) => {
     for (const pair of el.getAttribute('data-i18n-attr').split(';')) {
       const [attr, key] = pair.split(':');
-      const value = lookup(key);
+      const value = variant(key);
       if (attr && typeof value === 'string') el.setAttribute(attr, value);
     }
   });
