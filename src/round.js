@@ -314,6 +314,13 @@ export function setupRound() {
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) setPaused(true);
   });
+  // Reloading or leaving the page would throw a period in progress away, as Restart and Back to
+  // menu would, so the browser asks first ("Leave site?"). Not on the start or end screens.
+  window.addEventListener('beforeunload', (e) => {
+    if (!S.running) return;
+    e.preventDefault();
+    e.returnValue = ''; // browsers that ask only when a return value is set
+  });
 
   el.fullscreenBtn.addEventListener('click', () => {
     if (!document.fullscreenElement) {
