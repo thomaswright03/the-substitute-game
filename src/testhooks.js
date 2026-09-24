@@ -4,7 +4,7 @@ import { STUDENTS, TEACHER, TUNING } from './data.js';
 import * as R from './rules.js';
 import { applyStaticStrings, setStrings } from './strings.js';
 import { S } from './session.js';
-import { camera, ensurePrincipal, renderState, scene, world } from './world.js';
+import { camera, ensurePrincipal, renderState, scene, updateStudents, world } from './world.js';
 import { onQualityChange, qualitySetting } from './quality.js';
 import { EYE_HEIGHT, keys, player } from './player.js';
 import { headForward } from './characters.js';
@@ -71,6 +71,10 @@ export function exposeTestHooks() {
     faceMeasure: (id) => faceMeasure(world.students[id] || world.principal),
     setExpression: (id, weights) => applyExpression((world.students[id] || world.principal).userData.parts.faceMesh, weights),
     headForward: (id) => headForward(world.students[id]).toArray(),
+    // poses the students `frames` times, `dt` seconds apart, as that many frames would
+    stepStudents(dt, frames) {
+      for (let i = 0; i < frames; i++) updateStudents(dt);
+    },
     ensurePrincipal,
     // Plays the principal's visit through to its end straight away, in the steps the frame loop
     // would take, so a test doesn't depend on how quickly frames arrive. Resolves to true when

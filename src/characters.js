@@ -283,7 +283,9 @@ function blinkAt(t, seed) {
 
 // state: {kind, type, argueReady, windup}. kind is one of
 //  'calm' | 'shake' (wrong card) | 'hand' (marked present) | 'active' | 'detained' | 'throwing'
-export function poseCharacter(group, state, t) {
+// t is the animation clock and dt the time since the last pose, both in seconds.
+const SPIN_SPEED = 4.8; // radians a second
+export function poseCharacter(group, state, t, dt) {
   const p = group.userData.parts;
   const face = p.faceMesh;
   const showTell = state.kind === 'active';
@@ -328,7 +330,7 @@ export function poseCharacter(group, state, t) {
       applyExpression(face, { browDown_L: 0.3, browDown_R: 0.3, mouthLeft: 0.4 });
       break;
     case 'spin':
-      group.userData.spinYaw = (group.userData.spinYaw || 0) + 0.08;
+      group.userData.spinYaw = (group.userData.spinYaw || 0) + SPIN_SPEED * dt;
       group.rotation.y = CHAR.forwardYaw + group.userData.spinYaw;
       applyExpression(face, { mouthSmile_L: 0.8, mouthSmile_R: 0.8, eyeWide_L: 0.3, eyeWide_R: 0.3 });
       break;

@@ -235,9 +235,13 @@ export function placeInSeat(group, seat) {
   group.position.set(p.x, p.y, p.z);
 }
 
+// The students' own clock, in seconds: it runs with the frames' real time, so every animation
+// plays at the same speed at any frame rate, and it stands still while the game is paused.
+let animT = 0;
+
 const flashPoses = {}; // id -> {kind, until}
 export function flashPose(id, kind, seconds) {
-  flashPoses[id] = { kind, until: performance.now() / 1000 + seconds };
+  flashPoses[id] = { kind, until: animT + seconds };
 }
 
 export function resetStudentVisuals() {
@@ -256,7 +260,7 @@ export function resetStudentVisuals() {
 
 // Slides two students to their new desks after a swap.
 export function animateSeatSwap(ids) {
-  const now = performance.now() / 1000;
+  const now = animT;
   for (const id of ids) {
     const g = world.students[id];
     const to = seatTarget(g, S.game.seats[id]);
@@ -283,7 +287,11 @@ function poseStateFor(s, st, now) {
   return pose('calm');
 }
 
-export function updateStudents(now) {
+// Poses every student for this frame. dt is the time the frame took, in seconds, or 0 to hold
+// every student still.
+export function updateStudents(dt) {
+  animT += dt;
+  const now = animT;
   for (const s of STUDENTS) {
     const g = world.students[s.id];
     const st = S.game.students[s.id];
@@ -306,7 +314,7 @@ export function updateStudents(now) {
         placeInSeat(g, S.game.seats[s.id]);
         if (st.active && st.escalation >= 75) g.position.x += Math.sin(now * 20) * 0.02;
       }
-      poseCharacter(g, poseStateFor(s, st, now), now);
+      poseCharacter(g, poseStateFor(s, st, now), now, dt);
     }
     g.updateMatrixWorld(true);
     const head = g.userData.parts.head;

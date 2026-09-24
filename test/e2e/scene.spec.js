@@ -251,3 +251,35 @@ test.describe('behaviour tells', () => {
     expect(r.spin).not.toBe(before);
   });
 });
+
+test('students animate by the clock, not the frame rate, and hold still while paused', async ({ page }) => {
+  await openGame(page);
+  await startRound(page);
+  await hooks(page, (s) => {
+    s.game.spawnTimer = Infinity;
+    s.game.tuning.attendanceRateScale = 0.01;
+    const st = s.game.students.mikeOxlong;
+    st.active = true;
+    st.escalation = 10;
+    st.activatedAt = s.game.elapsed;
+  });
+  const spin = () => hooks(page, (s) => s.world.students.mikeOxlong.rotation.y);
+  const before = await spin();
+  await page.waitForFunction((y) => window.__substitute.world.students.mikeOxlong.rotation.y !== y, before);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#pauseOverlay')).toBeVisible();
+  const paused = await spin();
+  await page.waitForTimeout(1000);
+  expect(await spin()).toBe(paused);
+  // a second of 60 Hz frames turns the chair as far as a second of 144 Hz frames
+  const turned = await hooks(page, (s) => {
+    const g = s.world.students.mikeOxlong;
+    const a = g.userData.spinYaw;
+    s.stepStudents(1 / 60, 60);
+    const b = g.userData.spinYaw;
+    s.stepStudents(1 / 144, 144);
+    return [b - a, g.userData.spinYaw - b];
+  });
+  expect(turned[0]).toBeGreaterThan(3);
+  expect(Math.abs(turned[1] - turned[0])).toBeLessThan(1e-6);
+});

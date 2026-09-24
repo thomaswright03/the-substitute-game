@@ -62,7 +62,8 @@ function frame(now) {
     }
     drainEvents();
     updatePrincipal(Math.min(realDt, CUTSCENE_MAX_DT));
-    updateStudents(nowS);
+    // the students hold still while the game is paused or a menu is open over the class
+    updateStudents(S.paused || S.disciplineTarget !== null ? 0 : realDt);
     updateAim();
     updateProjectile();
     updateTags();
