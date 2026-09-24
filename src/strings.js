@@ -363,7 +363,7 @@ const EN = {
     },
     mikeOxlong: {
       active: 'Mike Oxlong gives her chair a slow, testing spin.',
-      calm: 'Mike Oxlong plants all four wheels back on the floor.',
+      calm: 'Mike Oxlong stops spinning and plants her feet on the floor.',
       fail: 'Mike Oxlong spins one too many times and crashes into the bookshelf!',
     },
   },

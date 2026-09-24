@@ -347,7 +347,7 @@ export default {
     },
     mikeOxlong: {
       active: 'Mike Oxlong fait tourner sa chaise, lentement, pour voir.',
-      calm: 'Mike Oxlong repose les quatre roues sur le sol.',
+      calm: 'Mike Oxlong arrête de tourner et pose les pieds par terre.',
       fail: 'Mike Oxlong tourne une fois de trop et s’écrase contre la bibliothèque !',
     },
   },

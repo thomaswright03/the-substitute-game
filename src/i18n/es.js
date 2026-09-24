@@ -347,7 +347,7 @@ export default {
     },
     mikeOxlong: {
       active: 'Mike Oxlong da un giro lento, de prueba, con su silla.',
-      calm: 'Mike Oxlong vuelve a poner las cuatro ruedas en el suelo.',
+      calm: 'Mike Oxlong deja de girar y apoya los pies en el suelo.',
       fail: '¡Mike Oxlong gira una vez de más y se estrella contra la estantería!',
     },
   },
