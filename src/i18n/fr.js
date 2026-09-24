@@ -1,5 +1,9 @@
 // French. Same keys as the English table in strings.js (a unit test checks they match).
 // Student names are the characters' names and stay as they are.
+import '../boot-strings.js';
+
+const BOOT = globalThis.SubstituteBootStrings;
+
 export default {
   common: {
     listSeparator: ', ',
@@ -11,21 +15,7 @@ export default {
     he: { possessive: 'son' },
     she: { possessive: 'son' },
   },
-  boot: {
-    loading: 'On prépare la salle de classe…',
-    loadingDetail: 'Chargement de la classe ({percent} %)',
-    loadingSlow: 'Cela prend plus de temps que d’habitude. Avec une connexion lente, comptez une minute ; le chargement continue.',
-    noWebglTitle: 'Votre navigateur ne peut pas afficher de 3D',
-    noWebglBody: 'Le Remplaçant a besoin de WebGL, qui est désactivé ou indisponible dans ce navigateur. Essayez une version récente de Chrome, Firefox, Edge ou Safari, et vérifiez que l’accélération matérielle (accélération graphique) est activée dans les réglages du navigateur.',
-    fileTitle: 'Ouvrez le jeu via un serveur web local',
-    fileBody: 'Les navigateurs bloquent un jeu ouvert directement depuis un fichier : la classe ne peut pas se charger ainsi. Dans le dossier du jeu, lancez la commande ci-dessous, puis ouvrez http://localhost:8000 dans votre navigateur.',
-    fileCommand: 'npm start',
-    loadFailTitle: 'La classe n’a pas pu se charger',
-    loadFailBody: 'Certains fichiers du jeu ne sont pas arrivés. Vérifiez votre connexion et réessayez.',
-    retry: 'Réessayer',
-    crashTitle: 'Un problème est survenu',
-    crashBody: 'Le jeu a rencontré un problème dont il ne peut pas se remettre. Recharger la page relance le cours.',
-  },
+  boot: BOOT.fr,
   board: {
     room: 'Salle 204',
     motto: '3e heure · Soyez sympa, rembobinez',

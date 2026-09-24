@@ -4,11 +4,15 @@
 // data-i18n-attr="attr:key;attr:key" and is filled from this table at start-up by
 // applyStaticStrings(). Text built while playing goes through t(key, params).
 // Translations live in src/i18n/ with exactly the same keys (a unit test checks this); to add
-// one, add its table to LANGUAGES below.
+// one, add its table to LANGUAGES below, and its start-up card text to src/boot-strings.js.
 
+import './boot-strings.js';
 import ES from './i18n/es.js';
 import FR from './i18n/fr.js';
 import { keyNames } from './keys.js';
+
+// the start-up cards' text is shared with src/boot.js, which shows them before this module loads
+const BOOT = globalThis.SubstituteBootStrings;
 
 const EN = {
   common: {
@@ -23,21 +27,7 @@ const EN = {
     he: { possessive: 'his' },
     she: { possessive: 'her' },
   },
-  boot: {
-    loading: 'Chalking up the classroom…',
-    loadingDetail: 'Loading the class ({percent}%)',
-    loadingSlow: 'This is taking longer than usual. A slow connection can take a minute; it will keep trying.',
-    noWebglTitle: 'Your browser can’t show 3D graphics',
-    noWebglBody: 'The Substitute needs WebGL, which is turned off or unavailable in this browser. Try a recent version of Chrome, Firefox, Edge or Safari, and make sure hardware acceleration (graphics acceleration) is switched on in your browser settings.',
-    fileTitle: 'Open the game through a local web server',
-    fileBody: 'Browsers block a game opened straight from a file, so the classroom can’t load this way. In the game’s folder, run the command below, then open http://localhost:8000 in your browser.',
-    fileCommand: 'npm start',
-    loadFailTitle: 'The classroom couldn’t load',
-    loadFailBody: 'Some of the game’s files didn’t arrive. Check your connection and try again.',
-    retry: 'Try again',
-    crashTitle: 'Something went wrong',
-    crashBody: 'The game ran into a problem it can’t recover from. Reloading starts the class again.',
-  },
+  boot: BOOT.en,
   // written on the chalkboard at the front of the room
   board: {
     room: 'Room 204',

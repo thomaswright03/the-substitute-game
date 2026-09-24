@@ -10,6 +10,9 @@ interface SubstituteBoot {
   ready(): void;
 }
 
+// The start-up cards' text in each language (src/boot-strings.js).
+declare var SubstituteBootStrings: Record<'en' | 'es' | 'fr', Record<string, string>>;
+
 interface Window {
   SubstituteBoot?: SubstituteBoot;
   // the ?test API (src/testhooks.js)
