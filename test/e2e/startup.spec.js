@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { fileURLToPath } from 'node:url';
-import { openGame, watchPage } from './helpers.js';
+import { hooks, openGame, startRound, watchPage } from './helpers.js';
 
 test('loads to the start screen with no errors, 404s or external requests', async ({ page }) => {
   const problems = watchPage(page);
@@ -58,6 +58,29 @@ test('a missing model shows a friendly error with a working Try again button', a
   block = false;
   await page.locator('#retryBtn').click();
   await expect(page.locator('#startOverlay')).toBeVisible({ timeout: 90_000 });
+});
+
+test('an error during play stops the game with a plain message, and Try again reloads', async ({ page }) => {
+  await openGame(page);
+  await startRound(page);
+  const errors = [];
+  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+  await hooks(page, (s) => s.failNextFrame('broken on purpose'));
+  const card = page.locator('#crashed');
+  await expect(card).toBeVisible();
+  await expect(card).toContainText('Something went wrong');
+  // keyboard focus is on Try again (read directly: the page itself may not have the window's focus)
+  expect(await page.evaluate(() => document.activeElement && document.activeElement.id)).toBe('crashRetryBtn');
+  // the loop stopped: the period clock no longer moves
+  const elapsed = await hooks(page, (s) => s.game.elapsed);
+  await page.waitForTimeout(1000);
+  expect(await hooks(page, (s) => s.game.elapsed)).toBe(elapsed);
+  // the error is still reported for whoever looks at the console
+  expect(errors.join('\n')).toContain('broken on purpose');
+  await page.locator('#crashRetryBtn').click();
+  await expect(page.locator('#startOverlay')).toBeVisible({ timeout: 90_000 });
+  await expect(card).toBeHidden();
+  expect(await hooks(page, (s) => s.running)).toBe(false);
 });
 
 test('opened as a file, the game explains how to serve it', async ({ page }) => {

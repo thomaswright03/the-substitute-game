@@ -6,7 +6,7 @@ import { applyStaticStrings, onLanguageChange, t } from './strings.js';
 import { el } from './dom.js';
 import { S, TEST_MODE, frozen } from './session.js';
 import { buildWorld, camera, createRenderer, ensurePrincipal, render, resizeRenderer, updateStudents } from './world.js';
-import { facingBoard, stepPlayer, syncCamera } from './player.js';
+import { facingBoard, releaseKeys, stepPlayer, syncCamera } from './player.js';
 import { setupDialogs, openDialog } from './dialogs.js';
 import { renderControlsLists, setTouch, setupInput } from './input.js';
 import { updateAim } from './aim.js';
@@ -24,11 +24,11 @@ import { refreshButtonLabels, setupRound, showBest, updateCountdown } from './ro
 import { setupAudio } from './audio.js';
 import { difficulty, setupGraphicsSettings, setupLanguage, setupSettings } from './settings.js';
 import { noteFrame, setupQuality } from './quality.js';
-import { applyCameraOverride, exposeTestHooks } from './testhooks.js';
+import { applyCameraOverride, exposeTestHooks, testFault } from './testhooks.js';
 import { registerServiceWorker } from './offline.js';
 import { onKeyLabelsChange, setupKeyLabels } from './keys.js';
 
-const boot = window.SubstituteBoot || { blocked: false, progress() {}, fail() {}, ready() {}, show() {} };
+const boot = window.SubstituteBoot || { blocked: false, progress() {}, fail() {}, crash() {}, ready() {}, show() {} };
 const MAX_FRAME_DT = 5; // longer gaps are stalls (a hidden tab pauses the game), not play time
 const CUTSCENE_MAX_DT = 0.25; // the principal's walk never skips ahead, even on a stalled frame
 const SCRIPTS_SHARE = 0.12; // share of the first download taken by the page and its scripts
@@ -43,8 +43,23 @@ function resize() {
 }
 
 let lastT = null;
+let stopped = false;
 function frame(now) {
+  if (stopped) return;
   requestAnimationFrame(frame);
+  try {
+    step(now);
+  } catch (err) {
+    // the same error would come back every frame: stop once, and say so (with no round in
+    // play, freeing the mouse doesn't also open the pause screen over the message)
+    stopped = true;
+    S.running = false;
+    releaseKeys();
+    boot.crash(err);
+  }
+}
+
+function step(now) {
   const nowS = now / 1000;
   const realDt = lastT === null ? 0 : Math.min(MAX_FRAME_DT, nowS - lastT);
   lastT = nowS;
@@ -54,6 +69,7 @@ function frame(now) {
   syncCamera(camera);
   applyCameraOverride();
 
+  if (TEST_MODE) testFault();
   const game = S.game;
   if (game) {
     if (S.running && !frozen()) {

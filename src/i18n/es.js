@@ -21,6 +21,8 @@ export default {
     loadFailTitle: 'No se pudo cargar el aula',
     loadFailBody: 'Algunos archivos del juego no llegaron. Comprueba tu conexión e inténtalo de nuevo.',
     retry: 'Reintentar',
+    crashTitle: 'Algo ha salido mal',
+    crashBody: 'El juego ha tenido un problema del que no puede recuperarse. Al recargar, la clase empieza de nuevo.',
   },
   board: {
     room: 'Aula 204',

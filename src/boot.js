@@ -4,7 +4,7 @@
 (function () {
   'use strict';
 
-  var CARDS = ['loadingCard', 'noWebgl', 'fileProtocol', 'loadFailed'];
+  var CARDS = ['loadingCard', 'noWebgl', 'fileProtocol', 'loadFailed', 'crashed'];
   var STALL_MS = 10000;
 
   var lastProgressAt = Date.now();
@@ -68,6 +68,17 @@
       if (err) console.error('The Substitute failed to load:', err);
       show('loadFailed');
       var retry = byId('retryBtn');
+      if (retry) retry.focus();
+    },
+    // an error while the game was running: stop, say so, and offer a reload
+    crash: function (err) {
+      if (boot.blocked) return;
+      boot.blocked = true;
+      boot.reason = 'crashed';
+      if (err) console.error('The Substitute stopped after an error:', err);
+      if (document.pointerLockElement && document.exitPointerLock) document.exitPointerLock();
+      show('crashed');
+      var retry = byId('crashRetryBtn');
       if (retry) retry.focus();
     },
     ready: function () {

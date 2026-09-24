@@ -32,6 +32,8 @@ const EN = {
     loadFailTitle: 'The classroom couldn’t load',
     loadFailBody: 'Some of the game’s files didn’t arrive. Check your connection and try again.',
     retry: 'Try again',
+    crashTitle: 'Something went wrong',
+    crashBody: 'The game ran into a problem it can’t recover from. Reloading starts the class again.',
   },
   // written on the chalkboard at the front of the room
   board: {

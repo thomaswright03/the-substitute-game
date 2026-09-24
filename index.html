@@ -47,6 +47,12 @@
         <p data-i18n="boot.loadFailBody">Some of the game’s files didn’t arrive. Check your connection and try again.</p>
         <button class="btn" type="button" id="retryBtn" data-action="reload" data-i18n="boot.retry">Try again</button>
       </div>
+      <div class="loadingCard" id="crashed" role="alert" hidden>
+        <span class="apple" aria-hidden="true">🧯</span>
+        <h1 data-i18n="boot.crashTitle">Something went wrong</h1>
+        <p data-i18n="boot.crashBody">The game ran into a problem it can’t recover from. Reloading starts the class again.</p>
+        <button class="btn" type="button" id="crashRetryBtn" data-action="reload" data-i18n="boot.retry">Try again</button>
+      </div>
     </div>
 
     <header class="hud" id="hud">

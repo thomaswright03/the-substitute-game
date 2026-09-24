@@ -21,6 +21,8 @@ export default {
     loadFailTitle: 'La classe n’a pas pu se charger',
     loadFailBody: 'Certains fichiers du jeu ne sont pas arrivés. Vérifiez votre connexion et réessayez.',
     retry: 'Réessayer',
+    crashTitle: 'Un problème est survenu',
+    crashBody: 'Le jeu a rencontré un problème dont il ne peut pas se remettre. Recharger la page relance le cours.',
   },
   board: {
     room: 'Salle 204',

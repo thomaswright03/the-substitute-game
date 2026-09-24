@@ -16,6 +16,15 @@ import { audioStarted, playedCues } from './audio.js';
 import { updatePrincipal } from './principal.js';
 
 let cameraOverride = null; // look at the scene from anywhere
+let fault = null; // an error the next frame throws
+
+// Called by the frame loop: throws the error a test asked for, once.
+export function testFault() {
+  if (!fault) return;
+  const message = fault;
+  fault = null;
+  throw new Error(message);
+}
 
 export function applyCameraOverride() {
   if (!cameraOverride) return;
@@ -97,6 +106,10 @@ export function exposeTestHooks() {
       renderControlsLists();
     },
     bestGrade: () => S.lastBestGrade,
+    // makes the next frame throw, as a bug would
+    failNextFrame(message = 'test fault') {
+      fault = message;
+    },
     // the graphics setting and what is drawn: {setting, level, pixelRatio, bloom, shadows}
     quality: () => ({ setting: qualitySetting(), ...renderState() }),
     qualityChanges: () => qualityChanges.slice(),
