@@ -389,7 +389,8 @@ export function updateStudents(dt) {
         if (k >= 1) delete data.seatAnim;
       } else {
         placeInSeat(g, S.game.seats[s.id]);
-        if (st.active && st.escalation >= 75) g.position.x += Math.sin(now * 20) * 0.02;
+        // close to losing it: the student fidgets, as their ring shakes (hud.js)
+        if (st.active && st.escalation >= S.game.tuning.hud.danger) g.position.x += Math.sin(now * 20) * 0.02;
       }
       poseCharacter(g, poseStateFor(s, st, now), now, dt);
     }

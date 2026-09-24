@@ -21,7 +21,7 @@ STUDENTS.forEach((s) => {
 
 export function renderSeatChart() {
   const game = S.game;
-  if (!game || !S.seatChartOpen) return;
+  if (!S.seatChartOpen) return;
   const focused = /** @type {HTMLElement} */ (document.activeElement);
   const hadFocus = el.seatGrid.contains(focused) ? focused.dataset.seat : null;
   el.seatGrid.textContent = '';

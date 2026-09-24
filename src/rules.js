@@ -744,10 +744,11 @@ export function report(game) {
   if (c.detentions) deductions.push({ kind: 'detentions', count: c.detentions, points: c.detentions * p.detention });
   if (c.principalCalls) deductions.push({ kind: 'principal', count: c.principalCalls, points: c.principalCalls * p.principal });
   if (c.zaps) deductions.push({ kind: 'zaps', count: c.zaps, points: c.zaps * p.zap });
-  if (game.maxChaos >= 90) deductions.push({ kind: 'closeCall', count: 1, points: p.veryCloseCall });
-  else if (game.maxChaos >= 75) deductions.push({ kind: 'closeCall', count: 1, points: p.closeCall });
+  if (game.maxChaos >= p.veryCloseCallAt) deductions.push({ kind: 'closeCall', count: 1, points: p.veryCloseCall });
+  else if (game.maxChaos >= p.closeCallAt) deductions.push({ kind: 'closeCall', count: 1, points: p.closeCall });
   const score = Math.max(0, 100 - deductions.reduce((sum, d) => sum + d.points, 0));
-  const grade = score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : 'D';
+  const g = p.grades;
+  const grade = score >= g.A ? 'A' : score >= g.B ? 'B' : score >= g.C ? 'C' : 'D';
   return { score, grade, deductions };
 }
 

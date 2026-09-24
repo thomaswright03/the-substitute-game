@@ -136,8 +136,10 @@ test('the chaos bar changes colour at the same thresholds as the number', async 
   await openGame(page);
   await startRound(page);
   await freezeRandomness(page);
+  const { warning, danger } = await hooks(page, (s) => s.game.tuning.hud);
   const colours = [];
-  for (const level of [20, 50, 80]) {
+  // one level in each band: calm, warning and danger
+  for (const level of [Math.floor(warning / 2), Math.round((warning + danger) / 2), Math.min(100, danger + 5)]) {
     await activate(page, 'mikeHunt', level);
     await expect(page.locator('#chaosValue')).toHaveText(level + '%');
     colours.push(await page.evaluate(() => [

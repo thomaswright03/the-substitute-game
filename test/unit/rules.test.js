@@ -459,6 +459,35 @@ describe('the end-of-period report', () => {
     assert.equal(r.grade, 'C');
     assert.deepEqual(r.deductions.map((d) => d.kind), ['principal', 'zaps']);
   });
+
+  test('a close call costs points from the thresholds in the tuning table', () => {
+    const p = TUNING.report;
+    const closeCallPoints = (maxChaos) => {
+      const game = newGame();
+      game.maxChaos = maxChaos;
+      return report(game).deductions.filter((d) => d.kind === 'closeCall').map((d) => d.points);
+    };
+    assert.deepEqual(closeCallPoints(p.closeCallAt - 0.5), []);
+    assert.deepEqual(closeCallPoints(p.closeCallAt), [p.closeCall]);
+    assert.deepEqual(closeCallPoints(p.veryCloseCallAt - 0.5), [p.closeCall]);
+    assert.deepEqual(closeCallPoints(p.veryCloseCallAt), [p.veryCloseCall]);
+  });
+
+  test('grades follow the score bands in the tuning table', () => {
+    const { grades } = TUNING.report;
+    const gradeFor = (score) => {
+      // hits cost a fixed number of points each; build a period that scores `score`
+      const game = newGame({ tuning: { report: { ...TUNING.report, hit: 1 } } });
+      game.counters.hits = 100 - score;
+      return report(game).grade;
+    };
+    assert.equal(gradeFor(grades.A), 'A');
+    assert.equal(gradeFor(grades.A - 1), 'B');
+    assert.equal(gradeFor(grades.B), 'B');
+    assert.equal(gradeFor(grades.B - 1), 'C');
+    assert.equal(gradeFor(grades.C), 'C');
+    assert.equal(gradeFor(grades.C - 1), 'D');
+  });
 });
 
 describe('ticking', () => {

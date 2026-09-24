@@ -18,7 +18,6 @@ export function setupEvents() {
 }
 
 export function drainEvents() {
-  if (!S.game) return;
   const events = S.game.events.splice(0);
   for (const e of events) handleEvent(e);
 }

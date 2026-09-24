@@ -73,24 +73,21 @@ function step(now) {
   applyCameraOverride();
 
   if (TEST_MODE) testFault();
-  const game = S.game;
-  if (game) {
-    if (S.running && !frozen()) {
-      // the rules advance by real elapsed time, so the period lasts the same on any machine
-      R.tick(game, realDt, { facingBoard: facingBoard() });
-    }
-    drainEvents();
-    updatePrincipal(Math.min(realDt, CUTSCENE_MAX_DT));
-    // the students hold still while the game is paused or a menu is open over the class
-    updateStudents(S.paused || S.disciplineTarget !== null ? 0 : realDt);
-    updateAim();
-    updateProjectile();
-    updateTags();
-    updatePromptAndActions();
-    updateAttendancePanel();
-    updateSpeech();
-    updateCountdown();
+  if (S.running && !frozen()) {
+    // the rules advance by real elapsed time, so the period lasts the same on any machine
+    R.tick(S.game, realDt, { facingBoard: facingBoard() });
   }
+  drainEvents();
+  updatePrincipal(Math.min(realDt, CUTSCENE_MAX_DT));
+  // the students hold still while the game is paused or a menu is open over the class
+  updateStudents(S.paused || S.disciplineTarget !== null ? 0 : realDt);
+  updateAim();
+  updateProjectile();
+  updateTags();
+  updatePromptAndActions();
+  updateAttendancePanel();
+  updateSpeech();
+  updateCountdown();
   updateHud();
   render();
 }

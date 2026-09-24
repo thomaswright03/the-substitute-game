@@ -139,6 +139,13 @@ export const TUNING = {
   warnAt: 80,
   failAt: 100,
 
+  // How the HUD shows escalation (percent): each student's ring and the chaos meter turn yellow
+  // at `warning` and red at `danger`, where the ring also shakes and so does the student.
+  hud: {
+    warning: 40,
+    danger: 75,
+  },
+
   // A misbehaving student escalates this many times faster while their friend sits next to them.
   friendBoost: 1.6,
 
@@ -170,13 +177,17 @@ export const TUNING = {
   hitClassBump: 8,
   caughtWindow: 6,
 
-  // End-of-period report card for a round that reaches the bell.
+  // End-of-period report card for a round that reaches the bell: points off 100 for each of
+  // these, and the lowest score that earns each grade (below C is a D).
   report: {
     hit: 4,
     detention: 5,
     principal: 15,
     zap: 10,
-    closeCall: 5, // closest call at or above 75%
-    veryCloseCall: 10, // closest call at or above 90%
+    closeCall: 5, // the period's closest call reached closeCallAt
+    closeCallAt: 75,
+    veryCloseCall: 10, // the period's closest call reached veryCloseCallAt
+    veryCloseCallAt: 90,
+    grades: { A: 90, B: 80, C: 70 },
   },
 };

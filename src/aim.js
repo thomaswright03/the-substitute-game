@@ -65,7 +65,7 @@ function ctx(kind, id) {
 
 export function currentContext() {
   const game = S.game;
-  if (!game || !S.running || game.phase === 'over') return null;
+  if (!S.running || game.phase === 'over') return null;
   const id = S.aim.studentId;
   if (S.seatChartOpen && id) return ctx('swap', id);
   if (S.aim.cardId) return ctx('pickup', S.aim.cardId);

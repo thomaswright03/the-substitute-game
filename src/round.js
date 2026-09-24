@@ -130,7 +130,7 @@ const COUNTDOWN_SECONDS = 10;
 let lastTick = null;
 export function updateCountdown() {
   const game = S.game;
-  if (!game || !S.running) return;
+  if (!S.running) return;
   const left = Math.ceil(game.tuning.period - game.elapsed);
   if (left > 0 && left <= COUNTDOWN_SECONDS && left !== lastTick) {
     lastTick = left;

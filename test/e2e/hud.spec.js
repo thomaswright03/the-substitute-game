@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { faceCard, freezeRandomness, hooks, openGame, startRound } from './helpers.js';
+import { faceCard, faceStudent, freezeRandomness, hooks, openGame, startRound } from './helpers.js';
 
 test('during play only the log is announced to screen readers', async ({ page }) => {
   await openGame(page);
@@ -36,4 +36,41 @@ test('frames with a roll-call answer showing do not measure the page layout', as
   }));
   expect(reads).toBe(0);
   expect(await hooks(page, (s) => s.game.attendance.holding)).toBe('moeLester');
+});
+
+test('the chaos meter and the rings over the students change colour at the tuning table\'s thresholds', async ({ page }) => {
+  await openGame(page);
+  await startRound(page);
+  await freezeRandomness(page);
+  const { warning, danger } = await hooks(page, (s) => s.game.tuning.hud);
+  const steve = await hooks(page, (s) => Object.keys(s.world.students).indexOf('steve'));
+  await faceStudent(page, 'steve');
+  const ring = page.locator('#studentLayer .tag').nth(steve);
+  const cases = [
+    [warning - 1, [], 'var(--calm-green-bright)'],
+    [warning, ['mid'], 'var(--pencil-yellow)'],
+    [danger - 1, ['mid'], 'var(--pencil-yellow)'],
+    [danger, ['hot'], 'var(--marker-red-bright)'],
+  ];
+  for (const [pct, classes, stroke] of cases) {
+    await hooks(page, (s, p) => {
+      const st = s.game.students.steve;
+      st.active = true;
+      st.escalation = p;
+      st.activatedAt = s.game.elapsed;
+    }, pct);
+    await expect(page.locator('#chaosBadge')).toHaveAttribute('aria-valuenow', String(pct));
+    const badge = await page.locator('#chaosBadge').evaluate((n) => ['mid', 'hot'].filter((c) => n.classList.contains(c)));
+    expect(badge, `${pct}%`).toEqual(classes);
+    await expect(ring.locator('.ring .fill')).toHaveCSS('stroke', await page.evaluate((v) => {
+      // the colour the token resolves to, as the browser reports a computed stroke
+      const probe = document.createElement('div');
+      probe.style.color = v;
+      document.body.append(probe);
+      const c = getComputedStyle(probe).color;
+      probe.remove();
+      return c;
+    }, stroke));
+    expect(await ring.evaluate((n) => n.classList.contains('critical')), `${pct}%`).toBe(pct >= danger);
+  }
 });

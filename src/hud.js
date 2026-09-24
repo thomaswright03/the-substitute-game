@@ -12,6 +12,17 @@ import { askRollCall } from './rollcall.js';
 import { toggleSeatChart } from './seating.js';
 import { keyLabel, keyLabelsVersion } from './keys.js';
 
+/**
+ * How the HUD colours an escalation of `pct` percent (see TUNING.hud).
+ * @param {import('./rules.js').Game} game
+ * @param {number} pct
+ * @returns {'calm' | 'warning' | 'danger'}
+ */
+function escalationLevel(game, pct) {
+  const h = game.tuning.hud;
+  return pct >= h.danger ? 'danger' : pct >= h.warning ? 'warning' : 'calm';
+}
+
 /* ---------------- rings and name tags over the students ---------------- */
 
 /**
@@ -84,8 +95,9 @@ export function updateTags() {
     if (pct !== tagEl.pct) {
       tagEl.pct = pct;
       fill.setAttribute('stroke-dashoffset', String(RING_C - (pct / 100) * RING_C));
-      fill.style.stroke = pct >= 75 ? 'var(--marker-red-bright)' : pct >= 40 ? 'var(--pencil-yellow)' : 'var(--calm-green-bright)';
-      tag.classList.toggle('critical', pct >= 75);
+      const level = escalationLevel(game, pct);
+      fill.style.stroke = level === 'danger' ? 'var(--marker-red-bright)' : level === 'warning' ? 'var(--pencil-yellow)' : 'var(--calm-green-bright)';
+      tag.classList.toggle('critical', level === 'danger');
     }
     tag.classList.toggle('ready', st.active && s.type === 'argue' && R.argueReady(game, s.id));
     const friend = st.active ? R.adjacentFriend(game, s.id) : null;
@@ -262,7 +274,7 @@ export function invalidateAttendancePanel() {
 
 export function updateAttendancePanel() {
   const game = S.game;
-  const a = game && S.running && game.phase === 'attendance' && !S.seatChartOpen ? game.attendance : null;
+  const a = S.running && game.phase === 'attendance' && !S.seatChartOpen ? game.attendance : null;
   el.attPanel.hidden = !a;
   if (!a) return;
   const speech = S.speech;
@@ -303,7 +315,7 @@ function clockText(frac) {
 const hudShown = { minute: -1, clockTenths: -1, chaos: -1, chaosTenths: -1, finalBell: null };
 export function updateHud() {
   const game = S.game;
-  const frac = game ? Math.min(1, game.elapsed / game.tuning.period) : 0;
+  const frac = Math.min(1, game.elapsed / game.tuning.period);
   const minute = Math.floor(frac * 45);
   if (minute !== hudShown.minute) {
     hudShown.minute = minute;
@@ -314,13 +326,14 @@ export function updateHud() {
     hudShown.clockTenths = clockTenths;
     el.clockFill.style.width = clockTenths / 10 + '%';
   }
-  const c = game ? R.chaos(game) : 0;
+  const c = R.chaos(game);
   const pct = Math.round(c);
   if (pct !== hudShown.chaos) {
     hudShown.chaos = pct;
     setText(el.chaosValue, pct + '%');
-    el.chaosBadge.classList.toggle('mid', pct >= 40 && pct < 75);
-    el.chaosBadge.classList.toggle('hot', pct >= 75);
+    const level = escalationLevel(game, pct);
+    el.chaosBadge.classList.toggle('mid', level === 'warning');
+    el.chaosBadge.classList.toggle('hot', level === 'danger');
     el.chaosBadge.setAttribute('aria-valuenow', String(pct));
   }
   const chaosTenths = Math.round(Math.min(100, c) * 10);
@@ -328,7 +341,7 @@ export function updateHud() {
     hudShown.chaosTenths = chaosTenths;
     el.chaosFill.style.width = chaosTenths / 10 + '%';
   }
-  const left = game ? game.tuning.period - game.elapsed : Infinity;
+  const left = game.tuning.period - game.elapsed;
   const finalBell = S.running && left <= 15 && left > 0;
   if (finalBell !== hudShown.finalBell) {
     hudShown.finalBell = finalBell;
