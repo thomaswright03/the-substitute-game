@@ -1,0 +1,16 @@
+Character models: "Ultimate Modular Men Pack" and "Ultimate Modular Women Pack" by Quaternius
+(https://quaternius.com), obtained via poly.pizza.
+
+Files used and their per-model licence:
+  business-man.glb   (Business Man, men pack)   - CC0 (Public Domain)
+  casual-man.glb     (Casual Character, men)     - CC0 (Public Domain)
+  hoodie-man.glb     (Hoodie Character, men)     - CC0 (Public Domain)
+  worker-man.glb     (Worker, men pack)          - CC0 (Public Domain)
+  punk-man.glb       (Punk, men pack)            - CC0 (Public Domain)
+  suit-woman.glb     (Suit, women pack)          - CC BY (Attribution: Quaternius)
+  worker-woman.glb   (Worker, women pack)        - CC BY (Attribution: Quaternius)
+  punk-woman.glb     (Punk, women pack)          - CC0 (Public Domain)
+  casual-woman.glb   (Animated Woman, women pack)- CC0 (Public Domain)
+
+CC BY items require attribution: "Character model by Quaternius (quaternius.com)".
+No modifications made to geometry/rig; used as downloaded (glTF export via poly.pizza).
