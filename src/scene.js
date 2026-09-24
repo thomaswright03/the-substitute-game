@@ -21,6 +21,12 @@ export const CHAIR = {
 };
 
 // The top-centre of the chair seat for a given seat in the seating chart.
+// The student desk's top surface, relative to the desk's centre on the floor.
+export const DESK = {
+  topY: 0.745,
+  halfDepth: 0.357,
+};
+
 export function seatPosition(seat) {
   return { x: ROOM.colsX[seat.col], y: CHAIR.seatTop, z: ROOM.rowsZ[seat.row] + CHAIR.z };
 }

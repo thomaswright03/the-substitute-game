@@ -8,6 +8,8 @@
 // The bodies have no facial blend shapes, so a separate expressive head (52 ARKit morph targets,
 // assets/face.glb) is attached to each character's Head bone in place of the original head skin.
 
+import { CHAIR, DESK, canvasTexture } from './scene.js';
+
 export const CHAR = {
   scale: 0.95,
   // the rig's model-space forward is +Z; the class faces the board at -Z
@@ -194,16 +196,130 @@ export function applyExpression(faceMesh, weights) {
 
 /* ---------------- building a character ---------------- */
 
+// Where each behaviour's prop sits, and where the wrists go to hold it, in metres from the
+// top-centre of the chair seat: +x is the student's right, +y up, -z toward the desk (and the
+// board). Everything is on or above the desk top, so the teacher can see it from the front of
+// the room and from the aisles.
+const DESK_Y = DESK.topY - CHAIR.seatTop;
+const DESK_MID_Z = -CHAIR.z + DESK.halfDepth / 2; // halfway between the desk's centre and its near edge
+const REST_L = [-0.15, DESK_Y + 0.05, DESK_MID_Z + 0.05];
+export const TELL_POSES = {
+  notes: { prop: [0.05, DESK_Y + 0.004, DESK_MID_Z - 0.04], R: [0.07, DESK_Y + 0.06, DESK_MID_Z + 0.02], L: REST_L },
+  phone: { prop: [0, DESK_Y + 0.17, DESK_MID_Z + 0.01], R: [0.1, DESK_Y + 0.12, DESK_MID_Z + 0.07], L: [-0.1, DESK_Y + 0.12, DESK_MID_Z + 0.07] },
+  plane: { prop: [0.2, DESK_Y + 0.46, DESK_MID_Z - 0.02], R: [0.2, DESK_Y + 0.39, DESK_MID_Z + 0.06], L: REST_L },
+  snack: { prop: [0.16, DESK_Y + 0.09, DESK_MID_Z - 0.04], R: [0.13, DESK_Y + 0.16, DESK_MID_Z + 0.04], L: REST_L },
+};
+
+const paperMat = new THREE.MeshStandardMaterial({ color: 0xf7f3e8, roughness: 0.55, side: THREE.DoubleSide });
+
+function notesTexture() {
+  return canvasTexture((ctx, w, h) => {
+    ctx.fillStyle = '#f7f3e8';
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = 'rgba(47,106,147,0.55)';
+    ctx.lineWidth = 2;
+    for (let y = 26; y < h; y += 16) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = 'rgba(200,52,31,0.6)';
+    ctx.beginPath();
+    ctx.moveTo(18, 0);
+    ctx.lineTo(18, h);
+    ctx.stroke();
+    // a scribbled message and a heart: unmistakably not class notes
+    ctx.strokeStyle = '#2b2b3a';
+    ctx.lineWidth = 3;
+    for (let row = 0; row < 5; row++) {
+      ctx.beginPath();
+      for (let x = 26; x < w - 20 - row * 12; x += 6) ctx.lineTo(x, 22 + row * 16 + Math.sin(x * 0.7 + row) * 3);
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#d9457a';
+    ctx.beginPath();
+    ctx.arc(w * 0.62, h * 0.8, 9, Math.PI, 0);
+    ctx.arc(w * 0.62 + 18, h * 0.8, 9, Math.PI, 0);
+    ctx.lineTo(w * 0.62 + 9, h * 0.8 + 20);
+    ctx.closePath();
+    ctx.fill();
+  }, 128, 160);
+}
+
+function paperPlaneGeometry() {
+  // nose at -z; two wings folded up a little from a centre keel
+  const nose = [0, 0, -0.19], tail = [0, 0, 0.13], keel = [0, -0.045, 0.11];
+  const wingL = [-0.13, 0.02, 0.13], wingR = [0.13, 0.02, 0.13];
+  const v = [...nose, ...wingL, ...tail, ...nose, ...tail, ...wingR, ...nose, ...keel, ...tail];
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
+  geo.computeVertexNormals();
+  return geo;
+}
+
+// Each builder returns a prop in seat-space orientation (see TELL_POSES), centred on its anchor.
 const PROP_BUILDERS = {
-  notes: () => new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.006, 0.09), new THREE.MeshStandardMaterial({ color: 0xf5f0e6, roughness: 0.4 })),
-  phone: () => new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.09, 0.012), new THREE.MeshStandardMaterial({ color: 0x241d18, roughness: 0.5 })),
+  notes: () => {
+    const sheet = new THREE.Mesh(new THREE.PlaneGeometry(0.17, 0.21), new THREE.MeshStandardMaterial({ map: notesTexture(), roughness: 0.6 }));
+    sheet.rotation.x = -Math.PI / 2;
+    sheet.rotation.z = 0.25;
+    return sheet;
+  },
+  phone: () => {
+    const g = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.17, 0.014), new THREE.MeshStandardMaterial({ color: 0x241d18, roughness: 0.45 }));
+    const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.078, 0.15), new THREE.MeshBasicMaterial({ color: 0xb8ecff }));
+    screen.position.z = 0.0075;
+    g.add(body, screen);
+    // held up in front of the chest, screen tipped toward the student's face
+    g.rotation.x = -0.5;
+    g.rotation.y = Math.PI;
+    return g;
+  },
   plane: () => {
-    const m = new THREE.Mesh(new THREE.ConeGeometry(0.032, 0.11, 3), new THREE.MeshStandardMaterial({ color: 0xf5f0e6, roughness: 0.4 }));
-    m.rotation.z = Math.PI / 2;
+    const m = new THREE.Mesh(paperPlaneGeometry(), paperMat);
+    m.rotation.set(0.35, 0.8, 0); // nose up and angled across the body, ready to launch
     return m;
   },
-  snack: () => new THREE.Mesh(new THREE.SphereGeometry(0.042, 8, 6), new THREE.MeshStandardMaterial({ color: 0xd9a441, roughness: 0.55 })),
+  snack: () => {
+    const g = new THREE.Group();
+    const bag = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.18, 0.05), new THREE.MeshStandardMaterial({ color: 0xe0452b, roughness: 0.35, metalness: 0.2 }));
+    const band = new THREE.Mesh(new THREE.BoxGeometry(0.132, 0.05, 0.052), new THREE.MeshStandardMaterial({ color: 0xf2b93b, roughness: 0.4 }));
+    band.position.y = 0.01;
+    g.add(bag, band);
+    g.rotation.y = 0.4;
+    return g;
+  },
 };
+
+/* ---------------- arm poses ---------------- */
+
+const _a = new THREE.Vector3();
+const _b = new THREE.Vector3();
+const _c = new THREE.Vector3();
+const _q = new THREE.Quaternion();
+const _qp = new THREE.Quaternion();
+const _qb = new THREE.Quaternion();
+
+// Cyclic-coordinate-descent IK: turns the forearm, then the upper arm, so that the wrist reaches
+// `target` (world space). Runs once per pose when a character is built, not every frame.
+function reach(upper, lower, wrist, target, iterations = 16) {
+  upper.updateMatrixWorld(true);
+  for (let it = 0; it < iterations; it++) {
+    for (const bone of [lower, upper]) {
+      bone.getWorldPosition(_a);
+      wrist.getWorldPosition(_b);
+      const toWrist = _b.sub(_a).normalize();
+      const toTarget = _c.copy(target).sub(_a).normalize();
+      _q.setFromUnitVectors(toWrist, toTarget);
+      bone.parent.getWorldQuaternion(_qp);
+      bone.getWorldQuaternion(_qb);
+      bone.quaternion.copy(_qp.invert().multiply(_q).multiply(_qb));
+      bone.updateMatrixWorld(true);
+    }
+  }
+}
 
 function findClip(animations, name) {
   return animations.find((a) => a.name.split('|').pop() === name) || null;
@@ -251,28 +367,9 @@ export function buildCharacter(gltf, faceTemplate, opts) {
   const head = bones.Head || null;
   const arm = bones.UpperArmR || null;
   const hand = bones.WristR || null;
+  const armBones = ['UpperArmR', 'LowerArmR', 'UpperArmL', 'LowerArmL'].map((n) => bones[n] || null);
+  const armRestQ = armBones.map((b) => (b ? b.quaternion.clone() : null));
 
-  let prop = null;
-  if (opts.type && PROP_BUILDERS[opts.type]) {
-    prop = PROP_BUILDERS[opts.type]();
-    prop.visible = false;
-    if (hand) {
-      // bone-local units: divide the intended metres by the bone's world scale
-      hand.updateMatrixWorld(true);
-      const s = hand.getWorldScale(new THREE.Vector3()).x || 1;
-      prop.scale.setScalar(1 / s);
-      prop.position.set(0, -0.08 / s, 0.03 / s);
-      hand.add(prop);
-    }
-  }
-
-  const faceMesh = attachExpressiveFace(g, head, faceTemplate);
-
-  g.userData.parts = {
-    head, arm, hand, prop, faceMesh, mixer, actions,
-    headRest: head ? head.rotation.clone() : new THREE.Euler(),
-    armRest: arm ? arm.rotation.clone() : new THREE.Euler(),
-  };
   // Measured, not tuned per model: the costumes' rigs differ in proportions and bind pose, so
   // find where this one's hips ended up and offset the whole character to put them on the seat.
   g.userData.seatOffset = new THREE.Vector3();
@@ -285,7 +382,56 @@ export function buildCharacter(gltf, faceTemplate, opts) {
       g.userData.seatOffset.set(-at.x, CHAR.hipAboveSeat - at.y, CHAR.hipBehindSeatCentre - at.z);
     }
   }
+  // with the group at the origin, the top-centre of the seat is at -seatOffset
+  const seatSpace = (offset) => new THREE.Vector3(...offset).sub(g.userData.seatOffset);
+
+  // Arm poses for this behaviour's tell, solved against this rig's own proportions.
+  let tellPose = null;
+  let prop = null;
+  const tell = seated && opts.type ? TELL_POSES[opts.type] : null;
+  if (tell && armBones.every(Boolean) && bones.WristR && bones.WristL) {
+    g.updateMatrixWorld(true);
+    reach(bones.UpperArmR, bones.LowerArmR, bones.WristR, seatSpace(tell.R));
+    reach(bones.UpperArmL, bones.LowerArmL, bones.WristL, seatSpace(tell.L));
+    tellPose = armBones.map((b) => b.quaternion.clone());
+    armBones.forEach((b, i) => b.quaternion.copy(armRestQ[i]));
+    g.updateMatrixWorld(true);
+  }
+  if (tell && PROP_BUILDERS[opts.type]) {
+    prop = PROP_BUILDERS[opts.type]();
+    prop.name = 'prop-' + opts.type;
+    prop.position.copy(seatSpace(tell.prop));
+    prop.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+    prop.updateMatrixWorld(true);
+    g.updateMatrixWorld(true);
+    g.attach(prop); // keeps the seat-space placement, now riding along with the student
+    prop.visible = false;
+  }
+
+  const faceMesh = attachExpressiveFace(g, head, faceTemplate);
+
+  // the direction the face points at rest, in the head bone's own space
+  let headForwardLocal = null;
+  if (head) {
+    g.updateMatrixWorld(true);
+    const forward = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), CHAR.forwardYaw);
+    headForwardLocal = forward.applyQuaternion(head.getWorldQuaternion(new THREE.Quaternion()).invert());
+  }
+
+  g.userData.parts = {
+    head, arm, hand, prop, faceMesh, mixer, actions, armBones, armRestQ, tellPose, headForwardLocal,
+    headRest: head ? head.rotation.clone() : new THREE.Euler(),
+    armRest: arm ? arm.rotation.clone() : new THREE.Euler(),
+  };
   return g;
+}
+
+// World-space direction the character's face points (for tests and diagnostics).
+export function headForward(group, target = new THREE.Vector3()) {
+  const p = group.userData.parts;
+  if (!p.head || !p.headForwardLocal) return null;
+  group.updateMatrixWorld(true);
+  return target.copy(p.headForwardLocal).applyQuaternion(p.head.getWorldQuaternion(_qb)).normalize();
 }
 
 // Switches a standing character between its frozen idle pose and its walk cycle.
@@ -310,10 +456,12 @@ export function setWalking(group, walking) {
 export function poseCharacter(group, state, t) {
   const p = group.userData.parts;
   const face = p.faceMesh;
-  if (p.prop) p.prop.visible = state.kind === 'active';
+  const showTell = state.kind === 'active';
+  if (p.prop) p.prop.visible = showTell;
   group.rotation.x = 0;
   if (p.head) p.head.rotation.copy(p.headRest);
-  if (p.arm) p.arm.rotation.copy(p.armRest);
+  p.armBones.forEach((b, i) => { if (b) b.quaternion.copy(p.armRestQ[i]); });
+  if (showTell && p.tellPose) p.armBones.forEach((b, i) => b.quaternion.copy(p.tellPose[i]));
   if (state.kind !== 'active' || state.type !== 'spin') group.rotation.y = CHAR.forwardYaw;
 
   switch (state.kind) {
@@ -331,7 +479,8 @@ export function poseCharacter(group, state, t) {
       applyExpression(face, { mouthSmile_L: 0.9, mouthSmile_R: 0.9, eyeSquint_L: 0.5, eyeSquint_R: 0.5 });
       return;
     case 'detained':
-      if (p.head) p.head.rotation.x = p.headRest.x - 0.18;
+      // head hung, sulking
+      if (p.head) p.head.rotation.x = p.headRest.x + 0.22;
       applyExpression(face, { mouthFrown_L: 0.5, mouthFrown_R: 0.5, browInnerUp: 0.5, eyeLookDown_L: 0.5, eyeLookDown_R: 0.5 });
       return;
     case 'active':
@@ -357,7 +506,8 @@ export function poseCharacter(group, state, t) {
       break;
     case 'phone':
     case 'notes':
-      if (p.head) p.head.rotation.x = p.headRest.x - 0.3;
+      // head bowed over the desk (+x pitches every rig's head forward and down)
+      if (p.head) p.head.rotation.x = p.headRest.x + 0.42 + Math.sin(t * 1.7) * 0.03;
       applyExpression(face, { eyeLookDown_L: 0.6, eyeLookDown_R: 0.6, mouthSmile_L: 0.3, mouthSmile_R: 0.3 });
       break;
     case 'snack':
@@ -372,8 +522,7 @@ export function poseCharacter(group, state, t) {
         : { browDown_L: 0.8, browDown_R: 0.8, jawOpen: 0.35 + Math.sin(t * 12) * 0.15 });
       break;
     case 'plane':
-      if (p.head) p.head.rotation.x = p.headRest.x - 0.25;
-      if (p.arm) p.arm.rotation.x = p.armRest.x - 0.5;
+      if (p.head) p.head.rotation.x = p.headRest.x + 0.3;
       applyExpression(face, { mouthSmile_L: 0.6, mouthSmile_R: 0.3, eyeSquint_L: 0.3 });
       break;
   }

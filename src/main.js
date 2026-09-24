@@ -5,7 +5,7 @@ import * as R from './rules.js';
 import { applyStaticStrings, listNames, lookup, plural, setStrings, t } from './strings.js';
 import { ROOM, buildAttendanceCards, buildDesk, buildRoom, deskPosition, seatPosition } from './scene.js';
 import {
-  FACE_URL, buildCharacter, faceOffsetFromHead, loadAll, loadGLB, modelUrl, poseCharacter, setWalking,
+  FACE_URL, buildCharacter, faceOffsetFromHead, headForward, loadAll, loadGLB, modelUrl, poseCharacter, setWalking,
 } from './characters.js';
 
 const boot = window.SubstituteBoot || { blocked: false, progress() {}, fail() {}, ready() {}, show() {} };
@@ -1620,6 +1620,7 @@ function exposeTestHooks() {
       if (world.principal) out.principal = faceOffsetFromHead(world.principal);
       return out;
     },
+    headForward: (id) => headForward(world.students[id]).toArray(),
     ensurePrincipal,
     // pass null to hand the camera back to the player
     setCameraOverride(pos, target) {
