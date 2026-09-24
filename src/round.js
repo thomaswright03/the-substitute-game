@@ -1,7 +1,7 @@
 // Rounds: starting, pausing, and the end-of-period screen with its report card.
 import { STUDENTS } from './data.js';
 import * as R from './rules.js';
-import { listNames, plural, t } from './strings.js';
+import { formatPercent, listNames, plural, t } from './strings.js';
 import { $, el } from './dom.js';
 import { S, name } from './session.js';
 import { resetStudentVisuals } from './world.js';
@@ -142,7 +142,7 @@ export function updateCountdown() {
 function fillStats(game) {
   const c = game.counters;
   $('statInterventions').textContent = String(R.interventions(game));
-  $('statChaos').textContent = Math.round(game.maxChaos) + '%';
+  $('statChaos').textContent = formatPercent(Math.round(game.maxChaos));
   $('statHits').textContent = String(c.hits);
   $('statDetentions').textContent = String(c.detentions);
   $('statPrincipal').textContent = String(c.principalCalls);

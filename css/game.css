@@ -238,7 +238,14 @@ canvas#gl { position: absolute; inset: 0; display: block; width: 100%; height: 1
 .iconBtn[aria-pressed="true"] { background: var(--paper-deep); }
 @container stage (max-width: 620px) {
   .badge.title { display: none; }
+  /* the clock and the chaos meter share the room the buttons leave, and a label that doesn't
+     fit on one line (a long translation, a narrow phone) wraps onto two */
   .badge { min-width: 0; padding: var(--space-2) var(--space-5); }
+  .badge.clock, .badge.chaos { flex: 1 1 0; max-width: calc(170 * var(--px)); justify-content: flex-end; }
+  .badge .label { white-space: normal; text-wrap: balance; line-height: 1.2; letter-spacing: 0.03em; }
+}
+@container stage (max-width: 360px) {
+  .badge .value { font-size: var(--fs-3); }
 }
 
 /* ================= HUD: panels under the top band ================= */

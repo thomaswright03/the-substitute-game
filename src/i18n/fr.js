@@ -4,6 +4,8 @@ export default {
   common: {
     listSeparator: ', ',
     listAnd: ' et ',
+    percent: '{value}\u00a0%',
+    clock: '{hours} h {minutes}',
   },
   pronoun: {
     he: { possessive: 'son' },

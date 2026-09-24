@@ -14,6 +14,9 @@ const EN = {
   common: {
     listSeparator: ', ',
     listAnd: ' and ',
+    // how the HUD and the end screen write a percentage and a time of day
+    percent: '{value}%',
+    clock: '{hours}:{minutes}',
   },
   // keyed by each student's `pronoun` in data.js
   pronoun: {
@@ -485,6 +488,21 @@ export function t(key, params) {
  */
 export function plural(count, singularKey, pluralKey) {
   return t(count === 1 ? singularKey : pluralKey);
+}
+
+// A percentage in the current language: 45% in English, 45 % in Spanish and French.
+/** @param {number} value */
+export function formatPercent(value) {
+  return t('common.percent', { value });
+}
+
+// A time of day in the current language: 9:05 in English and Spanish, 9 h 05 in French.
+/**
+ * @param {number} hours
+ * @param {number} minutes
+ */
+export function formatClock(hours, minutes) {
+  return t('common.clock', { hours, minutes: String(minutes).padStart(2, '0') });
 }
 
 // Joins names as "A", "A and B", "A, B and C".

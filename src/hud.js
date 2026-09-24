@@ -2,7 +2,7 @@
 // prompt, the action buttons and the attendance panel.
 import { ICON, STUDENTS } from './data.js';
 import * as R from './rules.js';
-import { currentLanguage, plural, t } from './strings.js';
+import { currentLanguage, formatClock, formatPercent, plural, t } from './strings.js';
 import { el, keyedLabel, setText } from './dom.js';
 import { S, frozen, name } from './session.js';
 import { project, world } from './world.js';
@@ -306,13 +306,19 @@ function clockText(frac) {
   let h = Math.floor(total / 60);
   const m = Math.floor(total % 60);
   if (h > 12) h -= 12;
-  return h + ':' + String(m).padStart(2, '0');
+  return formatClock(h, m);
 }
 
 // Runs every frame, and writes to the page only when a shown value changes. When a period
 // ends the HUD keeps its final clock and chaos, so a loss shows the 100% that caused it.
 /** @type {{minute: number, clockTenths: number, chaos: number, chaosTenths: number, finalBell: boolean | null}} */
 const hudShown = { minute: -1, clockTenths: -1, chaos: -1, chaosTenths: -1, finalBell: null };
+
+// Forgets the clock and chaos text, so the next frame writes them again (after a change of language).
+export function invalidateHud() {
+  hudShown.minute = -1;
+  hudShown.chaos = -1;
+}
 export function updateHud() {
   const game = S.game;
   const frac = Math.min(1, game.elapsed / game.tuning.period);
@@ -330,7 +336,7 @@ export function updateHud() {
   const pct = Math.round(c);
   if (pct !== hudShown.chaos) {
     hudShown.chaos = pct;
-    setText(el.chaosValue, pct + '%');
+    setText(el.chaosValue, formatPercent(pct));
     const level = escalationLevel(game, pct);
     el.chaosBadge.classList.toggle('mid', level === 'warning');
     el.chaosBadge.classList.toggle('hot', level === 'danger');

@@ -140,3 +140,81 @@ test('the pause screen repeats the five rules, in each language', async ({ page 
     }
   }
 });
+
+// The clock and the chaos meter on a small phone, at their widest (a two-digit minute and 100%).
+for (const [w, h] of [[320, 568], [375, 667]]) {
+  for (const locale of ['en-US', 'es-ES', 'fr-FR']) {
+    test(`the HUD's labels and values fit their badges at ${w}px in ${locale}`, async ({ browser }) => {
+      const context = await browser.newContext({ locale, viewport: { width: w, height: h }, hasTouch: true, isMobile: true });
+      const page = await context.newPage();
+      await page.addInitScript(() => localStorage.setItem('substitute.quality', 'minimum'));
+      await openGame(page);
+      await startRound(page);
+      await freezeRandomness(page);
+      await hooks(page, (s) => {
+        s.holdTime();
+        s.game.elapsed = s.game.tuning.period * (43.5 / 45);
+        const st = s.game.students.hughJass;
+        st.active = true;
+        st.escalation = 99.8;
+      });
+      await expect(page.locator('#chaosValue')).toHaveText(/^100/);
+      await expect(page.locator('#clockValue')).toHaveText(/48$/);
+      const parts = await page.evaluate(() => [...document.querySelectorAll('#hud .label, #hud .value')]
+        .filter((n) => n.checkVisibility())
+        .map((n) => {
+          const r = n.getBoundingClientRect();
+          const b = n.closest('.badge').getBoundingClientRect();
+          return {
+            text: n.textContent,
+            fontSize: parseFloat(getComputedStyle(n).fontSize),
+            overflow: n.scrollWidth - n.clientWidth,
+            inside: r.left >= b.left - 0.5 && r.right <= b.right + 0.5 && r.top >= b.top - 0.5 && r.bottom <= b.bottom + 0.5,
+          };
+        }));
+      expect(parts.length).toBe(4);
+      for (const p of parts) {
+        expect(p.overflow, `"${p.text}" is wider than its box`).toBeLessThanOrEqual(0);
+        expect(p.inside, `"${p.text}" spills out of its badge`).toBe(true);
+        expect(p.fontSize, `"${p.text}" is too small to read`).toBeGreaterThanOrEqual(12);
+      }
+      await context.close();
+    });
+  }
+}
+
+test('the clock and the chaos meter are written the way the chosen language writes them', async ({ page }) => {
+  await openGame(page);
+  await startRound(page);
+  await freezeRandomness(page);
+  await hooks(page, (s) => {
+    s.holdTime();
+    s.game.elapsed = s.game.tuning.period * (5 / 45);
+    const st = s.game.students.hughJass;
+    st.active = true;
+    st.escalation = 42;
+  });
+  await expect(page.locator('#clockValue')).toHaveText('9:10');
+  await expect(page.locator('#chaosValue')).toHaveText('42%');
+
+  await switchLanguageFromPause(page, 'fr');
+  await expect(page.locator('#clockValue')).toHaveText('9 h 10');
+  await expect(page.locator('#chaosValue')).toHaveText('42 %');
+  // the same conventions as the French rules and end-of-period text
+  expect(FR.start.intro).toContain('9 h 50');
+  expect(FR.start.rules[1].body).toContain('100 %');
+
+  await switchLanguageFromPause(page, 'es');
+  await expect(page.locator('#clockValue')).toHaveText('9:10');
+  await expect(page.locator('#chaosValue')).toHaveText('42 %');
+  expect(ES.start.rules[1].body).toContain('100 %');
+
+  // the end screen's closest call too
+  await hooks(page, (s) => {
+    s.game.maxChaos = 64;
+    s.game.elapsed = s.game.tuning.period - 0.05;
+    return s.advance(200);
+  });
+  await expect(page.locator('#endOverlay')).toBeVisible();
+  await expect(page.locator('#statChaos')).toHaveText('64\u00a0%');
+});

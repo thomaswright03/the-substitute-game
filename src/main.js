@@ -12,7 +12,7 @@ import { renderControlsLists, setTouch, setupInput } from './input.js';
 import { updateAim } from './aim.js';
 import { drainEvents, setupEvents } from './events.js';
 import {
-  buildTags, invalidateAttendancePanel, invalidateTags, setupActionButtons, updateAttendancePanel, updateHud,
+  buildTags, invalidateAttendancePanel, invalidateHud, invalidateTags, setupActionButtons, updateAttendancePanel, updateHud,
   updatePromptAndActions, updateTags,
 } from './hud.js';
 import { refreshSpeech, updateSpeech } from './rollcall.js';
@@ -102,6 +102,7 @@ function refreshDrawnText() {
   refreshSpeech();
   invalidateAttendancePanel();
   invalidateTags();
+  invalidateHud();
   renderSeatChart();
   showBest();
 }
