@@ -21,6 +21,7 @@ import { updateProjectile } from './effects.js';
 import { updatePrincipal } from './principal.js';
 import { setupRound, showBest } from './round.js';
 import { applyCameraOverride, exposeTestHooks } from './testhooks.js';
+import { registerServiceWorker } from './offline.js';
 
 const boot = window.SubstituteBoot || { blocked: false, progress() {}, fail() {}, ready() {}, show() {} };
 const MAX_FRAME_DT = 5; // longer gaps are stalls (a hidden tab pauses the game), not play time
@@ -110,6 +111,7 @@ async function init() {
   // fetch the principal in the background once the classroom is up
   setTimeout(() => ensurePrincipal().catch(() => { /* retried when first needed */ }), 1500);
   if (TEST_MODE) exposeTestHooks();
+  registerServiceWorker();
 }
 
 init().catch((err) => boot.fail(err));

@@ -4,7 +4,14 @@ A browser-based 3D classroom-management game built with Three.js. You're the sub
 teacher in Room 204: take attendance, keep the class from boiling over, and make it to the
 bell at 9:50.
 
-## How to run it
+## Play it
+
+Once GitHub Pages is switched on (see [Hosting](#hosting)), the game is at
+<https://thomaswright03.github.io/the-substitute-game/>. It needs a browser with WebGL (any
+recent Chrome, Edge, Firefox or Safari with hardware acceleration switched on). Without WebGL
+the page says so instead of loading.
+
+## Run it locally
 
 It's a static site with no build step. From the project folder:
 
@@ -19,9 +26,6 @@ Any other static server works too, for example `python3 -m http.server 8000`.
 The game has to be served over `http://`. Browsers block the game's scripts and 3D models
 when `index.html` is opened directly from disk (`file://`). If you open it that way, the page
 explains this and shows the command above.
-
-It needs a browser with WebGL (any recent Chrome, Edge, Firefox or Safari with hardware
-acceleration switched on). Without WebGL the page says so instead of loading.
 
 ## How to play
 
@@ -70,6 +74,40 @@ discipline and close calls.
 
 The whole game can be played with the keyboard alone. Menus take focus when they open and
 give it back when they close.
+
+## Hosting
+
+The game is published to GitHub Pages by `.github/workflows/pages.yml`. Every push to `main`
+runs the full test suite, builds the site and deploys it. Nothing else deploys.
+
+**Switching it on (once).** In the repository on GitHub, open *Settings > Pages* and under
+*Build and deployment* set *Source* to **GitHub Actions**. The next push to `main` publishes
+the game at <https://thomaswright03.github.io/the-substitute-game/> (the pattern is
+`https://<owner>.github.io/<repository>/`). The deploy job's summary in the *Actions* tab
+shows the URL too.
+
+**What gets published.** `npm run build` writes `_site/`: `index.html`, `css/`, `src/`, `lib/`
+and `assets/` copied as they are, a `.nojekyll` marker, and `sw.js`, a service worker listing
+a content hash for every file. Every URL in the game is relative, so it works under the
+`/the-substitute-game/` sub-path. To try the published build locally, run `npm run preview`
+and open <http://localhost:8080/the-substitute-game/>.
+
+**Compression and caching.** GitHub Pages sends `.html`, `.js`, `.css` and `.glb` files
+gzip-compressed (a little over 3 MB for a first visit) with a 10-minute browser cache and ETags. On
+top of that, the service worker keeps every file in the browser under its content hash, so a
+repeat visit loads the models, fonts and three.js from that cache without touching the
+network, and a new deploy only downloads the files that changed. The page itself is always
+fetched fresh first, so players see a new deploy on their next visit. `npm start` never
+registers the service worker. To check a live deploy:
+
+```bash
+curl -sI -H 'Accept-Encoding: gzip' https://thomaswright03.github.io/the-substitute-game/assets/characters/punk-man.glb | grep -i -E 'content-encoding|cache-control'
+```
+
+**Redeploying and rolling back.** To redeploy the current `main`, push to it (an empty
+commit works: `git commit --allow-empty -m "Redeploy" && git push`). To roll back, either
+revert the bad commit on `main` and push, or open *Actions > Deploy to GitHub Pages*, pick the
+last good run and choose *Re-run all jobs*, which rebuilds and redeploys that run's commit.
 
 ## Development
 
@@ -142,8 +180,8 @@ Characters combine two things at runtime:
 The character files were re-packed for the web with `npm run optimize-assets`: unused
 animation clips were removed and the geometry meshopt-compressed (about 520 KB per
 character instead of 1.4 MB). The principal's model only downloads after the classroom is
-ready. `npm start` sends scripts, styles and models gzip-compressed, so the first load is
-about 3 MB on the wire (it was 13.6 MB). If you host the game somewhere else, turn on gzip or
+ready. `npm start` and GitHub Pages send scripts, styles and models gzip-compressed, so the
+first load is a little over 3 MB on the wire. If you host the game somewhere else, turn on gzip or
 Brotli compression for `.html`, `.js`, `.css` and `.glb` files there too.
 
 ## Asset credits
@@ -160,4 +198,5 @@ Brotli compression for `.html`, `.js`, `.css` and `.glb` files there too.
 ## Status
 
 The core loop, attendance, discipline, seating, characters and facial expressions are all
-in place, with automated tests. Not deployed anywhere. It runs locally.
+in place, with automated tests. Deployment to GitHub Pages is set up and runs once Pages is
+switched on in the repository settings (see [Hosting](#hosting)).
