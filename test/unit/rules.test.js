@@ -55,6 +55,38 @@ describe('an idle round', () => {
   });
 });
 
+describe('the gentle start on Relaxed', () => {
+  test('the first student acts up later, and none of them sits next to a friend', () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      const game = newGame({ seed, difficulty: 'relaxed' });
+      run(game, game.tuning.firstSpawnDelay - 0.5);
+      assert.equal(eventsOf(game, 'activate').length, 0, `seed ${seed}`);
+      run(game, 40);
+      for (const e of eventsOf(game, 'activate')) {
+        assert.equal(adjacentFriend(game, e.id), null, `seed ${seed}: ${e.id} started next to a friend`);
+      }
+    }
+  });
+
+  test('once the first card is handed out, anyone can act up again', () => {
+    const seen = new Set();
+    for (let seed = 1; seed <= 40; seed++) {
+      const game = newGame({ seed, difficulty: 'relaxed' });
+      pickupCard(game, 'hughJass');
+      deliverCard(game, 'hughJass');
+      run(game, 60);
+      for (const e of eventsOf(game, 'activate')) if (adjacentFriend(game, e.id)) seen.add(e.id);
+    }
+    assert.ok(seen.size >= 4, `only ${[...seen]} started next to a friend`);
+  });
+
+  test('Standard starts as it always did', () => {
+    const game = newGame({ seed: 3, difficulty: 'standard' });
+    assert.equal(game.tuning.gentleStart, false);
+    assert.equal(game.tuning.firstSpawnDelay, TUNING.firstSpawnDelay);
+  });
+});
+
 describe('a round played well', () => {
   test('a finished attendance with no incidents wins at the bell', () => {
     const game = newGame();

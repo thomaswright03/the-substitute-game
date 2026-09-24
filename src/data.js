@@ -63,10 +63,15 @@ export const TEACHER = { speed: 3.1, startZ: ROOM.backZ - 1.7 };
 // designed around. The balance tests show that a player a little slower than the simulated
 // first-timer (slower to react, to aim and to find each card's owner) loses almost every
 // Standard period, mostly by running out of time for attendance; Relaxed doubles the period and
-// calms the class so that player wins most rounds. See test/unit/balance.test.js.
+// calms the class so that player wins most rounds. It also starts gently, for a player still
+// learning the controls: the first student acts up later, and until the first name card is
+// handed out nobody sitting next to a friend starts (a friend beside them makes them escalate
+// 60% faster). See test/unit/balance.test.js.
 export const DIFFICULTY = {
   relaxed: {
     period: 240,
+    firstSpawnDelay: 15,
+    gentleStart: true,
     rateScale: 0.7,
     attendanceRateScale: 0.5,
     throwChanceAttendance: 0.08,
@@ -86,6 +91,8 @@ export const TUNING = {
 
   // Misbehaviour spawning. The interval shrinks as the period goes on.
   firstSpawnDelay: 7,
+  // true: until the first card is handed out, no one sitting next to a friend starts acting up
+  gentleStart: false,
   spawnIntervalStart: 13,
   spawnIntervalShrink: 8.5,
   // While attendance is still being taken the class is still settling in: students act up

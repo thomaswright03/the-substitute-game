@@ -163,12 +163,12 @@ two minutes of unpaused play on Standard, four on Relaxed. The game pauses itsel
 is hidden.
 
 **Difficulty and balance.** The start screen offers Relaxed (a four-minute period, a calmer
-class and fewer throws) and Standard (the two-minute period the game was designed around). A
-first visit starts on Relaxed and the choice is remembered; each difficulty keeps its own best
-grade. `test/unit/balance.test.js` plays many seeded periods with a simulated first-time player
-that has to find each card's owner by roll call and walking, and sometimes tries the wrong desk,
-and checks the win-rate targets stated there. Notes from real playtests go in
-`docs/playtests.md`.
+class, fewer throws and a gentle first minute; see `docs/playtests.md`) and Standard (the
+two-minute period the game was designed around). A first visit starts on Relaxed and the choice is
+remembered; each difficulty keeps its own best grade. `test/unit/balance.test.js` plays many
+seeded periods with a simulated first-time player that has to find each card's owner by roll
+call and walking, and sometimes tries the wrong desk, and checks the win-rate targets stated
+there. Notes from real playtests go in `docs/playtests.md`.
 
 **Graphics.** The start and pause screens have a Graphics setting, kept in the browser like
 the other settings. Automatic (the default) starts with the full look and, when frames keep

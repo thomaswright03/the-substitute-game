@@ -6,6 +6,8 @@
 //  - Standard: the simulated first-timer wins at least 90% of seeds.
 //  - Relaxed: a markedly slower player (slower to react, to aim, to read and to find each
 //    owner) wins at least 80% of seeds, where on Standard the same player almost never wins.
+//  - Relaxed starts gently: a player who spends the whole first minute learning the controls,
+//    doing nothing useful, has not lost yet, on every seed.
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { createGame } from '../../src/rules.js';
@@ -57,6 +59,14 @@ describe('balance', () => {
 
   test('a first visit starts on Relaxed', () => {
     assert.equal(DEFAULT_DIFFICULTY, 'relaxed');
+  });
+
+  test('a player still learning the controls survives the first minute of Relaxed', () => {
+    for (let seed = 1; seed <= SEEDS; seed++) {
+      const game = createGame({ rng: seeded(seed), difficulty: 'relaxed' });
+      run(game, 60);
+      assert.notEqual(game.phase, 'over', `seed ${seed}: lost at ${game.elapsed.toFixed(1)} s`);
+    }
   });
 
   test('doing nothing still loses on Relaxed', () => {

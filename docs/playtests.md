@@ -14,6 +14,16 @@ Because a player only a little slower than the first-timer loses almost every St
 a first visit starts on Relaxed. The difficulty can be changed on the start screen, and the
 choice is remembered.
 
+**The opening of Relaxed.** A new player spends their first minute learning to walk, look and
+pick up a card. Before the gentle start below, a player who did nothing useful in that minute
+lost it in 86% of seeded Relaxed periods, the earliest at 31 seconds: the phone student sits
+next to his friend and escalates 60% faster. Relaxed now starts gently: the first student acts
+up after 15 seconds instead of 7, and until the first name card is handed out, nobody sitting
+next to a friend starts acting up. A player who does nothing for the first minute has not lost
+yet on any seed (the earliest loss is now at 77 seconds), and doing nothing for the whole
+period still loses. Standard is unchanged. This was tuned from the simulation, not from people;
+the sessions below should confirm it or say otherwise.
+
 ## How to run a session
 
 1. Use someone who has never played or watched the game. Give them the link and nothing else.

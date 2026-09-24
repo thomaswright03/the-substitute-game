@@ -198,7 +198,9 @@ function pick(game, list) {
 }
 
 function calmPool(game) {
-  return game.roster.filter((s) => canMisbehave(game, s.id) && !game.students[s.id].active);
+  const pool = game.roster.filter((s) => canMisbehave(game, s.id) && !game.students[s.id].active);
+  if (game.tuning.gentleStart && game.attendance.delivered === 0) return pool.filter((s) => !adjacentFriend(game, s.id));
+  return pool;
 }
 
 function completeAttendanceIfDone(game) {
