@@ -12,8 +12,8 @@ import { pushLog } from './log.js';
 import { emit } from './bus.js';
 
 const ANSWER_SECONDS = 9; // of play: a pause doesn't use them up
-/** @type {string | null} */
-let lastRollLine = null;
+/** @type {number} the roll-call line used last, so the next answer is a different one */
+let lastRollLine = -1;
 
 /**
  * Angle to a world point from where the teacher faces: 0 ahead, +PI/2 right, +-PI behind.
@@ -26,15 +26,43 @@ function relativeDirection(worldPos) {
   return Math.atan2(r, f);
 }
 
-/** @param {number} angle */
-function directionWords(angle) {
+/**
+ * Where the voice came from, as a key of the `where` texts.
+ * @param {number} angle
+ */
+function directionKey(angle) {
   const a = Math.abs(angle) * 180 / Math.PI;
   const side = angle >= 0 ? 'Right' : 'Left';
-  if (a < 25) return t('where.ahead');
-  if (a < 70) return t('where.ahead' + side);
-  if (a < 110) return t('where.' + side.toLowerCase());
-  if (a < 155) return t('where.behind' + side);
-  return t('where.behind');
+  if (a < 25) return 'where.ahead';
+  if (a < 70) return 'where.ahead' + side;
+  if (a < 110) return 'where.' + side.toLowerCase();
+  if (a < 155) return 'where.behind' + side;
+  return 'where.behind';
+}
+
+/** The roll-call answers in the current language. */
+function rollCallLines() {
+  const table = lookup('rollCall.lines');
+  return Array.isArray(table) ? table.filter((line) => typeof line === 'string') : [];
+}
+
+/**
+ * Writes an answer's text in the current language: the line the student says (in the bubble)
+ * and the sentence the attendance panel shows.
+ * @param {import('./session.js').Speech} speech
+ */
+function writeSpeech(speech) {
+  const line = rollCallLines()[speech.line] || '';
+  speech.answer = t('attendance.answered', { name: name(speech.id), where: t(speech.where), line });
+  el.bubbleText.textContent = line;
+  // the bubble is measured again, the next frame it shows
+  delete speech.bw;
+  delete speech.bh;
+}
+
+// After a change of language: the answer on screen is written again in the new language.
+export function refreshSpeech() {
+  if (S.speech) writeSpeech(S.speech);
 }
 
 export function askRollCall() {
@@ -45,17 +73,17 @@ export function askRollCall() {
 
 /** @param {string} id who answers */
 export function showRollCallAnswer(id) {
-  const table = lookup('rollCall.lines');
-  /** @type {string[]} */
-  const lines = Array.isArray(table) ? table : [];
-  let line = lines[Math.floor(Math.random() * lines.length)] || '';
-  if (lines.length > 1 && line === lastRollLine) line = lines[(lines.indexOf(line) + 1) % lines.length];
+  const count = rollCallLines().length;
+  let line = Math.floor(Math.random() * count);
+  if (count > 1 && line === lastRollLine) line = (line + 1) % count;
   lastRollLine = line;
   const g = world.students[id];
-  const where = directionWords(relativeDirection(characterData(g).headWorld || g.position));
-  S.speech = { id, until: S.game.elapsed + ANSWER_SECONDS, answer: t('attendance.answered', { name: name(id), where, line }) };
-  pushLog(S.speech.answer);
-  el.bubbleText.textContent = line;
+  const where = directionKey(relativeDirection(characterData(g).headWorld || g.position));
+  /** @type {import('./session.js').Speech} */
+  const speech = { id, until: S.game.elapsed + ANSWER_SECONDS, line, where, answer: '' };
+  writeSpeech(speech);
+  S.speech = speech;
+  pushLog(speech.answer);
 }
 
 export function clearSpeech() {

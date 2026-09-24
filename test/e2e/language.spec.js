@@ -1,5 +1,19 @@
 import { test, expect } from '@playwright/test';
-import { freezeRandomness, hooks, openGame, startRound } from './helpers.js';
+import FR from '../../src/i18n/fr.js';
+import { activate, faceCard, faceStudent, freezeRandomness, hooks, openGame, startRound } from './helpers.js';
+
+// A French text with its {placeholders} filled.
+function french(text, params) {
+  return text.replace(/\{(\w+)\}/g, (m, key) => (key in params ? params[key] : m));
+}
+
+async function switchLanguageFromPause(page, code) {
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#pauseOverlay')).toBeVisible();
+  await page.locator('#pauseOverlay [data-language]').selectOption(code);
+  await page.locator('#resumeBtn').click();
+  await expect(page.locator('#pauseOverlay')).toBeHidden();
+}
 
 // Every element of the open panel and the HUD whose text is wider than its box.
 function overflowing(page) {
@@ -61,3 +75,37 @@ for (const [w, h] of [[375, 667], [1440, 900]]) {
     });
   }
 }
+
+test('the text over the classroom switches language with the rest of the page', async ({ page }) => {
+  await openGame(page);
+  await startRound(page);
+  await freezeRandomness(page);
+  // Ben Dover sits next to his friend Dixie Normous at the start, so she eggs him on
+  await activate(page, 'benDover', 30);
+  await faceStudent(page, 'benDover');
+  const note = page.locator('#studentLayer .tag.target .note');
+  await expect(note).toBeVisible();
+  await expect(note).toHaveText('egged on by Dixie Normous');
+
+  await switchLanguageFromPause(page, 'fr');
+  await expect(note).toHaveText(french(FR.prompt.friendNear, { name: 'Dixie Normous' }));
+  await expect(page.locator('#prompt')).toContainText('Ben Dover');
+  await expect(page.locator('#prompt')).not.toContainText('Help');
+});
+
+test('a roll-call answer on screen switches language too', async ({ page }) => {
+  await openGame(page);
+  await startRound(page);
+  await freezeRandomness(page);
+  await faceCard(page, 'moeLester');
+  await page.keyboard.press('e');
+  await page.keyboard.press('q');
+  await expect(page.locator('#attAnswer')).toContainText('Moe Lester answered from');
+  await hooks(page, (s) => { s.speech.until = s.game.elapsed + 600; });
+  const line = await hooks(page, (s) => s.speech.line);
+
+  await switchLanguageFromPause(page, 'fr');
+  await expect(page.locator('#attAnswer')).toContainText('Moe Lester a répondu depuis');
+  await expect(page.locator('#attAnswer')).toContainText(FR.rollCall.lines[line]);
+  expect(await page.locator('#bubbleText').textContent()).toBe(FR.rollCall.lines[line]);
+});

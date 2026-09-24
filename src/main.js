@@ -12,10 +12,10 @@ import { renderControlsLists, setTouch, setupInput } from './input.js';
 import { updateAim } from './aim.js';
 import { drainEvents, setupEvents } from './events.js';
 import {
-  buildTags, invalidateAttendancePanel, setupActionButtons, updateAttendancePanel, updateHud, updatePromptAndActions,
-  updateTags,
+  buildTags, invalidateAttendancePanel, invalidateTags, setupActionButtons, updateAttendancePanel, updateHud,
+  updatePromptAndActions, updateTags,
 } from './hud.js';
-import { updateSpeech } from './rollcall.js';
+import { refreshSpeech, updateSpeech } from './rollcall.js';
 import { renderSeatChart, setupSeating } from './seating.js';
 import { setupDiscipline } from './discipline.js';
 import { updateProjectile } from './effects.js';
@@ -93,11 +93,15 @@ function step(now) {
 }
 
 // Text drawn by code, redrawn when the language changes or the keyboard's key names become known
-// (the page's own text is redrawn by applyStaticStrings).
+// (the page's own text is redrawn by applyStaticStrings). The prompt under the crosshair follows
+// by itself (hud.js compares the language each frame); everything else drawn over the classroom
+// is written again here, and shows in the new language on the next frame.
 function refreshDrawnText() {
   renderControlsLists();
   refreshButtonLabels();
+  refreshSpeech();
   invalidateAttendancePanel();
+  invalidateTags();
   renderSeatChart();
   showBest();
 }

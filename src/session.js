@@ -8,7 +8,9 @@ import { createGame } from './rules.js';
  * @typedef {object} Speech
  * @property {string} id who answered
  * @property {number} until game time the answer shows until
- * @property {string} answer the log line
+ * @property {number} line which of the roll-call lines they said
+ * @property {string} where the key of the text saying where the voice came from
+ * @property {string} answer the sentence the attendance panel shows, in the current language
  * @property {number} [bw] the bubble's size, measured the first frame it shows
  * @property {number} [bh]
  * @property {number} [x]
