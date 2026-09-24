@@ -412,6 +412,14 @@ canvas#gl { position: absolute; inset: 0; display: block; width: 100%; height: 1
 .actBtn.danger { background: var(--marker-red-pale); }
 /* on keyboard devices the centre prompt already carries E / F, so those two buttons only show on touch */
 body:not(.touch) #actPrimary, body:not(.touch) #actDiscipline { display: none; }
+/* While the mouse is captured for looking there is no cursor to click with, so the buttons turn
+   into key hints: the same keys and words, drawn like the centre prompt and not clickable. Esc
+   frees the mouse, and they are buttons again. */
+.stage.locked .actBtn {
+  pointer-events: none; cursor: none; min-height: 0; padding: var(--space-2) var(--space-4);
+  background: color-mix(in srgb, var(--ink) 70%, transparent); color: var(--chalk); border-color: transparent; box-shadow: none;
+}
+.stage.locked .actBtn.rollCall kbd { background: var(--chalk); }
 
 .joystick {
   grid-area: joy; display: none; position: relative; pointer-events: auto;

@@ -81,7 +81,8 @@ browser reports the layout where it can (Chrome and Edge), a French or Belgian b
 from AZERTY names otherwise, and pressing a key corrects its name.
 
 The whole game can be played with the keyboard alone. Menus take focus when they open and
-give it back when they close.
+give it back when they close. While the mouse is captured for looking, the Seats and Roll call
+buttons turn into key hints, since there is no cursor to click them with; Esc frees the mouse.
 
 ## Hosting
 
