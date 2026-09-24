@@ -220,6 +220,38 @@ test.describe('on a phone', () => {
     }
   });
 
+  for (const size of [{ width: 375, height: 667 }, { width: 390, height: 844 }]) {
+    test(`in portrait at ${size.width}x${size.height} the rules come before Start, and play keeps half the screen for the room`, async ({ page }) => {
+      await page.setViewportSize(size);
+      await openGame(page);
+      // the start card reads intro, rules, then the settings: the first rule is on screen as it opens
+      const firstRule = page.locator('#startOverlay .rules li').first();
+      await expect(firstRule).toBeInViewport();
+      const ruleTop = (await firstRule.boundingBox()).y;
+      const setupTop = (await page.locator('#startOverlay .difficulty').boundingBox()).y;
+      expect(ruleTop).toBeLessThan(setupTop);
+      await expect(page.locator('#startBtn')).toBeInViewport();
+
+      await startRound(page);
+      await expect(page.locator('#attendancePanel')).toBeVisible();
+      const m = await page.evaluate(() => {
+        const box = (sel) => document.querySelector(sel).getBoundingClientRect();
+        const question = document.getElementById('attQuestion');
+        const range = document.createRange();
+        range.selectNodeContents(question);
+        const lines = new Set([...range.getClientRects()].map((r) => Math.round(r.top))).size;
+        const shown = [...document.querySelectorAll('#attendancePanel > *')].filter((n) => n.checkVisibility()).map((n) => n.className);
+        return { stage: box('#stage'), panel: box('#attendancePanel'), question: box('#attQuestion'), top: box('.topStack'), bottom: box('#bottomBar'), lines, shown };
+      });
+      // the attendance panel is the question alone, on one line, plus its padding
+      expect(m.lines).toBe(1);
+      expect(m.shown).toEqual(['attQuestion']);
+      expect(m.panel.height).toBeLessThanOrEqual(m.question.height + 16);
+      // between the top HUD and the log/controls, at least half the stage shows the classroom
+      expect(m.bottom.top - m.top.bottom).toBeGreaterThan(m.stage.height / 2);
+    });
+  }
+
   test('no text on a phone names a keyboard key, and the seating chart explains its colours', async ({ page }) => {
     await openGame(page);
     await startRound(page);

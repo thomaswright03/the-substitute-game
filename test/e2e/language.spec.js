@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import ES from '../../src/i18n/es.js';
 import FR from '../../src/i18n/fr.js';
 import { activate, faceCard, faceStudent, freezeRandomness, hooks, openGame, startRound } from './helpers.js';
 
@@ -108,4 +109,31 @@ test('a roll-call answer on screen switches language too', async ({ page }) => {
   await expect(page.locator('#attAnswer')).toContainText('Moe Lester a répondu depuis');
   await expect(page.locator('#attAnswer')).toContainText(FR.rollCall.lines[line]);
   expect(await page.locator('#bubbleText').textContent()).toBe(FR.rollCall.lines[line]);
+});
+
+test('the pause screen repeats the five rules, in each language', async ({ page }) => {
+  await openGame(page);
+  await startRound(page);
+  await freezeRandomness(page);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#pauseOverlay')).toBeVisible();
+  const rules = page.locator('#pauseRules');
+  // folded away until asked for, so the pause screen still leads with Resume
+  await expect(rules.locator('li').first()).toBeHidden();
+  await rules.locator('summary').click();
+  await expect(rules.locator('li')).toHaveCount(5);
+  await expect(rules.locator('li').first()).toBeVisible();
+  const table = { en: null, es: ES, fr: FR };
+  for (const code of ['en', 'es', 'fr']) {
+    await page.locator('#pauseOverlay [data-language]').selectOption(code);
+    await expect(page.locator('html')).toHaveAttribute('lang', code);
+    const onPause = await rules.locator('li').allTextContents();
+    const onStart = await page.locator('#startOverlay .rules li').allTextContents();
+    expect(onPause).toEqual(onStart);
+    expect(onPause.every((text) => text.trim().length > 20)).toBe(true);
+    if (table[code]) {
+      await expect(rules.locator('summary')).toHaveText(table[code].start.rulesTitle);
+      for (const [i, rule] of table[code].start.rules.entries()) expect(onPause[i]).toContain(rule.lead);
+    }
+  }
 });
