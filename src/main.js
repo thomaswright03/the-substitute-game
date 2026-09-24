@@ -1512,7 +1512,7 @@ function frame(now) {
       R.tick(game, realDt, { facingBoard });
     }
     drainEvents();
-    updatePrincipal(realDt);
+    updatePrincipal(Math.min(realDt, MAX_MOVE_DT)); // a cut-scene: never skip ahead, even on a stalled frame
     updateStudents(nowS);
     aim = running ? { studentId: nearestStudent(), cardId: nearestCard() } : { studentId: null, cardId: null };
     updateProjectile();
