@@ -33,6 +33,7 @@ export function exposeTestHooks() {
     get paused() { return S.paused; },
     get seatChartOpen() { return S.seatChartOpen; },
     get disciplineTarget() { return S.disciplineTarget; },
+    get speech() { return S.speech; },
     player,
     keys,
     world,

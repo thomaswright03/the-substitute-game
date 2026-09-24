@@ -44,20 +44,21 @@ test('roll call: the answer is readable without turning around', async ({ page }
 
   // the arrow counts only time in play: pausing doesn't use it up
   await page.keyboard.press('Escape');
-  const until = await hooks(page, (s) => s.game.elapsed);
+  const pausedAt = await hooks(page, (s) => s.game.elapsed);
   await page.waitForTimeout(1500);
-  expect(await hooks(page, (s) => s.game.elapsed)).toBe(until);
+  expect(await hooks(page, (s) => s.game.elapsed)).toBe(pausedAt);
   await page.locator('#resumeBtn').click();
   await expect(page.locator('#dirArrow')).toBeVisible();
 
-  // and it goes the moment the card is handed over
+  // and it goes the moment the card is handed over, however long it had left
+  await hooks(page, (s) => { s.speech.until = s.game.elapsed + 600; });
   await faceStudent(page, 'moeLester');
   await expect(page.locator('#speechBubble')).toBeVisible();
   await page.keyboard.press('e');
   await expect(lastLog(page)).toContainText('Marked present');
   await expect(page.locator('#speechBubble')).toBeHidden();
   await expect(page.locator('#dirArrow')).toBeHidden();
-  expect(await hooks(page, (s) => s.game.elapsed)).toBeLessThan(until + 9);
+  expect(await hooks(page, (s) => s.speech)).toBe(null);
 });
 
 test('a lost round keeps its final HUD values; the stats sit three by two', async ({ page }) => {

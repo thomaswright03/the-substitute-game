@@ -81,35 +81,69 @@ test('walking covers the same ground per second of the period at a low frame rat
   await startRound(page);
   await freezeRandomness(page);
   // across the open back of the room, facing +x, with nothing in the way for 7 m
-  await hooks(page, (s) => Object.assign(s.player, { x: -3.5, z: 3, yaw: -Math.PI / 2, pitch: 0 }));
-  const cdp = await page.context().newCDPSession(page);
-  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
-  // press and release W between frames, and read the clock and the position at the same moments
-  const run = await page.evaluate(() => new Promise((resolve) => {
+  const START_X = -3.5;
+  await hooks(page, (s, x) => Object.assign(s.player, { x, z: 3, yaw: -Math.PI / 2, pitch: 0 }), START_X);
+  // where the far wall stops the teacher: walk there once, before slowing the page down
+  const limit = await page.evaluate(() => new Promise((resolve) => {
     const s = window.__substitute;
-    const frames = [];
-    let start = null;
-    const onFrame = (ts) => {
-      frames.push(ts);
-      if (!start) {
-        start = { t: s.game.elapsed, x: s.player.x, ts };
-        s.keys.w = true;
-      } else if (ts - start.ts >= 2000) {
+    let prev = null, still = 0;
+    s.keys.w = true;
+    const onFrame = () => {
+      still = s.player.x === prev ? still + 1 : 0;
+      prev = s.player.x;
+      if (still >= 3) {
         s.keys.w = false;
-        resolve({ seconds: s.game.elapsed - start.t, metres: s.player.x - start.x, frames: frames.length - 1, wall: (ts - start.ts) / 1000 });
+        resolve(s.player.x);
+      } else requestAnimationFrame(onFrame);
+    };
+    requestAnimationFrame(onFrame);
+  }));
+  await hooks(page, (s, x) => { s.player.x = x; }, START_X);
+  // slow the page to a few frames a second: less throttling when the machine is already busy
+  const baseline = await page.evaluate(() => new Promise((resolve) => {
+    let n = 0;
+    const t0 = performance.now();
+    const onFrame = (ts) => (ts - t0 >= 1000 ? resolve((n * 1000) / (ts - t0)) : (n++, requestAnimationFrame(onFrame)));
+    requestAnimationFrame(onFrame);
+  }));
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: Math.min(4, Math.max(1, baseline / 6)) });
+  // Hold W, adding up each frame's walk and the period time it took, and step back to the
+  // start after every frame. A frame so long that the walk reached the far wall can't show
+  // how far the teacher would have gone, so it is left out of both sums.
+  const run = await page.evaluate(([startX, wallX]) => new Promise((resolve) => {
+    const s = window.__substitute;
+    let frames = 0, blocked = 0, metres = 0, seconds = 0, last = null, t0 = null;
+    const onFrame = (ts) => {
+      if (last === null) {
+        t0 = ts;
+        s.keys.w = true;
+      } else if (s.player.x >= wallX - 0.05) {
+        blocked++;
+      } else {
+        frames++;
+        metres += s.player.x - startX;
+        seconds += s.game.elapsed - last;
+      }
+      last = s.game.elapsed;
+      s.player.x = startX;
+      if ((seconds >= 2 && frames >= 4) || ts - t0 > 60_000) {
+        s.keys.w = false;
+        resolve({ seconds, metres, frames, blocked, wall: (ts - t0) / 1000 });
         return;
       }
       requestAnimationFrame(onFrame);
     };
     requestAnimationFrame(onFrame);
-  }));
+  }), [START_X, limit]);
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
   const speed = await hooks(page, (s) => s.teacher.speed);
-  const fps = run.frames / run.wall;
+  const fps = (run.frames + run.blocked) / run.wall;
+  const detail = `${run.metres.toFixed(2)} m in ${run.seconds.toFixed(2)} s over ${run.frames} frames (${run.blocked} too long) at ${fps.toFixed(1)} fps`;
   expect(fps, 'the scenario should be a slow machine').toBeLessThan(15);
-  expect(run.seconds).toBeGreaterThan(1.9);
+  expect(run.seconds, detail).toBeGreaterThanOrEqual(2);
   const expected = speed * run.seconds;
-  expect(Math.abs(run.metres - expected) / expected, `${run.metres.toFixed(2)} m in ${run.seconds.toFixed(2)} s at ${fps.toFixed(1)} fps`).toBeLessThan(0.1);
+  expect(Math.abs(run.metres - expected) / expected, detail).toBeLessThan(0.1);
 });
 
 test('keyboard only: seating chart, pause and discipline can all be driven from the keyboard', async ({ page }) => {
