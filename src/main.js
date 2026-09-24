@@ -29,6 +29,7 @@ const MAX_MOVE_DT = 0.25;
 const BEST_GRADE_KEY = 'substitute_best_grade';
 const LOG_LINES = 12; // kept in the log; CSS shows the newest few and fades the rest out
 const SCRIPTS_SHARE = 0.12;
+const PRINCIPAL_WAIT_MS = 8000; // longest the class waits for the principal's model to arrive
 const FRIEND_COLORS = ['#2f6a93', '#d0741c', '#8a4bb8', '#2f8f6a'];
 
 const $ = (id) => document.getElementById(id);
@@ -1214,10 +1215,25 @@ function startPrincipal(id) {
     return;
   }
   pushLog(t('log.principalDelayed'));
-  ensurePrincipal().then(beginPrincipalWalk).catch((err) => {
-    // no principal model: the student still leaves, just without the walk
+  const seq = principalSeq;
+  // A download that stalls must never freeze the class: after PRINCIPAL_WAIT_MS the student
+  // goes to the office on their own, exactly as when the download fails outright.
+  let settled = false;
+  const giveUp = (err) => {
+    if (settled || principalSeq !== seq) return;
+    settled = true;
     console.warn('Principal model unavailable:', err);
-    finishPrincipal();
+    finishPrincipal('log.principalNoShow');
+  };
+  const timer = setTimeout(() => giveUp(new Error('timed out after ' + PRINCIPAL_WAIT_MS + ' ms')), PRINCIPAL_WAIT_MS);
+  ensurePrincipal().then(() => {
+    clearTimeout(timer);
+    if (settled || principalSeq !== seq) return;
+    settled = true;
+    beginPrincipalWalk();
+  }, (err) => {
+    clearTimeout(timer);
+    giveUp(err);
   });
 }
 
@@ -1232,7 +1248,7 @@ function beginPrincipalWalk() {
   principalSeq.t = 0;
 }
 
-function finishPrincipal() {
+function finishPrincipal(logKey = 'log.principalDone') {
   if (!principalSeq) return;
   const g = world.students[principalSeq.id];
   g.visible = false;
@@ -1241,7 +1257,7 @@ function finishPrincipal() {
     world.principal.visible = false;
     setWalking(world.principal, false);
   }
-  pushLog(t('log.principalDone', { name: name(principalSeq.id) }));
+  pushLog(t(logKey, { name: name(principalSeq.id) }));
   principalSeq = null;
   if (running) requestLook();
 }

@@ -251,6 +251,7 @@ const EN = {
     principal: '*knock knock*: the principal steps in for {name}.',
     principalDone: '{name} gets marched out by the principal. The room goes quiet.',
     principalDelayed: 'The principal is on the way…',
+    principalNoShow: 'The principal is held up in the office, so {name} walks down there alone.',
     zap: 'You zap {name} with a bolt of lightning. Attitude: adjusted.',
     zapSetOff: 'The commotion sets {name} off!',
     throwWindup: '{name} winds up while your back is turned…',
