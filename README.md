@@ -71,6 +71,7 @@ discipline and close calls.
 | Seating chart | R (Tab / Enter to pick seats) | Seats button |
 | Roll call | Q | Roll call button |
 | Pause | Esc or P | pause button |
+| Sound on / off | M, or the speaker button | speaker button (on a narrow phone, the pause screen) |
 
 The whole game can be played with the keyboard alone. Menus take focus when they open and
 give it back when they close.
@@ -129,21 +130,25 @@ every push and pull request.
 |---|---|
 | `index.html`, `css/game.css` | Page markup and styles |
 | `src/boot.js` | Start-up checks that run before anything else: `file://`, WebGL, load failures, progress |
+| `src/three-setup.js` | Imported first: sets three.js up to keep the look the game was designed with (see [Tech](#tech)) |
 | `src/rules.js` | The rules of a period, as pure functions with no DOM or three.js. Unit-tested. |
 | `src/data.js` | The roster, seating, friendships and every tuning number |
-| `src/strings.js` | Every piece of user-facing text in one table (see below) |
+| `src/strings.js`, `src/i18n/` | Every piece of user-facing text in one table, and its Spanish and French translations (see below) |
 | `src/main.js` | Start-up and the frame loop |
 | `src/world.js`, `src/player.js` | The three.js renderer and classroom, the students' poses each frame, and the teacher's movement |
 | `src/input.js`, `src/aim.js` | Keyboard, mouse, touch and stick input; what the teacher is aiming at and what E / F do |
 | `src/hud.js`, `src/dialogs.js`, `src/rollcall.js` | HUD, log, prompts and buttons; modal dialogs and focus; roll-call bubble and arrow |
 | `src/seating.js`, `src/discipline.js`, `src/principal.js`, `src/effects.js` | Seating chart, discipline menu, the principal's visit, hit / zap / throw effects |
-| `src/events.js`, `src/round.js`, `src/session.js` | Rule events to log lines and effects; starting, pausing and ending a round; shared UI state |
-| `src/audio.js`, `src/settings.js` | Synthesised sound cues; the sound and volume controls |
+| `src/events.js`, `src/round.js`, `src/session.js`, `src/dom.js` | Rule events to log lines and effects; starting, pausing and ending a round; shared UI state; the page elements the game drives |
+| `src/audio.js`, `src/settings.js` | Synthesised sound cues; the sound, volume, language and difficulty controls |
+| `src/offline.js` | Registers the service worker on a deployed build only |
 | `src/testhooks.js` | The `?test` API for the browser tests |
 | `src/scene.js`, `src/characters.js` | The classroom, and the character models: seating, arm poses and body language |
 | `src/face.js`, `src/props.js` | The grafted expressive face and its painted features; the props for each behaviour |
 | `test/unit`, `test/e2e` | Rules tests and browser tests |
-| `scripts/` | Static server and the asset optimizer |
+| `lib/three/` | The vendored three.js modules |
+| `docs/playtests.md` | How to run a playtest, and the notes from each one |
+| `scripts/` | Static server, site build and service worker, three.js vendoring, and the asset optimizer |
 
 The rules advance on real elapsed time, not frames, so a period lasts the same on any machine:
 two minutes of unpaused play on Standard, four on Relaxed. The game pauses itself when the tab
@@ -175,6 +180,16 @@ attribute follows it. A key with a sibling named `<key>Touch` (for example `seat
 `seating.closeTouch`) supplies the text used on touch screens, so no phone player is told to
 press a key. To add a language, add a table with the same keys to `src/i18n/` and list it in
 `LANGUAGES` in `src/strings.js`.
+
+**Look and styling.** The game has one art direction on purpose: a dark wooden frame around the
+3D classroom, with the HUD and every dialog drawn as cream paper and chalk. It doesn't switch
+with the system's light or dark setting, because the classroom is lit the same either way and
+the paper panels already read as light on dark. `css/game.css` takes every colour from the
+tokens at its top (translucent shades mix a token with `transparent`) and every margin, padding
+and gap from a ten-step spacing scale; a unit test (`test/unit/css.test.js`) fails on a raw
+colour or an off-scale space anywhere else. Sizes are multiples of `--px`, which is 1px except
+on the in-game HUD: there it grows with the stage, from 1px on a stage about 1100px wide to 2px,
+so the HUD keeps its share of a large monitor and phones keep text at 12px or more.
 
 **Test hooks.** Adding `?test` to the URL exposes `window.__substitute` for the browser
 tests. Nothing is exposed without it.
