@@ -164,10 +164,17 @@ and the principal's knock. Nothing plays until the first tap, click or key press
 switched off and the volume set on the start and pause screens, with the HUD speaker button or
 with M; the choice is kept in the browser's local storage.
 
-**Text and translation.** Static page text is tagged with `data-i18n` and filled from
-`src/strings.js`, and all text built during play goes through the same table. To translate,
-provide a table with the same keys and pass it to `setStrings()` before the
-classroom is built (the chalkboard and name cards are drawn once, at start-up).
+**Text and translation.** The game is in English, Spanish and French. Static page text is
+tagged with `data-i18n` and filled from `src/strings.js`, and all text built during play
+(including the chalkboard, roll-call answers and every student's lines) goes through the same
+table. The Spanish and French tables in `src/i18n/` have exactly the English keys, list lengths
+and `{placeholders}`, which a unit test checks, and a second test fails if a key in the table
+isn't used by the source or the page. A language switcher sits on the start and pause screens;
+the choice is remembered, a first visit follows the browser's language, and the page's `lang`
+attribute follows it. A key with a sibling named `<key>Touch` (for example `seating.close` and
+`seating.closeTouch`) supplies the text used on touch screens, so no phone player is told to
+press a key. To add a language, add a table with the same keys to `src/i18n/` and list it in
+`LANGUAGES` in `src/strings.js`.
 
 **Test hooks.** Adding `?test` to the URL exposes `window.__substitute` for the browser
 tests. Nothing is exposed without it.

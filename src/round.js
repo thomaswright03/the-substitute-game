@@ -38,13 +38,23 @@ export function showBest() {
 
 /* ---------------- pause ---------------- */
 
+// The HUD buttons whose label depends on the state (and on the language).
+export function refreshButtonLabels() {
+  el.pauseBtn.firstElementChild.textContent = S.paused ? '▶' : '⏸';
+  const pauseLabel = t(S.paused ? 'hud.resume' : 'hud.pause');
+  el.pauseBtn.setAttribute('aria-label', pauseLabel);
+  el.pauseBtn.title = pauseLabel;
+  const full = !!document.fullscreenElement;
+  el.fullscreenBtn.firstElementChild.textContent = full ? '⤡' : '⛶';
+  const fullLabel = t(full ? 'hud.exitFullscreen' : 'hud.fullscreen');
+  el.fullscreenBtn.setAttribute('aria-label', fullLabel);
+  el.fullscreenBtn.title = fullLabel;
+}
+
 export function setPaused(p) {
   if (!S.running || S.paused === p) return;
   S.paused = p;
-  el.pauseBtn.firstElementChild.textContent = p ? '▶' : '⏸';
-  const label = t(p ? 'hud.resume' : 'hud.pause');
-  el.pauseBtn.setAttribute('aria-label', label);
-  el.pauseBtn.title = label;
+  refreshButtonLabels();
   releaseKeys();
   if (p) {
     releaseLook();
@@ -206,11 +216,5 @@ export function setupRound() {
       document.exitFullscreen();
     }
   });
-  document.addEventListener('fullscreenchange', () => {
-    const full = !!document.fullscreenElement;
-    el.fullscreenBtn.firstElementChild.textContent = full ? '⤡' : '⛶';
-    const label = t(full ? 'hud.exitFullscreen' : 'hud.fullscreen');
-    el.fullscreenBtn.setAttribute('aria-label', label);
-    el.fullscreenBtn.title = label;
-  });
+  document.addEventListener('fullscreenchange', refreshButtonLabels);
 }

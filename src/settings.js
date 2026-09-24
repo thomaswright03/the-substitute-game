@@ -2,6 +2,7 @@
 // copy of a control shows the same value.
 import { audioPrefs, onAudioPrefsChange, setMuted, setVolume } from './audio.js';
 import { $ } from './dom.js';
+import { LANGUAGES, currentLanguage, onLanguageChange, setLanguage } from './strings.js';
 import { DEFAULT_DIFFICULTY, DIFFICULTY } from './data.js';
 
 const DIFFICULTY_KEY = 'substitute.difficulty';
@@ -41,6 +42,49 @@ function renderSound(prefs) {
   const mute = $('muteBtn');
   mute.setAttribute('aria-pressed', String(prefs.muted));
   mute.querySelector('[data-sound-icon]').textContent = prefs.muted ? '🔇' : '🔊';
+}
+
+const LANGUAGE_KEY = 'substitute.language';
+
+// The player's saved language, else the first of the browser's languages the game has.
+function initialLanguage() {
+  try {
+    const saved = localStorage.getItem(LANGUAGE_KEY);
+    if (LANGUAGES[saved]) return saved;
+  } catch { /* storage blocked: fall back to the browser's languages */ }
+  for (const tag of navigator.languages || [navigator.language || 'en']) {
+    const code = String(tag).slice(0, 2).toLowerCase();
+    if (LANGUAGES[code]) return code;
+  }
+  return 'en';
+}
+
+function chooseLanguage(code) {
+  try {
+    localStorage.setItem(LANGUAGE_KEY, code);
+  } catch { /* storage blocked: the choice lasts until the page is closed */ }
+  setLanguage(code);
+}
+
+function renderLanguage(code) {
+  document.querySelectorAll('[data-language]').forEach((select) => { select.value = code; });
+}
+
+// Called before anything draws text, so the page starts in the player's language.
+export function setupLanguage() {
+  document.querySelectorAll('[data-language]').forEach((select) => {
+    for (const [code, { name }] of Object.entries(LANGUAGES)) {
+      const option = document.createElement('option');
+      option.value = code;
+      option.lang = code;
+      option.textContent = name;
+      select.append(option);
+    }
+    select.addEventListener('change', () => chooseLanguage(select.value));
+  });
+  onLanguageChange(renderLanguage);
+  setLanguage(initialLanguage());
+  renderLanguage(currentLanguage());
 }
 
 export function setupSettings() {

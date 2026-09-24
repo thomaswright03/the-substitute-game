@@ -1,7 +1,7 @@
 // The classroom itself: walls, floor, windows, chalkboard, desks and the attendance cards.
 import * as THREE from 'three';
 import './three-setup.js';
-import { t } from './strings.js';
+import { onLanguageChange, t } from './strings.js';
 import { ROOM } from './data.js';
 
 export { ROOM };
@@ -33,11 +33,18 @@ export function canvasTexture(draw, w, h) {
   const c = document.createElement('canvas');
   c.width = w;
   c.height = h;
-  draw(c.getContext('2d'), w, h);
+  const ctx = c.getContext('2d');
+  draw(ctx, w, h);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 4;
   tex.needsUpdate = true;
+  // draws the texture again, for text that changes with the language
+  tex.userData.redraw = () => {
+    ctx.clearRect(0, 0, w, h);
+    draw(ctx, w, h);
+    tex.needsUpdate = true;
+  };
   return tex;
 }
 
@@ -122,6 +129,13 @@ function noise(ctx, w, h, count, alpha, sizeW, sizeH) {
   }
 }
 
+// Sets the board font at `size` px, or smaller if the text would be wider than `maxWidth`.
+function fitText(ctx, text, size, maxWidth) {
+  ctx.font = '600 ' + size + 'px Fredoka, sans-serif';
+  const width = ctx.measureText(text).width;
+  if (width > maxWidth) ctx.font = '600 ' + Math.floor(size * maxWidth / width) + 'px Fredoka, sans-serif';
+}
+
 function buildChalkboard(scene) {
   const W = 4.6, H = 2.1, CY = 1.85;
   const boardTex = canvasTexture((ctx, w, h) => {
@@ -142,10 +156,10 @@ function buildChalkboard(scene) {
     ctx.textAlign = 'center';
     // the name cards cover the middle of the board, so the heading sits above them
     ctx.fillStyle = '#f6f1e4';
-    ctx.font = '600 64px Fredoka, sans-serif';
+    fitText(ctx, t('board.room'), 64, w * 0.6);
     ctx.fillText(t('board.room'), w / 2, h * 0.14);
-    ctx.font = '600 34px Fredoka, sans-serif';
     ctx.fillStyle = '#f2b93b';
+    fitText(ctx, t('board.motto'), 34, w * 0.9);
     ctx.fillText(t('board.motto'), w / 2, h * 0.94);
     ctx.strokeStyle = 'rgba(246,241,228,0.5)';
     ctx.lineWidth = 3;
@@ -156,6 +170,7 @@ function buildChalkboard(scene) {
   }, 1024, 512);
   const board = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.MeshStandardMaterial({ map: boardTex, roughness: 0.85 }));
   board.name = 'chalkboard';
+  onLanguageChange(() => boardTex.userData.redraw());
   board.position.set(0, CY, ROOM.frontZ + 0.03);
   board.receiveShadow = true;
   scene.add(board);

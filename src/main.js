@@ -2,7 +2,7 @@
 // imported here turn them into a 3D classroom you can walk around in.
 import './three-setup.js';
 import * as R from './rules.js';
-import { applyStaticStrings, t } from './strings.js';
+import { onLanguageChange, t } from './strings.js';
 import { el } from './dom.js';
 import { S, TEST_MODE, frozen } from './session.js';
 import { buildWorld, camera, createRenderer, ensurePrincipal, render, resizeRenderer, updateStudents } from './world.js';
@@ -12,16 +12,17 @@ import { renderControlsLists, setTouch, setupInput } from './input.js';
 import { updateAim } from './aim.js';
 import { drainEvents } from './events.js';
 import {
-  buildTags, setupActionButtons, updateAttendancePanel, updateHud, updatePromptAndActions, updateTags,
+  buildTags, invalidateAttendancePanel, setupActionButtons, updateAttendancePanel, updateHud, updatePromptAndActions,
+  updateTags,
 } from './hud.js';
 import { updateSpeech } from './rollcall.js';
-import { setupSeating } from './seating.js';
+import { renderSeatChart, setupSeating } from './seating.js';
 import { setupDiscipline } from './discipline.js';
 import { updateProjectile } from './effects.js';
 import { updatePrincipal } from './principal.js';
-import { setupRound, showBest, updateCountdown } from './round.js';
+import { refreshButtonLabels, setupRound, showBest, updateCountdown } from './round.js';
 import { setupAudio } from './audio.js';
-import { difficulty, setupSettings } from './settings.js';
+import { difficulty, setupLanguage, setupSettings } from './settings.js';
 import { applyCameraOverride, exposeTestHooks } from './testhooks.js';
 import { registerServiceWorker } from './offline.js';
 
@@ -72,7 +73,7 @@ function frame(now) {
 }
 
 async function init() {
-  applyStaticStrings(document);
+  setupLanguage();
   setTouch(window.matchMedia('(pointer: coarse)').matches);
   renderControlsLists();
   setupAudio();
@@ -107,6 +108,14 @@ async function init() {
   setupDiscipline();
   setupRound();
   buildTags();
+  // text drawn by code follows a change of language too (the page's own text already has)
+  onLanguageChange(() => {
+    renderControlsLists();
+    refreshButtonLabels();
+    invalidateAttendancePanel();
+    renderSeatChart();
+    showBest();
+  });
   S.game = R.createGame({ difficulty: difficulty() });
   syncCamera(camera);
   boot.ready();

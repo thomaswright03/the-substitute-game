@@ -468,6 +468,10 @@ body.touch .log div:nth-last-child(n+3) { display: none; }
 .settings input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--notebook-blue); margin: 0; }
 .settings input[type="range"] { width: 120px; accent-color: var(--notebook-blue); }
 .settings input:disabled { opacity: 0.5; }
+.settings select {
+  font: inherit; font-size: var(--fs-2); color: var(--ink); background: var(--paper-deep);
+  border: 2px solid var(--ink); border-radius: 8px; min-height: 36px; padding: 2px 8px; cursor: pointer;
+}
 /* the main button stays in reach while a long panel scrolls behind it */
 .panelFooter {
   position: sticky; bottom: -24px; z-index: 1; margin: 0 -24px -24px; padding: 12px 24px 16px;

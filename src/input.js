@@ -8,7 +8,7 @@ import { disciplineAction, primaryAction } from './aim.js';
 import { askRollCall } from './rollcall.js';
 import { setSeatChart, toggleSeatChart } from './seating.js';
 import { chooseDiscipline, closeDiscipline } from './discipline.js';
-import { setPaused } from './round.js';
+import { refreshButtonLabels, setPaused } from './round.js';
 import { audioPrefs, setMuted } from './audio.js';
 
 const LOOK_SENS = 0.0034;
@@ -36,6 +36,7 @@ export function setTouch(on) {
   document.body.classList.toggle('touch', on);
   setTouchStrings(on);
   applyStaticStrings(document);
+  refreshButtonLabels();
   renderControlsLists();
   for (const fn of touchListeners) fn(on);
 }

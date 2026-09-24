@@ -2,7 +2,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { STUDENTS } from '../../src/data.js';
-import { ENGLISH, listNames, lookup, setStrings, setTouchStrings, t } from '../../src/strings.js';
+import { ENGLISH, LANGUAGES, listNames, lookup, setLanguage, setStrings, setTouchStrings, t } from '../../src/strings.js';
 
 const root = new URL('../../', import.meta.url);
 const read = (path) => readFileSync(new URL(path, root), 'utf8');
@@ -104,6 +104,33 @@ describe('the string table', () => {
     };
     const unused = keys.filter((k) => !used(k.replace(/Touch$/, '')));
     assert.deepEqual(unused, []);
+  });
+
+  test('every translation has exactly the English keys, lists of the same length and the same placeholders', () => {
+    const shape = (node, path = '', out = {}) => {
+      if (typeof node === 'string') out[path] = [...node.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().join(',');
+      else if (Array.isArray(node) && node.every((v) => typeof v === 'string')) out[path] = 'list of ' + node.length;
+      else for (const k of Object.keys(node)) shape(node[k], path ? path + '.' + k : k, out);
+      return out;
+    };
+    const english = shape(ENGLISH);
+    assert.deepEqual(Object.keys(LANGUAGES).sort(), ['en', 'es', 'fr']);
+    for (const [code, { table }] of Object.entries(LANGUAGES)) {
+      assert.deepEqual(shape(table), english, code);
+    }
+  });
+
+  test('switching language changes the text, and an unknown code falls back to English', () => {
+    try {
+      setLanguage('es');
+      assert.equal(t('hud.chaos'), 'Nivel de caos');
+      setLanguage('fr');
+      assert.equal(t('prompt.help', { name: 'Steve' }), 'Aider Steve');
+      setLanguage('xx');
+      assert.equal(t('hud.chaos'), 'Chaos Level');
+    } finally {
+      setLanguage('en');
+    }
   });
 
   test('touch screens get text that names no keyboard keys', () => {

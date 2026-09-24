@@ -3,7 +3,11 @@
 // Static page text is tagged in index.html with data-i18n="key" (textContent) or
 // data-i18n-attr="attr:key;attr:key" and is filled from this table at start-up by
 // applyStaticStrings(). Text built while playing goes through t(key, params).
-// To translate the game, provide another table with the same keys and pass it to setStrings().
+// Translations live in src/i18n/ with exactly the same keys (a unit test checks this); to add
+// one, add its table to LANGUAGES below.
+
+import ES from './i18n/es.js';
+import FR from './i18n/fr.js';
 
 const EN = {
   common: {
@@ -108,6 +112,7 @@ const EN = {
     sound: 'Sound',
     volume: 'Volume',
     mute: 'Mute',
+    language: 'Language',
   },
   pause: {
     kicker: 'Class Paused',
@@ -316,11 +321,40 @@ const EN = {
   },
 };
 
+// Each language is listed under its own name, so a player can find theirs in any language.
+export const LANGUAGES = {
+  en: { name: 'English', table: EN },
+  es: { name: 'Español', table: ES },
+  fr: { name: 'Français', table: FR },
+};
+
 let table = EN;
+let language = 'en';
 let touch = false;
+const languageListeners = [];
 
 export function setStrings(next) {
   table = next || EN;
+}
+
+export function currentLanguage() {
+  return language;
+}
+
+// Switches every string to another language and tells the page and the modules that draw text.
+export function setLanguage(code) {
+  if (!LANGUAGES[code]) code = 'en';
+  language = code;
+  table = LANGUAGES[code].table;
+  if (typeof document !== 'undefined') {
+    document.documentElement.lang = code;
+    applyStaticStrings(document);
+  }
+  for (const fn of languageListeners) fn(code);
+}
+
+export function onLanguageChange(fn) {
+  languageListeners.push(fn);
 }
 
 // On touch screens a key with a sibling named <key>Touch uses that text instead, so nothing
