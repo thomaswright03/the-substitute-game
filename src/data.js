@@ -9,36 +9,36 @@
 // together, so reassigning seats is worth the player's time.
 export const STUDENTS = [
   {
-    id: 'priya', name: 'Dixie Normous', pronoun: 'she', model: 'suit-woman',
-    type: 'notes', rate: 4.0, fail: 'LEAVE', row: 0, col: 0, friend: 'marcus',
+    id: 'dixieNormous', name: 'Dixie Normous', pronoun: 'she', model: 'suit-woman',
+    type: 'notes', rate: 4.0, fail: 'LEAVE', row: 0, col: 0, friend: 'benDover',
   },
   {
-    id: 'marcus', name: 'Ben Dover', pronoun: 'he', model: 'casual-man',
-    type: 'phone', rate: 5.2, fail: 'LEAVE', row: 0, col: 1, friend: 'priya',
+    id: 'benDover', name: 'Ben Dover', pronoun: 'he', model: 'casual-man',
+    type: 'phone', rate: 5.2, fail: 'LEAVE', row: 0, col: 1, friend: 'dixieNormous',
   },
   {
-    id: 'wyatt', name: 'Moe Lester', pronoun: 'he', model: 'hoodie-man',
-    type: 'plane', rate: 7.4, fail: 'HURT', row: 0, col: 2, friend: 'diego',
+    id: 'moeLester', name: 'Moe Lester', pronoun: 'he', model: 'hoodie-man',
+    type: 'plane', rate: 7.4, fail: 'HURT', row: 0, col: 2, friend: 'steve',
   },
   {
-    id: 'diego', name: 'Steve', pronoun: 'he', model: 'worker-man',
-    type: 'tip', rate: 6.3, fail: 'HURT', row: 0, col: 3, friend: 'wyatt',
+    id: 'steve', name: 'Steve', pronoun: 'he', model: 'worker-man',
+    type: 'tip', rate: 6.3, fail: 'HURT', row: 0, col: 3, friend: 'moeLester',
   },
   {
-    id: 'cole', name: 'Hugh Jass', pronoun: 'he', model: 'punk-man',
+    id: 'hughJass', name: 'Hugh Jass', pronoun: 'he', model: 'punk-man',
     type: 'argue', rate: 4.6, fail: 'LEAVE', row: 1, col: 0, friend: null,
   },
   {
-    id: 'olivia', name: 'Mike Hunt', pronoun: 'she', model: 'worker-woman',
+    id: 'mikeHunt', name: 'Mike Hunt', pronoun: 'she', model: 'worker-woman',
     type: 'sleep', rate: 2.6, fail: 'LEAVE', row: 1, col: 1, friend: null,
   },
   {
-    id: 'nina', name: 'Gabe Iches', pronoun: 'she', model: 'punk-woman',
-    type: 'snack', rate: 3.8, fail: 'LEAVE', row: 1, col: 2, friend: 'ruby',
+    id: 'gabeIches', name: 'Gabe Iches', pronoun: 'she', model: 'punk-woman',
+    type: 'snack', rate: 3.8, fail: 'LEAVE', row: 1, col: 2, friend: 'mikeOxlong',
   },
   {
-    id: 'ruby', name: 'Mike Oxlong', pronoun: 'she', model: 'casual-woman',
-    type: 'spin', rate: 6.7, fail: 'HURT', row: 1, col: 3, friend: 'nina',
+    id: 'mikeOxlong', name: 'Mike Oxlong', pronoun: 'she', model: 'casual-woman',
+    type: 'spin', rate: 6.7, fail: 'HURT', row: 1, col: 3, friend: 'gabeIches',
   },
 ];
 

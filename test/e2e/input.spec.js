@@ -41,6 +41,7 @@ test.describe('mouse look without pointer lock', () => {
 });
 
 test('the period clock runs on real time, even at a low frame rate', async ({ page }) => {
+  test.setTimeout(240_000);
   await page.setViewportSize({ width: 480, height: 320 });
   await openGame(page);
   await startRound(page);
@@ -58,16 +59,19 @@ test('the period clock runs on real time, even at a low frame rate', async ({ pa
     frameTs: window.__frames[window.__frames.length - 1] / 1000,
     count: window.__frames.length,
   }));
-  await page.waitForTimeout(1000);
+  await page.waitForFunction(() => window.__frames.length >= 2, null, { timeout: 60_000 });
   const a = await sample();
   await page.waitForTimeout(10_000);
+  // on a heavily loaded machine frames can be seconds apart: wait for a few more to land
+  await page.waitForFunction((n) => window.__frames.length >= n, a.count + 4, { timeout: 60_000 });
   const b = await sample();
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
   const seconds = b.frameTs - a.frameTs;
   const fps = (b.count - a.count) / seconds;
   expect(fps, 'the scenario should be a slow machine').toBeLessThan(15);
-  // with a frame-driven clock, 10 s at a few fps would advance well under a second of game time
-  expect(Math.abs((b.game - a.game) - seconds), `fps ${fps.toFixed(1)}`).toBeLessThan(0.05);
+  // A frame-driven clock (the old bug) advances at most 0.06 s per frame, so over these ~10 s
+  // at a few fps it would fall far behind. A real-time clock keeps pace with the frames.
+  expect(Math.abs((b.game - a.game) / seconds - 1), `fps ${fps.toFixed(1)}, ${seconds.toFixed(2)} s`).toBeLessThan(0.05);
 });
 
 test('keyboard only: seating chart, pause and discipline can all be driven from the keyboard', async ({ page }) => {

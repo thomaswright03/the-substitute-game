@@ -251,43 +251,43 @@ const EN = {
     detainedAlready: '{name} is already in detention.',
   },
   students: {
-    priya: {
+    dixieNormous: {
       active: 'Dixie Normous starts scribbling a secret note…',
       calm: 'You catch Dixie Normous mid-fold. She puts the note away.',
       fail: 'Dixie Normous bursts into tears over the note and bolts for the bathroom.',
     },
-    marcus: {
+    benDover: {
       active: 'Ben Dover’s phone lights up under the desk.',
       warn: '“Phone away, Ben Dover.” He hesitates, thumb still on the screen.',
       calm: 'Ben Dover finally pockets the phone.',
       fail: 'Ben Dover slips out to take the call in the hallway.',
     },
-    wyatt: {
+    moeLester: {
       active: 'Moe Lester folds a suspiciously aerodynamic paper triangle.',
       calm: 'You confiscate Moe Lester’s plane before liftoff.',
       fail: 'Moe Lester’s paper airplane hits a classmate right in the eye!',
     },
-    diego: {
+    steve: {
       active: 'Steve leans back on two chair legs, grinning at the class.',
       calm: '“Four legs, please.” Steve settles his chair down.',
       fail: 'Steve tips too far back and cracks his head on the floor!',
     },
-    cole: {
+    hughJass: {
       active: 'Hugh Jass raises a hand: “Actually, that’s not even right—”',
       calm: 'Hugh Jass actually hears you out. Progress.',
       fail: 'Hugh Jass slams his book shut (“I don’t need this class!”) and storms out.',
     },
-    olivia: {
+    mikeHunt: {
       active: 'Mike Hunt’s eyelids are getting heavy…',
       calm: 'A gentle nudge, and Mike Hunt snaps back awake.',
       fail: 'Mike Hunt sleepwalks straight out the door, looking for the nurse’s office.',
     },
-    nina: {
+    gabeIches: {
       active: 'Gabe Iches unwraps something suspiciously crinkly.',
       calm: 'Gabe Iches’s wrapper disappears into her desk.',
       fail: 'Gabe Iches makes a break for the vending machine before you can stop her.',
     },
-    ruby: {
+    mikeOxlong: {
       active: 'Mike Oxlong gives her chair a slow, testing spin.',
       calm: 'Mike Oxlong plants all four wheels back on the floor.',
       fail: 'Mike Oxlong spins one too many times and crashes into the bookshelf!',

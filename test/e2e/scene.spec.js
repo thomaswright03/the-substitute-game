@@ -18,7 +18,7 @@ test('faces stay on the head while it nods, shakes and the chair spins', async (
   await hooks(page, (s) => {
     s.game.spawnTimer = Infinity;
     s.game.tuning.attendanceRateScale = 0.01;
-    for (const id of ['olivia', 'ruby', 'marcus']) {
+    for (const id of ['mikeHunt', 'mikeOxlong', 'benDover']) {
       const st = s.game.students[id];
       st.active = true;
       st.escalation = 10;
@@ -28,7 +28,7 @@ test('faces stay on the head while it nods, shakes and the chair spins', async (
   // let a few frames of sleeping, spinning and phone poses play
   await page.waitForTimeout(1500);
   const offsets = await hooks(page, (s) => s.faceOffsets());
-  for (const id of ['olivia', 'ruby', 'marcus']) expect(offsets[id], id).toBeLessThan(0.1);
+  for (const id of ['mikeHunt', 'mikeOxlong', 'benDover']) expect(offsets[id], id).toBeLessThan(0.1);
 });
 
 test('the green chalkboard is in front of its frame and behind the name cards', async ({ page }) => {
@@ -45,5 +45,5 @@ test('the green chalkboard is in front of its frame and behind the name cards', 
     }
     return names;
   });
-  expect(hits).toEqual(['chalkboard', 'card-priya']);
+  expect(hits).toEqual(['chalkboard', 'card-dixieNormous']);
 });

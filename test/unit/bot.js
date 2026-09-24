@@ -23,9 +23,9 @@ export function playWell(game, opts = {}) {
 
   if (splitFriends) {
     // spend a few seconds re-seating the three pairs of friends
-    swapSeats(game, 'marcus', 'olivia');
-    swapSeats(game, 'diego', 'cole');
-    swapSeats(game, 'nina', 'wyatt');
+    swapSeats(game, 'benDover', 'mikeHunt');
+    swapSeats(game, 'steve', 'hughJass');
+    swapSeats(game, 'gabeIches', 'moeLester');
     advance(3);
   }
 

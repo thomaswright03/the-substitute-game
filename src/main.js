@@ -27,6 +27,7 @@ const MAX_FRAME_DT = 5; // longer gaps are stalls (a hidden tab pauses the game)
 const MOVE_STEP = 1 / 30; // movement is integrated in steps no longer than this
 const MAX_MOVE_DT = 0.25;
 const BEST_GRADE_KEY = 'substitute_best_grade';
+const LOG_LINES = 12; // kept in the log; CSS shows the newest few and fades the rest out
 const SCRIPTS_SHARE = 0.12;
 const FRIEND_COLORS = ['#2f6a93', '#d0741c', '#8a4bb8', '#2f8f6a'];
 
@@ -277,11 +278,8 @@ function frozen() {
   return paused || disciplineTarget !== null || principalSeq !== null;
 }
 
+// Students are always called by their full name: two of them share a first name.
 function name(id) {
-  const s = R.studentConfig(game, id) || STUDENTS.find((x) => x.id === id);
-  return s ? s.name.split(' ')[0] : id;
-}
-function fullName(id) {
   const s = STUDENTS.find((x) => x.id === id);
   return s ? s.name : id;
 }
@@ -290,7 +288,7 @@ function pushLog(text) {
   const line = document.createElement('div');
   line.textContent = text;
   el.log.appendChild(line);
-  while (el.log.children.length > 3) el.log.removeChild(el.log.firstChild);
+  while (el.log.children.length > LOG_LINES) el.log.removeChild(el.log.firstChild);
 }
 
 /* ================= dialogs and focus ================= */
@@ -595,13 +593,13 @@ function handleEvent(e) {
     case 'activate': pushLog(t('students.' + e.id + '.active')); break;
     case 'nearlyLost': pushLog(t('log.nearlyLost', { name: n })); break;
     case 'eggedOn': pushLog(t('log.eggedOn', { name: n, friend: name(e.friendId) })); break;
-    case 'cardPicked': pushLog(t('log.cardPicked', { name: fullName(e.id) })); world.cards[e.id].mesh.visible = false; break;
+    case 'cardPicked': pushLog(t('log.cardPicked', { name: name(e.id) })); world.cards[e.id].mesh.visible = false; break;
     case 'cardDelivered':
       pushLog(t('log.cardDelivered', { name: n }));
       flashPose(e.id, 'hand', 1.2);
       break;
     case 'wrongStudent':
-      pushLog(t('log.wrongStudent', { name: n, held: fullName(e.heldId) }));
+      pushLog(t('log.wrongStudent', { name: n, held: name(e.heldId) }));
       flashPose(e.id, 'shake', 0.8);
       break;
     case 'cardResolvedByOffice':
@@ -812,7 +810,7 @@ function updatePromptAndActions() {
     const n = name(ctx.id);
     switch (ctx.kind) {
       case 'pickup':
-        parts.push({ key: 'E', text: t('prompt.pickUp', { name: fullName(ctx.id) }) });
+        parts.push({ key: 'E', text: t('prompt.pickUp', { name: name(ctx.id) }) });
         primary = t('actions.pickUp');
         break;
       case 'give':
@@ -899,7 +897,7 @@ function updateAttendancePanel() {
     setText(el.attQuestion, t('attendance.cardsLeft', { count: n, cards: plural(n, 'attendance.card', 'attendance.cards') }));
     setText(el.attHint, t('attendance.goToBoard'));
   } else {
-    setText(el.attQuestion, t('attendance.carrying', { name: fullName(a.holding) }));
+    setText(el.attQuestion, t('attendance.carrying', { name: name(a.holding) }));
     setText(el.attHint, t('attendance.findStudent', { name: name(a.holding) }));
   }
   const answer = speech && speech.answer && a.holding === speech.id ? speech.answer : '';
@@ -1077,7 +1075,7 @@ function openDiscipline(id) {
   disciplineTarget = id;
   const menu = R.disciplineMenu(game, id);
   const tu = game.tuning;
-  el.discName.textContent = fullName(id);
+  el.discName.textContent = name(id);
   discNotes.talk.textContent = t('discipline.talkNote', { calm: tu.talkCalm });
   discNotes.detention.textContent = menu.detention.left > 0
     ? t('discipline.detentionNote', { bump: tu.detentionClassBump, left: menu.detention.left, max: tu.detentionsPerPeriod })

@@ -57,7 +57,7 @@ test('the chaos bar changes colour at the same thresholds as the number', async 
   await freezeRandomness(page);
   const colours = [];
   for (const level of [20, 50, 80]) {
-    await activate(page, 'olivia', level);
+    await activate(page, 'mikeHunt', level);
     await expect(page.locator('#chaosValue')).toHaveText(level + '%');
     colours.push(await page.evaluate(() => [
       getComputedStyle(document.getElementById('chaosFill')).backgroundColor,
@@ -126,8 +126,8 @@ test.describe('on a phone', () => {
     }
 
     // help and discipline an acting-up student
-    await activate(page, 'ruby', 40);
-    await faceStudent(page, 'ruby');
+    await activate(page, 'mikeOxlong', 40);
+    await faceStudent(page, 'mikeOxlong');
     for (const sel of ['#actPrimary', '#actDiscipline']) {
       await expect(page.locator(sel)).toBeVisible();
       const r = await page.locator(sel).boundingBox();
@@ -147,14 +147,14 @@ test.describe('on a phone', () => {
     await page.locator('#seatGrid .seat', { hasText: 'Ben Dover' }).tap();
     await page.locator('#seatGrid .seat', { hasText: 'Mike Hunt' }).tap();
     await expect(page.locator('#log')).toContainText('Ben Dover and Mike Hunt swap seats');
-    const seats = await hooks(page, (s) => [s.game.seats.marcus, s.game.seats.olivia]);
+    const seats = await hooks(page, (s) => [s.game.seats.benDover, s.game.seats.mikeHunt]);
     expect(seats).toEqual([{ row: 1, col: 1 }, { row: 0, col: 1 }]);
 
     await page.locator('#seatClose').tap();
     await expect(page.locator('#seatChart')).toBeHidden();
 
     // roll call and pause are reachable too
-    await hooks(page, (s) => { s.rules.pickupCard(s.game, 'wyatt'); });
+    await hooks(page, (s) => { s.rules.pickupCard(s.game, 'moeLester'); });
     await expect(page.locator('#actRollCall')).toBeVisible();
     await page.locator('#actRollCall').tap();
     await expect(page.locator('#attAnswer')).toBeVisible();

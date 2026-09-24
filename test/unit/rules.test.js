@@ -49,8 +49,8 @@ describe('an idle round', () => {
     const game = newGame({ seed: 1 });
     noSpawns(game);
     game.tuning.throwChanceAttendance = 0;
-    pickupCard(game, 'priya');
-    deliverCard(game, 'priya');
+    pickupCard(game, 'dixieNormous');
+    deliverCard(game, 'dixieNormous');
     run(game, TUNING.period + 1);
     assert.deepEqual(game.outcome, { won: false, reason: 'attendance', unmarked: STUDENTS.length - 1 });
   });
@@ -80,22 +80,22 @@ describe('a round played well', () => {
 describe('attendance', () => {
   test('a card goes to its owner and marks them present', () => {
     const game = newGame();
-    assert.equal(pickupCard(game, 'nina'), true);
-    assert.equal(game.attendance.holding, 'nina');
-    assert.equal(pickupCard(game, 'ruby'), false, 'cannot carry two cards');
-    assert.equal(deliverCard(game, 'nina'), 'delivered');
+    assert.equal(pickupCard(game, 'gabeIches'), true);
+    assert.equal(game.attendance.holding, 'gabeIches');
+    assert.equal(pickupCard(game, 'mikeOxlong'), false, 'cannot carry two cards');
+    assert.equal(deliverCard(game, 'gabeIches'), 'delivered');
     assert.equal(game.attendance.delivered, 1);
     assert.equal(game.attendance.holding, null);
-    assert.ok(!game.attendance.remaining.includes('nina'));
+    assert.ok(!game.attendance.remaining.includes('gabeIches'));
   });
 
   test('the wrong student rejects the card and you keep holding it', () => {
     const game = newGame();
-    pickupCard(game, 'nina');
-    assert.equal(deliverCard(game, 'ruby'), 'wrong');
-    assert.equal(game.attendance.holding, 'nina');
+    pickupCard(game, 'gabeIches');
+    assert.equal(deliverCard(game, 'mikeOxlong'), 'wrong');
+    assert.equal(game.attendance.holding, 'gabeIches');
     assert.equal(game.attendance.delivered, 0);
-    assert.deepEqual(eventsOf(game, 'wrongStudent').map((e) => [e.id, e.heldId]), [['ruby', 'nina']]);
+    assert.deepEqual(eventsOf(game, 'wrongStudent').map((e) => [e.id, e.heldId]), [['mikeOxlong', 'gabeIches']]);
   });
 
   test('delivering all eight cards starts the lesson', () => {
@@ -108,16 +108,16 @@ describe('attendance', () => {
   test('roll call answers once per card, from the card owner', () => {
     const game = newGame();
     assert.equal(rollCall(game), null, 'nothing to ask without a card');
-    pickupCard(game, 'wyatt');
-    assert.equal(rollCall(game), 'wyatt');
+    pickupCard(game, 'moeLester');
+    assert.equal(rollCall(game), 'moeLester');
     assert.equal(rollCall(game), null);
   });
 
   test('a student sent to the principal is marked by the office', () => {
     const game = newGame();
-    activateNow(game, 'wyatt', 30);
-    discipline(game, 'wyatt', 'principal');
-    assert.ok(!game.attendance.remaining.includes('wyatt'));
+    activateNow(game, 'moeLester', 30);
+    discipline(game, 'moeLester', 'principal');
+    assert.ok(!game.attendance.remaining.includes('moeLester'));
     assert.equal(game.attendance.delivered, 1);
   });
 });
@@ -127,125 +127,125 @@ describe('escalation', () => {
     const game = newGame();
     finishAttendance(game, deliverCard, pickupCard);
     noSpawns(game);
-    activateNow(game, 'diego', 95);
+    activateNow(game, 'steve', 95);
     run(game, 5);
-    assert.deepEqual(game.outcome, { won: false, reason: 'student', culpritId: 'diego' });
+    assert.deepEqual(game.outcome, { won: false, reason: 'student', culpritId: 'steve' });
     assert.equal(eventsOf(game, 'nearlyLost').length, 1);
   });
 
   test('chaos is the worst escalation among students acting up', () => {
     const game = newGame();
-    activateNow(game, 'diego', 30);
-    activateNow(game, 'ruby', 55);
+    activateNow(game, 'steve', 30);
+    activateNow(game, 'mikeOxlong', 55);
     assert.equal(chaos(game), 55);
   });
 
   test('students escalate more slowly during attendance than in the lesson', () => {
     const game = newGame();
-    const duringAttendance = escalationRate(game, 'olivia');
+    const duringAttendance = escalationRate(game, 'mikeHunt');
     finishAttendance(game, deliverCard, pickupCard);
-    assert.ok(escalationRate(game, 'olivia') > duringAttendance);
+    assert.ok(escalationRate(game, 'mikeHunt') > duringAttendance);
   });
 });
 
 describe('helping (E)', () => {
   test('lowers escalation and calms a student at zero', () => {
     const game = newGame();
-    activateNow(game, 'diego', 40);
-    assert.equal(help(game, 'diego'), 'calmed');
-    assert.equal(game.students.diego.active, false);
+    activateNow(game, 'steve', 40);
+    assert.equal(help(game, 'steve'), 'calmed');
+    assert.equal(game.students.steve.active, false);
   });
 
   test('does nothing for a student who is behaving', () => {
     const game = newGame();
-    assert.equal(help(game, 'diego'), null);
+    assert.equal(help(game, 'steve'), null);
     assert.equal(game.counters.helps, 0);
   });
 
   test('the phone takes two presses: a warning, then taking it', () => {
     const game = newGame();
-    activateNow(game, 'marcus', 60);
-    assert.equal(help(game, 'marcus'), 'warned');
-    assert.equal(game.students.marcus.active, true);
+    activateNow(game, 'benDover', 60);
+    assert.equal(help(game, 'benDover'), 'warned');
+    assert.equal(game.students.benDover.active, true);
     run(game, 0.5);
-    assert.equal(help(game, 'marcus'), 'calmed');
-    assert.equal(game.students.marcus.active, false);
+    assert.equal(help(game, 'benDover'), 'calmed');
+    assert.equal(game.students.benDover.active, false);
   });
 
   test('the phone warning expires if you wait too long', () => {
     const game = newGame();
     noSpawns(game);
-    activateNow(game, 'marcus', 20);
-    help(game, 'marcus');
+    activateNow(game, 'benDover', 20);
+    help(game, 'benDover');
     run(game, TUNING.phoneWarnWindow + 0.5);
-    assert.equal(help(game, 'marcus'), 'warned');
+    assert.equal(help(game, 'benDover'), 'warned');
   });
 
   test('the arguer only calms during his pause; interrupting makes it worse', () => {
     const game = newGame();
     noSpawns(game);
-    activateNow(game, 'cole', 50);
+    activateNow(game, 'hughJass', 50);
     run(game, TUNING.argueReadyWindow + 0.1);
-    assert.equal(argueReady(game, 'cole'), false);
-    const before = game.students.cole.escalation;
-    assert.equal(help(game, 'cole'), 'missed');
-    assert.ok(game.students.cole.escalation > before);
-    run(game, timeUntilArgueReady(game, 'cole') + 0.05);
-    assert.equal(argueReady(game, 'cole'), true);
-    assert.notEqual(help(game, 'cole'), 'missed');
-    assert.ok(game.students.cole.escalation < before);
+    assert.equal(argueReady(game, 'hughJass'), false);
+    const before = game.students.hughJass.escalation;
+    assert.equal(help(game, 'hughJass'), 'missed');
+    assert.ok(game.students.hughJass.escalation > before);
+    run(game, timeUntilArgueReady(game, 'hughJass') + 0.05);
+    assert.equal(argueReady(game, 'hughJass'), true);
+    assert.notEqual(help(game, 'hughJass'), 'missed');
+    assert.ok(game.students.hughJass.escalation < before);
   });
 });
 
 describe('discipline (F)', () => {
   test('is refused for a student who is not acting up', () => {
     const game = newGame();
-    assert.deepEqual(disciplineEligibility(game, 'priya'), { ok: false, reason: 'calm' });
+    assert.deepEqual(disciplineEligibility(game, 'dixieNormous'), { ok: false, reason: 'calm' });
     for (const option of ['talk', 'detention', 'principal', 'zap']) {
-      assert.equal(discipline(game, 'priya', option), false, option);
+      assert.equal(discipline(game, 'dixieNormous', option), false, option);
     }
-    assert.equal(game.students.priya.detained, false);
+    assert.equal(game.students.dixieNormous.detained, false);
   });
 
   test('is allowed on a thrower you just caught, even if they look calm', () => {
     const game = newGame();
-    game.students.priya.caughtUntil = game.elapsed + 5;
-    assert.equal(disciplineEligibility(game, 'priya').ok, true);
+    game.students.dixieNormous.caughtUntil = game.elapsed + 5;
+    assert.equal(disciplineEligibility(game, 'dixieNormous').ok, true);
   });
 
   test('a stern talking-to lowers escalation but may not fully settle', () => {
     const game = newGame();
-    activateNow(game, 'ruby', 80);
-    assert.equal(discipline(game, 'ruby', 'talk'), true);
-    assert.equal(game.students.ruby.escalation, 80 - TUNING.talkCalm);
-    assert.equal(game.students.ruby.active, true);
+    activateNow(game, 'mikeOxlong', 80);
+    assert.equal(discipline(game, 'mikeOxlong', 'talk'), true);
+    assert.equal(game.students.mikeOxlong.escalation, 80 - TUNING.talkCalm);
+    assert.equal(game.students.mikeOxlong.active, true);
     assert.equal(game.counters.talks, 1);
   });
 
   test('detention silences the student, riles the class, and is limited per period', () => {
     const game = newGame();
-    activateNow(game, 'ruby', 50);
-    activateNow(game, 'diego', 20);
-    assert.equal(discipline(game, 'ruby', 'detention'), true);
-    assert.equal(game.students.ruby.detained, true);
-    assert.equal(game.students.diego.escalation, 20 + TUNING.detentionClassBump);
+    activateNow(game, 'mikeOxlong', 50);
+    activateNow(game, 'steve', 20);
+    assert.equal(discipline(game, 'mikeOxlong', 'detention'), true);
+    assert.equal(game.students.mikeOxlong.detained, true);
+    assert.equal(game.students.steve.escalation, 20 + TUNING.detentionClassBump);
 
-    activateNow(game, 'wyatt', 10);
-    assert.equal(discipline(game, 'wyatt', 'detention'), true);
-    activateNow(game, 'nina', 10);
-    assert.equal(disciplineMenu(game, 'nina').detention.available, false);
-    assert.equal(disciplineMenu(game, 'nina').detention.left, 0);
-    assert.equal(discipline(game, 'nina', 'detention'), false);
-    assert.equal(game.students.nina.detained, false);
+    activateNow(game, 'moeLester', 10);
+    assert.equal(discipline(game, 'moeLester', 'detention'), true);
+    activateNow(game, 'gabeIches', 10);
+    assert.equal(disciplineMenu(game, 'gabeIches').detention.available, false);
+    assert.equal(disciplineMenu(game, 'gabeIches').detention.left, 0);
+    assert.equal(discipline(game, 'gabeIches', 'detention'), false);
+    assert.equal(game.students.gabeIches.detained, false);
   });
 
   test('with every detention used, misbehaviour still happens and the round can be lost', () => {
     const game = newGame({ seed: 11 });
     finishAttendance(game, deliverCard, pickupCard);
-    activateNow(game, 'wyatt', 10);
-    activateNow(game, 'diego', 10);
-    discipline(game, 'wyatt', 'detention');
-    discipline(game, 'diego', 'detention');
+    activateNow(game, 'moeLester', 10);
+    activateNow(game, 'steve', 10);
+    discipline(game, 'moeLester', 'detention');
+    discipline(game, 'steve', 'detention');
     run(game, TUNING.period);
     assert.ok(eventsOf(game, 'activate').length > 0);
     assert.equal(game.outcome.won, false);
@@ -253,41 +253,41 @@ describe('discipline (F)', () => {
 
   test('a detained student never acts up again', () => {
     const game = newGame({ seed: 5 });
-    activateNow(game, 'ruby', 50);
-    discipline(game, 'ruby', 'detention');
+    activateNow(game, 'mikeOxlong', 50);
+    discipline(game, 'mikeOxlong', 'detention');
     run(game, 80);
-    const later = eventsOf(game, 'activate').filter((e) => e.id === 'ruby');
+    const later = eventsOf(game, 'activate').filter((e) => e.id === 'mikeOxlong');
     assert.equal(later.length, 0);
   });
 
   test('the principal removes the student, calms the others, and comes once per period', () => {
     const game = newGame();
-    activateNow(game, 'wyatt', 50);
-    activateNow(game, 'diego', 50);
-    assert.equal(discipline(game, 'wyatt', 'principal'), true);
-    assert.equal(game.students.wyatt.removed, true);
-    assert.equal(game.students.diego.escalation, 50 - TUNING.principalClassCalm);
-    assert.equal(disciplineMenu(game, 'diego').principal.available, false);
-    assert.equal(discipline(game, 'diego', 'principal'), false);
+    activateNow(game, 'moeLester', 50);
+    activateNow(game, 'steve', 50);
+    assert.equal(discipline(game, 'moeLester', 'principal'), true);
+    assert.equal(game.students.moeLester.removed, true);
+    assert.equal(game.students.steve.escalation, 50 - TUNING.principalClassCalm);
+    assert.equal(disciplineMenu(game, 'steve').principal.available, false);
+    assert.equal(discipline(game, 'steve', 'principal'), false);
   });
 
   test('the zap calms instantly, sets someone else off and then needs to recharge', () => {
     const game = newGame({ seed: 2 });
     noSpawns(game);
-    activateNow(game, 'ruby', 90);
-    assert.equal(discipline(game, 'ruby', 'zap'), true);
-    assert.equal(game.students.ruby.active, false);
+    activateNow(game, 'mikeOxlong', 90);
+    assert.equal(discipline(game, 'mikeOxlong', 'zap'), true);
+    assert.equal(game.students.mikeOxlong.active, false);
     const zap = eventsOf(game, 'zap')[0];
-    assert.ok(zap.setOffId && zap.setOffId !== 'ruby');
+    assert.ok(zap.setOffId && zap.setOffId !== 'mikeOxlong');
     assert.equal(game.students[zap.setOffId].active, true);
     assert.equal(game.students[zap.setOffId].escalation, TUNING.zapCommotionEscalation);
 
-    activateNow(game, 'diego', 40);
-    assert.equal(disciplineMenu(game, 'diego').zap.available, false);
+    activateNow(game, 'steve', 40);
+    assert.equal(disciplineMenu(game, 'steve').zap.available, false);
     for (const s of STUDENTS) game.students[s.id].active = false;
     run(game, TUNING.zapCooldown + 0.1);
-    activateNow(game, 'diego', 40);
-    assert.equal(disciplineMenu(game, 'diego').zap.available, true);
+    activateNow(game, 'steve', 40);
+    assert.equal(disciplineMenu(game, 'steve').zap.available, true);
   });
 
   test('no option dominates: each has a limit or a cost the others do not', () => {
@@ -306,57 +306,57 @@ describe('seating', () => {
     const game = newGame();
     noSpawns(game);
     finishAttendance(game, deliverCard, pickupCard);
-    assert.equal(adjacentFriend(game, 'ruby'), 'nina');
-    const together = escalationRate(game, 'ruby');
+    assert.equal(adjacentFriend(game, 'mikeOxlong'), 'gabeIches');
+    const together = escalationRate(game, 'mikeOxlong');
 
-    activateNow(game, 'ruby', 0);
+    activateNow(game, 'mikeOxlong', 0);
     run(game, 5);
-    const gainedTogether = game.students.ruby.escalation;
+    const gainedTogether = game.students.mikeOxlong.escalation;
 
-    assert.equal(swapSeats(game, 'nina', 'wyatt'), true);
-    assert.equal(adjacentFriend(game, 'ruby'), null);
-    const apart = escalationRate(game, 'ruby');
+    assert.equal(swapSeats(game, 'gabeIches', 'moeLester'), true);
+    assert.equal(adjacentFriend(game, 'mikeOxlong'), null);
+    const apart = escalationRate(game, 'mikeOxlong');
     assert.ok(apart < together);
     assert.ok(Math.abs(together / apart - TUNING.friendBoost) < 1e-9);
 
-    game.students.ruby.escalation = 0;
+    game.students.mikeOxlong.escalation = 0;
     run(game, 5);
-    assert.ok(game.students.ruby.escalation < gainedTogether, 'measured escalation should drop after the swap');
+    assert.ok(game.students.mikeOxlong.escalation < gainedTogether, 'measured escalation should drop after the swap');
   });
 
   test('the game explains a swap that splits friends up, or seats them together', () => {
     const game = newGame();
-    swapSeats(game, 'ruby', 'cole');
+    swapSeats(game, 'mikeOxlong', 'hughJass');
     const split = eventsOf(game, 'swap')[0];
-    assert.deepEqual(split.separated, [['nina', 'ruby']]);
+    assert.deepEqual(split.separated, [['gabeIches', 'mikeOxlong']]);
     assert.deepEqual(split.together, []);
-    swapSeats(game, 'ruby', 'cole');
+    swapSeats(game, 'mikeOxlong', 'hughJass');
     const rejoined = eventsOf(game, 'swap')[1];
-    assert.deepEqual(rejoined.together, [['nina', 'ruby']]);
+    assert.deepEqual(rejoined.together, [['gabeIches', 'mikeOxlong']]);
   });
 
   test('friends egging each other on is announced once per incident', () => {
     const game = newGame();
     noSpawns(game);
-    activateNow(game, 'ruby', 0);
+    activateNow(game, 'mikeOxlong', 0);
     run(game, 2);
-    assert.deepEqual(eventsOf(game, 'eggedOn').map((e) => [e.id, e.friendId]), [['ruby', 'nina']]);
+    assert.deepEqual(eventsOf(game, 'eggedOn').map((e) => [e.id, e.friendId]), [['mikeOxlong', 'gabeIches']]);
   });
 
   test('a detained or removed friend no longer eggs anyone on', () => {
     const game = newGame();
-    activateNow(game, 'nina', 10);
-    discipline(game, 'nina', 'detention');
-    assert.equal(adjacentFriend(game, 'ruby'), null);
+    activateNow(game, 'gabeIches', 10);
+    discipline(game, 'gabeIches', 'detention');
+    assert.equal(adjacentFriend(game, 'mikeOxlong'), null);
   });
 
   test('swapping into a removed student’s seat moves into the empty desk', () => {
     const game = newGame();
-    activateNow(game, 'wyatt', 50);
-    discipline(game, 'wyatt', 'principal');
-    const emptySeat = { ...game.seats.wyatt };
-    assert.equal(swapSeats(game, 'nina', 'wyatt'), true);
-    assert.deepEqual(game.seats.nina, emptySeat);
+    activateNow(game, 'moeLester', 50);
+    discipline(game, 'moeLester', 'principal');
+    const emptySeat = { ...game.seats.moeLester };
+    assert.equal(swapSeats(game, 'gabeIches', 'moeLester'), true);
+    assert.deepEqual(game.seats.gabeIches, emptySeat);
   });
 });
 
@@ -368,13 +368,13 @@ describe('thrown objects', () => {
   test('a hit riles the thrower and the rest of the class', () => {
     const game = newGame();
     noSpawns(game);
-    activateNow(game, 'diego', 30);
-    forceThrow(game, 'priya');
+    activateNow(game, 'steve', 30);
+    forceThrow(game, 'dixieNormous');
     run(game, TUNING.throwWindup + TUNING.throwFlight + 0.05, { facingBoard: true });
     assert.equal(game.counters.hits, 1);
-    assert.equal(game.students.priya.active, true);
-    assert.ok(game.students.priya.escalation >= TUNING.hitThrowerBump);
-    assert.ok(game.students.diego.escalation >= 30 + TUNING.hitClassBump);
+    assert.equal(game.students.dixieNormous.active, true);
+    assert.ok(game.students.dixieNormous.escalation >= TUNING.hitThrowerBump);
+    assert.ok(game.students.steve.escalation >= 30 + TUNING.hitClassBump);
     const hit = eventsOf(game, 'hit')[0];
     assert.equal(hit.first, true);
   });
@@ -382,11 +382,11 @@ describe('thrown objects', () => {
   test('turning around in time catches the thrower and opens discipline', () => {
     const game = newGame();
     noSpawns(game);
-    forceThrow(game, 'priya');
+    forceThrow(game, 'dixieNormous');
     run(game, TUNING.throwWindup + TUNING.throwFlight + 0.05, { facingBoard: false });
     assert.equal(game.counters.hits, 0);
-    assert.equal(eventsOf(game, 'caught')[0].id, 'priya');
-    assert.equal(disciplineEligibility(game, 'priya').ok, true);
+    assert.equal(eventsOf(game, 'caught')[0].id, 'dixieNormous');
+    assert.equal(disciplineEligibility(game, 'dixieNormous').ok, true);
   });
 
   test('throws only start while the teacher faces the board', () => {
@@ -400,16 +400,16 @@ describe('thrown objects', () => {
 describe('the end-of-period report', () => {
   test('counts every kind of intervention', () => {
     const game = newGame();
-    activateNow(game, 'diego', 40);
-    help(game, 'diego');
-    activateNow(game, 'ruby', 40);
-    discipline(game, 'ruby', 'talk');
-    activateNow(game, 'wyatt', 40);
-    discipline(game, 'wyatt', 'detention');
-    activateNow(game, 'nina', 40);
-    discipline(game, 'nina', 'principal');
-    activateNow(game, 'cole', 40);
-    discipline(game, 'cole', 'zap');
+    activateNow(game, 'steve', 40);
+    help(game, 'steve');
+    activateNow(game, 'mikeOxlong', 40);
+    discipline(game, 'mikeOxlong', 'talk');
+    activateNow(game, 'moeLester', 40);
+    discipline(game, 'moeLester', 'detention');
+    activateNow(game, 'gabeIches', 40);
+    discipline(game, 'gabeIches', 'principal');
+    activateNow(game, 'hughJass', 40);
+    discipline(game, 'hughJass', 'zap');
     assert.equal(interventions(game), 5);
   });
 
@@ -418,10 +418,10 @@ describe('the end-of-period report', () => {
     assert.deepEqual(report(clean), { score: 100, grade: 'A', deductions: [] });
 
     const heavy = newGame();
-    activateNow(heavy, 'wyatt', 40);
-    discipline(heavy, 'wyatt', 'principal');
-    activateNow(heavy, 'ruby', 40);
-    discipline(heavy, 'ruby', 'zap');
+    activateNow(heavy, 'moeLester', 40);
+    discipline(heavy, 'moeLester', 'principal');
+    activateNow(heavy, 'mikeOxlong', 40);
+    discipline(heavy, 'mikeOxlong', 'zap');
     const r = report(heavy);
     assert.equal(r.score, 100 - TUNING.report.principal - TUNING.report.zap);
     assert.equal(r.grade, 'C');
@@ -449,7 +449,7 @@ describe('messages', () => {
   test('two friends acting up together are announced once, not twice', () => {
     const game = newGame();
     game.spawnTimer = Infinity;
-    for (const id of ['nina', 'ruby']) {
+    for (const id of ['gabeIches', 'mikeOxlong']) {
       const st = game.students[id];
       st.active = true;
       st.activatedAt = 0;
