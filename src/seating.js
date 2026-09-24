@@ -10,6 +10,7 @@ import { releaseLook, requestLook, stopHoverLook } from './pointer.js';
 import { emit } from './bus.js';
 
 const FRIEND_COLORS = ['var(--friend-1)', 'var(--friend-2)', 'var(--friend-3)', 'var(--friend-4)'];
+/** @type {Record<string, string>} student id -> the colour their pair is drawn in */
 const friendColor = {};
 STUDENTS.forEach((s) => {
   if (!s.friend || friendColor[s.id]) return;
@@ -27,6 +28,7 @@ export function renderSeatChart() {
   for (let row = 0; row < 2; row++) {
     for (let col = 0; col < 4; col++) {
       const id = STUDENTS.map((s) => s.id).find((sid) => game.seats[sid].row === row && game.seats[sid].col === col);
+      if (!id) continue; // every desk has a student (or the empty place of one marched out)
       const st = game.students[id];
       const btn = document.createElement('button');
       btn.type = 'button';
@@ -62,6 +64,10 @@ export function renderSeatChart() {
   if (S.seatFirst) el.banner.textContent = t('seating.picked', { name: name(S.seatFirst) });
 }
 
+/**
+ * @param {boolean} open
+ * @param {boolean} [focusFirst] put focus on the first seat (keyboard players)
+ */
 export function setSeatChart(open, focusFirst = false) {
   if (open && (!S.running || frozen())) return;
   S.seatChartOpen = open;
@@ -82,10 +88,12 @@ export function setSeatChart(open, focusFirst = false) {
   }
 }
 
+/** @param {boolean} [focusFirst] */
 export function toggleSeatChart(focusFirst = false) {
   setSeatChart(!S.seatChartOpen, focusFirst);
 }
 
+/** @param {string} id */
 export function pickSeat(id) {
   if (!S.running || frozen()) return;
   if (!S.seatFirst) {
@@ -101,7 +109,10 @@ export function pickSeat(id) {
   renderSeatChart();
 }
 
-// A swap happened in the rules: slide the students over and say what it changed.
+/**
+ * A swap happened in the rules: slide the students over and say what it changed.
+ * @param {{a: string, b: string, separated: string[][], together: string[][]}} e
+ */
 export function onSwap(e) {
   const game = S.game;
   animateSeatSwap([e.a, e.b]);

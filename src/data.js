@@ -7,6 +7,25 @@
 // `friend` names another student's id. Friends seated next to each other egg each other on
 // (see TUNING.friendBoost). The starting chart deliberately seats three pairs of friends
 // together, so reassigning seats is worth the player's time.
+
+/** @typedef {'notes' | 'phone' | 'plane' | 'tip' | 'argue' | 'sleep' | 'snack' | 'spin'} Behaviour */
+
+/**
+ * One student in the roster.
+ * @typedef {object} StudentConfig
+ * @property {string} id
+ * @property {string} name the name shown in the game
+ * @property {'he' | 'she'} pronoun
+ * @property {string} model the character file in assets/characters/ (without .glb)
+ * @property {Behaviour} type how they act up
+ * @property {number} rate escalation per second while acting up, in percent
+ * @property {'LEAVE' | 'HURT'} fail what happens when they reach 100%
+ * @property {number} row the seat they start in
+ * @property {number} col
+ * @property {string | null} friend the id of the friend who eggs them on, if any
+ */
+
+/** @type {StudentConfig[]} */
 export const STUDENTS = [
   {
     id: 'dixieNormous', name: 'Dixie Normous', pronoun: 'she', model: 'suit-woman',
@@ -67,6 +86,8 @@ export const TEACHER = { speed: 3.1, startZ: ROOM.backZ - 1.7 };
 // learning the controls: the first student acts up later, and until the first name card is
 // handed out nobody sitting next to a friend starts (a friend beside them makes them escalate
 // 60% faster). See test/unit/balance.test.js.
+/** @typedef {'relaxed' | 'standard'} Difficulty */
+/** @type {Record<Difficulty, Partial<Tuning>>} */
 export const DIFFICULTY = {
   relaxed: {
     period: 240,
@@ -79,12 +100,23 @@ export const DIFFICULTY = {
   },
   standard: {},
 };
+/** @type {Difficulty} */
 export const DEFAULT_DIFFICULTY = 'relaxed';
 
+/**
+ * @param {unknown} value
+ * @returns {value is Difficulty}
+ */
+export function isDifficulty(value) {
+  return typeof value === 'string' && Object.hasOwn(DIFFICULTY, value);
+}
+
+/** @type {Record<Behaviour, string>} */
 export const ICON = {
   notes: '📝', phone: '📱', plane: '✈️', tip: '🪑', argue: '💬', sleep: '💤', snack: '🍪', spin: '🌀',
 };
 
+/** @typedef {typeof TUNING} Tuning */
 export const TUNING = {
   // One class period, in seconds of unpaused real time (shown as 9:05 -> 9:50).
   period: 120,

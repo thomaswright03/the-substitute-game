@@ -6,6 +6,7 @@ import { currentLanguage, plural, t } from './strings.js';
 import { el, keyedLabel, setText } from './dom.js';
 import { S, frozen, name } from './session.js';
 import { project, world } from './world.js';
+import { characterData } from './characters.js';
 import { currentContext, disciplineAction, primaryAction } from './aim.js';
 import { askRollCall } from './rollcall.js';
 import { toggleSeatChart } from './seating.js';
@@ -13,8 +14,31 @@ import { keyLabel, keyLabelsVersion } from './keys.js';
 
 /* ---------------- rings and name tags over the students ---------------- */
 
+/**
+ * A student's tag, and what it shows now (each is written to the page only when it changes).
+ * @typedef {object} Tag
+ * @property {HTMLElement} tag
+ * @property {HTMLElement | SVGElement} fill the ring's filled arc
+ * @property {HTMLElement} note the "egged on by" line
+ * @property {number} pct
+ * @property {string | null | undefined} friend undefined: not drawn yet
+ * @property {number} x
+ * @property {number} y
+ */
+/** @type {Record<string, Tag>} */
 const tagEls = {};
 const RING_R = 18, RING_C = 2 * Math.PI * RING_R;
+
+/**
+ * The element matching `selector` inside a tag that buildTags() just made.
+ * @param {HTMLElement} tag
+ * @param {string} selector
+ */
+function part(tag, selector) {
+  const node = tag.querySelector(selector);
+  if (!(node instanceof HTMLElement || node instanceof SVGElement)) throw new Error('A student tag has no ' + selector);
+  return node;
+}
 
 export function buildTags() {
   el.studentLayer.textContent = '';
@@ -26,10 +50,12 @@ export function buildTags() {
       '<circle class="track" cx="22" cy="22" r="' + RING_R + '" fill="none" stroke-width="4"></circle>' +
       '<circle class="fill" cx="22" cy="22" r="' + RING_R + '" fill="none" stroke-width="4" stroke-dasharray="' + RING_C + '" stroke-dashoffset="' + RING_C + '"></circle>' +
       '</svg><div class="icon"></div></div><div class="name"></div><div class="note"></div>';
-    tag.querySelector('.icon').textContent = ICON[s.type];
-    tag.querySelector('.name').textContent = s.name;
+    part(tag, '.icon').textContent = ICON[s.type];
+    part(tag, '.name').textContent = s.name;
     el.studentLayer.appendChild(tag);
-    tagEls[s.id] = { tag, fill: tag.querySelector('.ring .fill'), note: tag.querySelector('.note'), pct: -1, friend: undefined, x: NaN, y: NaN };
+    const note = part(tag, '.note');
+    if (!(note instanceof HTMLElement)) throw new Error('A student tag\'s note is not an HTML element');
+    tagEls[s.id] = { tag, fill: part(tag, '.ring .fill'), note, pct: -1, friend: undefined, x: NaN, y: NaN };
   }
 }
 
@@ -40,11 +66,11 @@ export function updateTags() {
     const tagEl = tagEls[s.id];
     const { tag, fill, note } = tagEl;
     const st = game.students[s.id];
-    const head = world.students[s.id].userData.headWorld;
+    const head = characterData(world.students[s.id]).headWorld;
     const targeted = S.aim.studentId === s.id;
     const show = S.running && head && !st.removed && (targeted || (st.active && R.canMisbehave(game, s.id)));
-    const pos = show ? project(head) : null;
-    if (!show || !pos.onScreen) { tag.classList.remove('show'); continue; }
+    const pos = show && head ? project(head) : null;
+    if (!pos || !pos.onScreen) { tag.classList.remove('show'); continue; }
     tag.classList.add('show');
     tag.classList.toggle('target', targeted);
     tag.classList.toggle('calm', !st.active);
@@ -78,6 +104,7 @@ export function invalidateTags() {
 
 /* ---------------- aim prompt and action buttons ---------------- */
 
+/** @param {{key: string | null, text: string}[]} parts */
 function renderPrompt(parts) {
   el.prompt.textContent = '';
   // one line per action, so a long hint never wraps into the middle of the next action
@@ -90,15 +117,21 @@ function renderPrompt(parts) {
   el.prompt.classList.toggle('show', parts.length > 0);
 }
 
+/** @param {string} id */
 function helpPromptText(id) {
   const game = S.game;
   const cfg = R.studentConfig(game, id);
   const n = name(id);
-  if (cfg.type === 'phone') return t(R.phoneWarned(game, id) ? 'prompt.helpPhoneSecond' : 'prompt.helpPhoneFirst', { name: n });
-  if (cfg.type === 'argue') return t(R.argueReady(game, id) ? 'prompt.helpArgueReady' : 'prompt.helpArgueWait', { name: n });
+  if (cfg && cfg.type === 'phone') return t(R.phoneWarned(game, id) ? 'prompt.helpPhoneSecond' : 'prompt.helpPhoneFirst', { name: n });
+  if (cfg && cfg.type === 'argue') return t(R.argueReady(game, id) ? 'prompt.helpArgueReady' : 'prompt.helpArgueWait', { name: n });
   return t('prompt.help', { name: n });
 }
 
+/**
+ * @param {HTMLElement} node
+ * @param {string} key
+ * @param {string} label
+ */
 function setButton(node, key, label) {
   const sig = key + ' ' + label + S.isTouch;
   if (node.dataset.label === sig) return;
@@ -108,17 +141,38 @@ function setButton(node, key, label) {
 
 // Everything the prompt and the buttons depend on, compared field by field each frame so they
 // are only rebuilt when something changed.
+/**
+ * @typedef {object} PromptInputs
+ * @property {string | null} kind
+ * @property {string | null} id
+ * @property {string | null} seatFirst
+ * @property {string | null} holding
+ * @property {number} phase
+ * @property {boolean} canAsk
+ * @property {boolean} running
+ * @property {boolean} chart
+ * @property {boolean} touch
+ * @property {string | null} language
+ * @property {number} keys
+ */
+/** @type {PromptInputs} */
 const shown = { kind: null, id: null, seatFirst: null, holding: null, phase: 0, canAsk: false, running: false, chart: false, touch: false, language: null, keys: -1 };
+/**
+ * @param {{kind: string, id: string} | null} ctx
+ * @param {import('./rules.js').Game} game
+ * @param {boolean} canAsk
+ */
 function samePromptInputs(ctx, game, canAsk) {
   const kind = ctx ? ctx.kind : null, id = ctx ? ctx.id : null;
   // the help prompt for the phone and the arguer changes with their state
   let phase = 0;
-  if (kind === 'help') {
-    const type = R.studentConfig(game, id).type;
+  if (kind === 'help' && id) {
+    const cfg = R.studentConfig(game, id);
+    const type = cfg ? cfg.type : null;
     if (type === 'phone') phase = R.phoneWarned(game, id) ? 1 : 0;
     else if (type === 'argue') phase = R.argueReady(game, id) ? 1 : 0;
   }
-  const holding = game ? game.attendance.holding : null;
+  const holding = game.attendance.holding;
   const same = kind === shown.kind && id === shown.id && S.seatFirst === shown.seatFirst && holding === shown.holding
     && phase === shown.phase && canAsk === shown.canAsk && S.running === shown.running && S.seatChartOpen === shown.chart
     && S.isTouch === shown.touch && currentLanguage() === shown.language && keyLabelsVersion() === shown.keys;
@@ -132,7 +186,9 @@ export function updatePromptAndActions() {
   const ctx = S.running && !frozen() ? currentContext() : null;
   const canAsk = S.running && !frozen() && R.canRollCall(game);
   if (samePromptInputs(ctx, game, canAsk)) return;
+  /** @type {{key: string | null, text: string}[]} */
   const parts = [];
+  /** @type {string | null} */
   let primary = null;
   let showDiscipline = false;
   if (ctx) {
@@ -143,7 +199,7 @@ export function updatePromptAndActions() {
         primary = t('actions.pickUp');
         break;
       case 'give':
-        parts.push({ key: keyLabel('help'), text: t('prompt.give', { held: name(game.attendance.holding), name: n }) });
+        parts.push({ key: keyLabel('help'), text: t('prompt.give', { held: name(game.attendance.holding || ''), name: n }) });
         primary = t('actions.give');
         break;
       case 'help':
@@ -174,8 +230,9 @@ export function updatePromptAndActions() {
   if (primary) setButton(el.actPrimary, keyLabel('help'), primary);
   el.actDiscipline.hidden = !showDiscipline;
   if (showDiscipline) setButton(el.actDiscipline, keyLabel('discipline'), t('actions.discipline'));
-  el.actRollCall.hidden = !canAsk;
-  if (canAsk) setButton(el.actRollCall, keyLabel('rollCall'), t('rollCall.button', { name: name(game.attendance.holding) }));
+  const holding = game.attendance.holding;
+  el.actRollCall.hidden = !canAsk || !holding;
+  if (canAsk && holding) setButton(el.actRollCall, keyLabel('rollCall'), t('rollCall.button', { name: name(holding) }));
   el.actSeats.hidden = !S.running;
   setButton(el.actSeats, keyLabel('seats'), t('actions.seats'));
   el.actSeats.setAttribute('aria-pressed', String(S.seatChartOpen));
@@ -197,6 +254,7 @@ export function setupActionButtons() {
 
 /* ---------------- attendance panel ---------------- */
 
+/** @type {{valid: boolean, holding: string | null, remaining: number, answer: string | null}} */
 const attShown = { valid: false, holding: null, remaining: -1, answer: null };
 export function invalidateAttendancePanel() {
   attShown.valid = false;
@@ -229,6 +287,7 @@ export function updateAttendancePanel() {
 
 /* ---------------- clock and chaos meter ---------------- */
 
+/** @param {number} frac how far through the period, 0 to 1 */
 function clockText(frac) {
   const startMin = 9 * 60 + 5, endMin = 9 * 60 + 50;
   const total = startMin + frac * (endMin - startMin);
@@ -240,6 +299,7 @@ function clockText(frac) {
 
 // Runs every frame, and writes to the page only when a shown value changes. When a period
 // ends the HUD keeps its final clock and chaos, so a loss shows the 100% that caused it.
+/** @type {{minute: number, clockTenths: number, chaos: number, chaosTenths: number, finalBell: boolean | null}} */
 const hudShown = { minute: -1, clockTenths: -1, chaos: -1, chaosTenths: -1, finalBell: null };
 export function updateHud() {
   const game = S.game;

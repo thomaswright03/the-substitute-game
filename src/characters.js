@@ -12,7 +12,55 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import { PROP_BUILDERS, TELL_POSES } from './props.js';
-import { applyExpression, attachExpressiveFace } from './face.js';
+import { applyExpression, attachExpressiveFace, isMesh } from './face.js';
+
+/** @typedef {import('three/addons/loaders/GLTFLoader.js').GLTF} GLTF */
+/** @typedef {import('./face.js').Face} Face */
+/** @typedef {import('./data.js').Behaviour} Behaviour */
+
+/**
+ * The parts of a character that its poses move.
+ * @typedef {object} CharacterParts
+ * @property {THREE.Object3D | null} head the head bone
+ * @property {THREE.Object3D | null} arm the right upper arm
+ * @property {THREE.Object3D | null} hand the right wrist
+ * @property {THREE.Object3D | null} prop the behaviour's prop, if it has one
+ * @property {Face | null} faceMesh
+ * @property {THREE.AnimationMixer} mixer
+ * @property {{idle?: THREE.AnimationAction, walk?: THREE.AnimationAction}} actions
+ * @property {(THREE.Object3D | null)[]} armBones upper and lower arm, right then left
+ * @property {(THREE.Quaternion | null)[]} armRestQ their rest pose
+ * @property {THREE.Quaternion[] | null} tellPose their pose while acting up, if the behaviour has one
+ * @property {THREE.Vector3 | null} headForwardLocal where the face points, in the head bone's space
+ * @property {THREE.Euler} headRest
+ * @property {THREE.Euler} armRest
+ */
+
+/**
+ * What a character keeps in its group's userData.
+ * @typedef {object} CharacterData
+ * @property {CharacterParts} parts
+ * @property {THREE.Vector3} seatOffset from the seat's top-centre to the group's origin
+ * @property {THREE.Vector3 | null} [headWorld] where the head is this frame (world.js); null while not drawn
+ * @property {THREE.Vector3} [headVec] the vector headWorld is kept in
+ * @property {{fromX: number, fromZ: number, toX: number, toZ: number, t0: number, dur: number}} [seatAnim] a slide to a new desk
+ * @property {number} [spinYaw] how far a spinning student has turned
+ */
+
+/**
+ * The data buildCharacter() keeps on a character.
+ * @param {THREE.Object3D} group
+ * @returns {CharacterData}
+ */
+export function characterData(group) {
+  if (!group.userData.parts) throw new Error((group.name || 'this object') + ' is not a character');
+  return /** @type {CharacterData} */ (group.userData);
+}
+
+/** @param {THREE.Object3D} group a character from buildCharacter() */
+export function partsOf(group) {
+  return characterData(group).parts;
+}
 
 export const CHAR = {
   scale: 0.95,
@@ -31,9 +79,15 @@ export const CHAR = {
 const loader = new GLTFLoader();
 loader.setMeshoptDecoder(MeshoptDecoder);
 
+/** @type {Record<string, Promise<GLTF>>} */
 const cache = {};
 
-// Loads a .glb once. onProgress(loadedBytes, totalBytes) is called while it downloads.
+/**
+ * Loads a .glb once. onProgress(loadedBytes, totalBytes) is called while it downloads.
+ * @param {string} url
+ * @param {(loaded: number, total: number) => void} [onProgress]
+ * @returns {Promise<GLTF>}
+ */
 export function loadGLB(url, onProgress) {
   if (!cache[url]) {
     cache[url] = new Promise((resolve, reject) => {
@@ -51,13 +105,22 @@ export function loadGLB(url, onProgress) {
   return cache[url];
 }
 
+/** @param {string} variant */
 export function modelUrl(variant) {
   return 'assets/characters/' + variant + '.glb';
 }
 
-// Downloads several files, reporting combined progress as a 0..1 fraction.
+/**
+ * Downloads several files, reporting combined progress as a 0..1 fraction.
+ * @param {string[]} urls
+ * @param {(fraction: number) => void} [onFraction]
+ * @param {number} [estimateBytes] a file's size until the server says
+ */
 export function loadAll(urls, onFraction, estimateBytes = 520000) {
-  const loaded = {}, total = {};
+  /** @type {Record<string, number>} */
+  const loaded = {};
+  /** @type {Record<string, number>} */
+  const total = {};
   urls.forEach((u) => { loaded[u] = 0; total[u] = estimateBytes; });
   const report = () => {
     let l = 0, t = 0;
@@ -89,6 +152,13 @@ const _qb = new THREE.Quaternion();
 
 // Cyclic-coordinate-descent IK: turns the forearm, then the upper arm, so that the wrist reaches
 // `target` (world space). Runs once per pose when a character is built, not every frame.
+/**
+ * @param {THREE.Object3D} upper
+ * @param {THREE.Object3D} lower
+ * @param {THREE.Object3D} wrist
+ * @param {THREE.Vector3} target
+ * @param {number} [iterations]
+ */
 function reach(upper, lower, wrist, target, iterations = 16) {
   upper.updateMatrixWorld(true);
   for (let it = 0; it < iterations; it++) {
@@ -98,7 +168,7 @@ function reach(upper, lower, wrist, target, iterations = 16) {
       const toWrist = _b.sub(_a).normalize();
       const toTarget = _c.copy(target).sub(_a).normalize();
       _q.setFromUnitVectors(toWrist, toTarget);
-      bone.parent.getWorldQuaternion(_qp);
+      parentOf(bone).getWorldQuaternion(_qp);
       bone.getWorldQuaternion(_qb);
       bone.quaternion.copy(_qp.invert().multiply(_q).multiply(_qb));
       bone.updateMatrixWorld(true);
@@ -106,9 +176,23 @@ function reach(upper, lower, wrist, target, iterations = 16) {
   }
 }
 
-// Rotates a bone by `angle` about an axis given in WORLD space, whatever its own axes are.
+/**
+ * A bone's parent (every bone this moves has one).
+ * @param {THREE.Object3D} bone
+ */
+function parentOf(bone) {
+  if (!bone.parent) throw new Error('Bone ' + bone.name + ' has no parent');
+  return bone.parent;
+}
+
+/**
+ * Rotates a bone by `angle` about an axis given in WORLD space, whatever its own axes are.
+ * @param {THREE.Object3D} bone
+ * @param {THREE.Vector3} axis
+ * @param {number} angle
+ */
 function turnAboutWorldAxis(bone, axis, angle) {
-  bone.parent.getWorldQuaternion(_qp);
+  parentOf(bone).getWorldQuaternion(_qp);
   _q.setFromAxisAngle(axis, angle);
   // local' = parentWorld^-1 * turn * parentWorld * local
   bone.quaternion.premultiply(_qb.copy(_qp).invert().multiply(_q).multiply(_qp));
@@ -119,6 +203,10 @@ function turnAboutWorldAxis(bone, axis, angle) {
 // men's shins bend about a different local axis from the women's), so the bend is made about
 // the character's own left-right axis in world space. The feet are separate bones hanging off
 // the rig's root, not the shins, so each is carried along with its shin.
+/**
+ * @param {THREE.Object3D} g
+ * @param {Record<string, THREE.Object3D>} bones
+ */
 function sit(g, bones) {
   g.updateMatrixWorld(true);
   const forward = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), g.rotation.y);
@@ -139,25 +227,33 @@ function sit(g, bones) {
   g.updateMatrixWorld(true);
   const m = new THREE.Matrix4();
   for (const { shin, foot, rel } of feet) {
-    m.multiplyMatrices(shin.matrixWorld, rel).premultiply(_m4.copy(foot.parent.matrixWorld).invert());
+    m.multiplyMatrices(shin.matrixWorld, rel).premultiply(_m4.copy(parentOf(foot).matrixWorld).invert());
     m.decompose(foot.position, foot.quaternion, foot.scale);
     foot.updateMatrixWorld(true);
   }
 }
 const _m4 = new THREE.Matrix4();
 
+/**
+ * @param {THREE.AnimationClip[]} animations
+ * @param {string} name
+ */
 function findClip(animations, name) {
   return animations.find((a) => a.name.split('|').pop() === name) || null;
 }
 
-// opts: {type, seated, model}
+/**
+ * A character, posed and ready to place: seated at a desk unless opts.seated is false.
+ * @param {GLTF} gltf
+ * @param {{type: Behaviour | null, seated?: boolean, model: string}} opts
+ */
 export function buildCharacter(gltf, opts) {
   const seated = opts.seated !== false;
   const g = cloneSkinned(gltf.scene);
   g.scale.setScalar(CHAR.scale);
   g.rotation.y = CHAR.forwardYaw;
   g.traverse((o) => {
-    if (/** @type {THREE.Mesh} */ (o).isMesh) {
+    if (isMesh(o)) {
       o.castShadow = true;
       o.receiveShadow = true;
       // posed skinned meshes move outside their bind-pose bounds
@@ -165,6 +261,7 @@ export function buildCharacter(gltf, opts) {
     }
   });
 
+  /** @type {Record<string, THREE.Object3D>} */
   const bones = {};
   g.traverse((o) => {
     if (/** @type {THREE.Bone} */ (o).isBone) bones[o.name] = o;
@@ -172,13 +269,15 @@ export function buildCharacter(gltf, opts) {
 
   const mixer = new THREE.AnimationMixer(g);
   const idle = findClip(gltf.animations, 'Idle_Neutral');
+  /** @type {CharacterParts['actions']} */
   const actions = {};
   if (idle) {
-    actions.idle = mixer.clipAction(idle);
-    actions.idle.play();
-    actions.idle.paused = true;
-    actions.idle.time = 0;
+    const action = mixer.clipAction(idle);
+    action.play();
+    action.paused = true;
+    action.time = 0;
     mixer.update(0);
+    actions.idle = action;
   }
   const walk = findClip(gltf.animations, 'Walk');
   if (walk) actions.walk = mixer.clipAction(walk);
@@ -193,40 +292,46 @@ export function buildCharacter(gltf, opts) {
 
   // Measured, not tuned per model: the costumes' rigs differ in proportions and bind pose, so
   // find where this one's hips ended up and offset the whole character to put them on the seat.
-  g.userData.seatOffset = new THREE.Vector3();
+  const seatOffset = new THREE.Vector3();
   if (seated) {
     const hips = bones.Hips || bones.Body || null;
     if (hips) {
       g.position.set(0, 0, 0);
       g.updateMatrixWorld(true);
       const at = hips.getWorldPosition(new THREE.Vector3());
-      g.userData.seatOffset.set(-at.x, CHAR.hipAboveSeat - at.y, CHAR.hipBehindSeatCentre - at.z);
+      seatOffset.set(-at.x, CHAR.hipAboveSeat - at.y, CHAR.hipBehindSeatCentre - at.z);
     }
   }
   // with the group at the origin, the top-centre of the seat is at -seatOffset
-  const seatSpace = (offset) => new THREE.Vector3(...offset).sub(g.userData.seatOffset);
+  /** @param {readonly number[]} offset */
+  const seatSpace = (offset) => new THREE.Vector3().fromArray(offset).sub(seatOffset);
 
   // Arm poses for this behaviour's tell, solved against this rig's own proportions.
+  /** @type {THREE.Quaternion[] | null} */
   let tellPose = null;
+  /** @type {THREE.Object3D | null} */
   let prop = null;
-  const tell = seated && opts.type ? TELL_POSES[opts.type] : null;
-  if (tell && armBones.every(Boolean) && bones.WristR && bones.WristL) {
+  const tell = seated && opts.type ? TELL_POSES[opts.type] : undefined;
+  const [upperR, lowerR, upperL, lowerL] = armBones;
+  if (tell && upperR && lowerR && upperL && lowerL && bones.WristR && bones.WristL) {
     g.updateMatrixWorld(true);
-    reach(bones.UpperArmR, bones.LowerArmR, bones.WristR, seatSpace(tell.R));
-    reach(bones.UpperArmL, bones.LowerArmL, bones.WristL, seatSpace(tell.L));
-    tellPose = armBones.map((b) => b.quaternion.clone());
-    armBones.forEach((b, i) => b.quaternion.copy(armRestQ[i]));
+    reach(upperR, lowerR, bones.WristR, seatSpace(tell.R));
+    reach(upperL, lowerL, bones.WristL, seatSpace(tell.L));
+    tellPose = [upperR, lowerR, upperL, lowerL].map((b) => b.quaternion.clone());
+    armBones.forEach((b, i) => { const q = armRestQ[i]; if (b && q) b.quaternion.copy(q); });
     g.updateMatrixWorld(true);
   }
-  if (tell && PROP_BUILDERS[opts.type]) {
-    prop = PROP_BUILDERS[opts.type]();
-    prop.name = 'prop-' + opts.type;
-    prop.position.copy(seatSpace(tell.prop));
-    prop.traverse((o) => { if (o.isMesh) o.castShadow = true; });
-    prop.updateMatrixWorld(true);
+  const buildProp = opts.type ? PROP_BUILDERS[opts.type] : undefined;
+  if (tell && buildProp) {
+    const built = buildProp();
+    built.name = 'prop-' + opts.type;
+    built.position.copy(seatSpace(tell.prop));
+    built.traverse((o) => { if (isMesh(o)) o.castShadow = true; });
+    built.updateMatrixWorld(true);
     g.updateMatrixWorld(true);
-    g.attach(prop); // keeps the seat-space placement, now riding along with the student
-    prop.visible = false;
+    g.attach(built); // keeps the seat-space placement, now riding along with the student
+    built.visible = false;
+    prop = built;
   }
 
   const faceMesh = attachExpressiveFace(g, head);
@@ -239,25 +344,38 @@ export function buildCharacter(gltf, opts) {
     headForwardLocal = forward.applyQuaternion(head.getWorldQuaternion(new THREE.Quaternion()).invert());
   }
 
-  g.userData.parts = {
-    head, arm, hand, prop, faceMesh, mixer, actions, armBones, armRestQ, tellPose, headForwardLocal,
-    headRest: head ? head.rotation.clone() : new THREE.Euler(),
-    armRest: arm ? arm.rotation.clone() : new THREE.Euler(),
+  /** @type {CharacterData} */
+  const data = {
+    seatOffset,
+    parts: {
+      head, arm, hand, prop, faceMesh, mixer, actions, armBones, armRestQ, tellPose, headForwardLocal,
+      headRest: head ? head.rotation.clone() : new THREE.Euler(),
+      armRest: arm ? arm.rotation.clone() : new THREE.Euler(),
+    },
   };
+  Object.assign(g.userData, data);
   return g;
 }
 
-// World-space direction the character's face points (for tests and diagnostics).
+/**
+ * World-space direction the character's face points (for tests and diagnostics).
+ * @param {THREE.Object3D} group
+ * @param {THREE.Vector3} [target]
+ */
 export function headForward(group, target = new THREE.Vector3()) {
-  const p = group.userData.parts;
+  const p = partsOf(group);
   if (!p.head || !p.headForwardLocal) return null;
   group.updateMatrixWorld(true);
   return target.copy(p.headForwardLocal).applyQuaternion(p.head.getWorldQuaternion(_qb)).normalize();
 }
 
-// Switches a standing character between its frozen idle pose and its walk cycle.
+/**
+ * Switches a standing character between its frozen idle pose and its walk cycle.
+ * @param {THREE.Object3D} group
+ * @param {boolean} walking
+ */
 export function setWalking(group, walking) {
-  const { actions } = group.userData.parts;
+  const { actions } = partsOf(group);
   if (!actions.walk || !actions.idle) return;
   if (walking) {
     actions.idle.stop();
@@ -275,25 +393,40 @@ export function setWalking(group, walking) {
 // A calm student blinks every few seconds, each on their own rhythm: how closed the eyes are
 // at time t (0 open, 1 shut).
 const BLINK_S = 0.16;
+/**
+ * @param {number} t
+ * @param {number} seed
+ */
 function blinkAt(t, seed) {
   const every = 3.6 + (seed % 7) * 0.45;
   const into = (t + seed * 1.37) % every;
   return into < BLINK_S ? Math.sin((into / BLINK_S) * Math.PI) : 0;
 }
 
-// state: {kind, type, argueReady, windup}. kind is one of
-//  'calm' | 'shake' (wrong card) | 'hand' (marked present) | 'active' | 'detained' | 'throwing'
+/**
+ * How a student is posed this frame. kind 'shake' is a wrong card, 'hand' is marked present.
+ * @typedef {{kind: 'calm' | 'shake' | 'hand' | 'active' | 'detained' | 'throwing', type: Behaviour | null, argueReady: boolean}} PoseState
+ */
+
 // t is the animation clock and dt the time since the last pose, both in seconds.
 const SPIN_SPEED = 4.8; // radians a second
+/**
+ * @param {THREE.Object3D} group
+ * @param {PoseState} state
+ * @param {number} t
+ * @param {number} dt
+ */
 export function poseCharacter(group, state, t, dt) {
-  const p = group.userData.parts;
+  const data = characterData(group);
+  const p = data.parts;
   const face = p.faceMesh;
   const showTell = state.kind === 'active';
   if (p.prop) p.prop.visible = showTell;
   group.rotation.x = 0;
   if (p.head) p.head.rotation.copy(p.headRest);
-  p.armBones.forEach((b, i) => { if (b) b.quaternion.copy(p.armRestQ[i]); });
-  if (showTell && p.tellPose) p.armBones.forEach((b, i) => b.quaternion.copy(p.tellPose[i]));
+  p.armBones.forEach((b, i) => { const q = p.armRestQ[i]; if (b && q) b.quaternion.copy(q); });
+  const tellPose = p.tellPose;
+  if (showTell && tellPose) p.armBones.forEach((b, i) => { if (b) b.quaternion.copy(tellPose[i]); });
   if (state.kind !== 'active' || state.type !== 'spin') group.rotation.y = CHAR.forwardYaw;
 
   switch (state.kind) {
@@ -330,8 +463,8 @@ export function poseCharacter(group, state, t, dt) {
       applyExpression(face, { browDown_L: 0.3, browDown_R: 0.3, mouthLeft: 0.4 });
       break;
     case 'spin':
-      group.userData.spinYaw = (group.userData.spinYaw || 0) + SPIN_SPEED * dt;
-      group.rotation.y = CHAR.forwardYaw + group.userData.spinYaw;
+      data.spinYaw = (data.spinYaw || 0) + SPIN_SPEED * dt;
+      group.rotation.y = CHAR.forwardYaw + data.spinYaw;
       applyExpression(face, { mouthSmile_L: 0.8, mouthSmile_R: 0.8, eyeWide_L: 0.3, eyeWide_R: 0.3 });
       break;
     case 'sleep':

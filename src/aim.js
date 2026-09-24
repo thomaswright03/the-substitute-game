@@ -5,6 +5,7 @@ import * as R from './rules.js';
 import { S, frozen } from './session.js';
 import { camera, world } from './world.js';
 import { camForward } from './player.js';
+import { characterData } from './characters.js';
 import { emit } from './bus.js';
 import { pickSeat } from './seating.js';
 import { openDiscipline } from './discipline.js';
@@ -31,7 +32,7 @@ function nearestStudent() {
   let best = null, bestScore = INTERACT_COS;
   for (const s of STUDENTS) {
     const st = S.game.students[s.id];
-    const head = world.students[s.id].userData.headWorld;
+    const head = characterData(world.students[s.id]).headWorld;
     if (st.removed || !head) continue;
     const d = tmpV.copy(head).sub(camera.position);
     const dist = d.length();
@@ -49,7 +50,13 @@ export function updateAim() {
 
 // What E / F would act on right now, or null. The same object is reused on every call (this
 // runs every frame), so read it straight away.
-const context = { kind: '', id: '' };
+/** @typedef {'swap' | 'pickup' | 'help' | 'give' | 'caught' | 'detained' | 'calm'} ContextKind */
+/** @type {{kind: ContextKind, id: string}} */
+const context = { kind: 'calm', id: '' };
+/**
+ * @param {ContextKind} kind
+ * @param {string} id
+ */
 function ctx(kind, id) {
   context.kind = kind;
   context.id = id;

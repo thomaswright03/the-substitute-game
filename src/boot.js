@@ -9,12 +9,15 @@
 
   var lastProgressAt = Date.now();
   var lastFraction = -1;
+  /** @type {ReturnType<typeof setInterval> | null} */
   var stallTimer = null;
 
+  /** @param {string} id */
   function byId(id) {
     return document.getElementById(id);
   }
 
+  /** @param {string} id the card to show */
   function show(id) {
     CARDS.forEach(function (card) {
       var el = byId(card);
@@ -38,6 +41,7 @@
     }
   }
 
+  /** @type {SubstituteBoot} */
   var boot = {
     blocked: false,
     reason: null,

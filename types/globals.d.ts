@@ -2,7 +2,7 @@
 
 interface SubstituteBoot {
   blocked: boolean;
-  reason?: string | null;
+  reason: 'file' | 'no-webgl' | 'load-failed' | 'crashed' | null;
   show(card: string): void;
   progress(fraction: number, detail?: string | null): void;
   fail(err?: unknown): void;

@@ -4,13 +4,22 @@
 //
 //   'rulesChanged'  a player action changed the rules' state: turn its events into effects now
 //   'pauseRequested'  the browser released the pointer lock (the player pressed Esc)
+/** @typedef {'rulesChanged' | 'pauseRequested'} BusEvent */
+
+/** @type {Map<BusEvent, (() => void)[]>} */
 const handlers = new Map();
 
+/**
+ * @param {BusEvent} type
+ * @param {() => void} fn
+ */
 export function on(type, fn) {
-  if (!handlers.has(type)) handlers.set(type, []);
-  handlers.get(type).push(fn);
+  const list = handlers.get(type) || [];
+  list.push(fn);
+  handlers.set(type, list);
 }
 
-export function emit(type, ...args) {
-  for (const fn of handlers.get(type) || []) fn(...args);
+/** @param {BusEvent} type */
+export function emit(type) {
+  for (const fn of handlers.get(type) || []) fn();
 }

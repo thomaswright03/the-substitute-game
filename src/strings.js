@@ -369,18 +369,28 @@ const EN = {
   },
 };
 
+/** @typedef {Record<string, unknown>} StringTable a table of text, nested by key */
+/** @typedef {Record<string, string | number>} Params values for a text's {placeholders} */
+
 // Each language is listed under its own name, so a player can find theirs in any language.
+/** @type {Record<string, {name: string, table: StringTable}>} */
 export const LANGUAGES = {
   en: { name: 'English', table: EN },
   es: { name: 'Español', table: ES },
   fr: { name: 'Français', table: FR },
 };
 
+/** @type {StringTable} */
 let table = EN;
 let language = 'en';
 let touch = false;
+/** @type {((code: string) => void)[]} */
 const languageListeners = [];
 
+/**
+ * Replaces the table the text comes from (the tests use this to check for text that isn't in it).
+ * @param {StringTable | null} next
+ */
 export function setStrings(next) {
   table = next || EN;
 }
@@ -389,7 +399,10 @@ export function currentLanguage() {
   return language;
 }
 
-// Switches every string to another language and tells the page and the modules that draw text.
+/**
+ * Switches every string to another language and tells the page and the modules that draw text.
+ * @param {string} code
+ */
 export function setLanguage(code) {
   if (!LANGUAGES[code]) code = 'en';
   language = code;
@@ -401,16 +414,19 @@ export function setLanguage(code) {
   for (const fn of languageListeners) fn(code);
 }
 
+/** @param {(code: string) => void} fn */
 export function onLanguageChange(fn) {
   languageListeners.push(fn);
 }
 
 // On touch screens a key with a sibling named <key>Touch uses that text instead, so nothing
 // tells a phone player to press a key they do not have.
+/** @param {boolean} on */
 export function setTouchStrings(on) {
   touch = !!on;
 }
 
+/** @param {string} key */
 function variant(key) {
   if (touch) {
     const v = lookup(key + 'Touch');
@@ -421,21 +437,27 @@ function variant(key) {
 
 /**
  * @param {string} key
- * @returns {any} whatever the table holds there (text, a list, a group), or undefined
+ * @returns {unknown} whatever the table holds there (text, a list, a group), or undefined
  */
 export function lookup(key) {
+  /** @type {unknown} */
   let node = table;
   for (const part of key.split('.')) {
     if (node == null || typeof node !== 'object' || !(part in node)) return undefined;
-    node = node[part];
+    node = /** @type {Record<string, unknown>} */ (node)[part];
   }
   return node;
 }
 
 // Fills {placeholders} from `params`, and the keyboard's own key names ({helpKey},
 // {moveKeys}...; see keys.js) wherever they appear.
+/**
+ * @param {string} text
+ * @param {Params} [params]
+ */
 export function fill(text, params) {
   if (text.indexOf('{') < 0) return text;
+  /** @type {Record<string, string> | null} */
   let keys = null;
   return text.replace(/\{(\w+)\}/g, (m, name) => {
     if (params && name in params) return String(params[name]);
@@ -446,29 +468,40 @@ export function fill(text, params) {
 
 // t('attendance.carrying', {name:'Mike Oxlong'}) -> "Carrying Mike Oxlong’s card".
 // A missing key is returned as-is so a gap in a translation is visible, not silent.
+/**
+ * @param {string} key
+ * @param {Params} [params]
+ */
 export function t(key, params) {
   const value = variant(key);
   if (typeof value !== 'string') return key;
   return fill(value, params);
 }
 
+/**
+ * @param {number} count
+ * @param {string} singularKey
+ * @param {string} pluralKey
+ */
 export function plural(count, singularKey, pluralKey) {
   return t(count === 1 ? singularKey : pluralKey);
 }
 
 // Joins names as "A", "A and B", "A, B and C".
+/** @param {string[]} names */
 export function listNames(names) {
   if (names.length <= 1) return names.join('');
   return names.slice(0, -1).join(t('common.listSeparator')) + t('common.listAnd') + names[names.length - 1];
 }
 
+/** @param {ParentNode} root */
 export function applyStaticStrings(root) {
   root.querySelectorAll('[data-i18n]').forEach((el) => {
-    const value = variant(el.getAttribute('data-i18n'));
+    const value = variant(el.getAttribute('data-i18n') || '');
     if (typeof value === 'string') el.textContent = fill(value);
   });
   root.querySelectorAll('[data-i18n-attr]').forEach((el) => {
-    for (const pair of el.getAttribute('data-i18n-attr').split(';')) {
+    for (const pair of (el.getAttribute('data-i18n-attr') || '').split(';')) {
       const [attr, key] = pair.split(':');
       const value = variant(key);
       if (attr && typeof value === 'string') el.setAttribute(attr, fill(value));

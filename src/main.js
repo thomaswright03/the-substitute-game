@@ -42,8 +42,10 @@ function resize() {
   resizeRenderer(Math.max(1, el.stage.clientWidth), Math.max(1, el.stage.clientHeight));
 }
 
+/** @type {number | null} */
 let lastT = null;
 let stopped = false;
+/** @param {number} now */
 function frame(now) {
   if (stopped) return;
   requestAnimationFrame(frame);
@@ -59,6 +61,7 @@ function frame(now) {
   }
 }
 
+/** @param {number} now ms, the frame's time */
 function step(now) {
   const nowS = now / 1000;
   const realDt = lastT === null ? 0 : Math.min(MAX_FRAME_DT, nowS - lastT);

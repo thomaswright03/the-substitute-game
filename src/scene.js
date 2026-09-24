@@ -21,36 +21,64 @@ export const DESK = {
   halfDepth: 0.357,
 };
 
+/** @typedef {import('./rules.js').Seat} Seat */
+
+/** @param {Seat} seat */
 export function seatPosition(seat) {
   return { x: ROOM.colsX[seat.col], y: CHAIR.seatTop, z: ROOM.rowsZ[seat.row] + CHAIR.z };
 }
 
+/** @param {Seat} seat */
 export function deskPosition(seat) {
   return { x: ROOM.colsX[seat.col], z: ROOM.rowsZ[seat.row] };
 }
 
+/** @typedef {(ctx: CanvasRenderingContext2D, w: number, h: number) => void} Draw */
+
+/** @type {WeakMap<THREE.Texture, () => void>} */
+const redraws = new WeakMap();
+
+/**
+ * A texture drawn on a canvas `w` by `h` pixels.
+ * @param {Draw} draw
+ * @param {number} w
+ * @param {number} h
+ */
 export function canvasTexture(draw, w, h) {
   const c = document.createElement('canvas');
   c.width = w;
   c.height = h;
   const ctx = c.getContext('2d');
+  if (!ctx) throw new Error('This browser cannot draw on a canvas');
   draw(ctx, w, h);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 4;
   tex.needsUpdate = true;
-  // draws the texture again, for text that changes with the language
-  tex.userData.redraw = () => {
+  redraws.set(tex, () => {
     ctx.clearRect(0, 0, w, h);
     draw(ctx, w, h);
     tex.needsUpdate = true;
-  };
+  });
   return tex;
 }
 
+/**
+ * Draws a texture from canvasTexture() again, for text that changes with the language.
+ * @param {THREE.Texture} tex
+ */
+function redrawTexture(tex) {
+  const redraw = redraws.get(tex);
+  if (redraw) redraw();
+}
+
+/**
+ * @template {THREE.Object3D} T
+ * @param {T} obj
+ */
 export function enableShadows(obj) {
   obj.traverse((o) => {
-    if (o.isMesh) {
+    if (/** @type {THREE.Mesh} */ (o).isMesh) {
       o.castShadow = true;
       o.receiveShadow = true;
     }
@@ -62,6 +90,12 @@ const deskTopMat = new THREE.MeshStandardMaterial({ color: 0xcda06a, roughness: 
 const legMat = new THREE.MeshStandardMaterial({ color: 0x54585c, roughness: 0.55, metalness: 0.35 });
 const seatMat = new THREE.MeshStandardMaterial({ color: 0x3f5c76, roughness: 0.75 });
 
+/**
+ * @param {number} height
+ * @param {THREE.Material} mat
+ * @param {number} hw
+ * @param {number} hd
+ */
 function legSet(height, mat, hw, hd) {
   const g = new THREE.Group();
   const geo = new THREE.BoxGeometry(0.045, height, 0.045);
@@ -92,9 +126,11 @@ export function buildDesk() {
 }
 
 // Light levels as designed under three.js r128, whose "legacy" lighting scaled every light by pi.
+/** @param {number} intensity */
 const legacy = (intensity) => intensity * Math.PI;
 const POINT_LIGHT_MATCH = 0.8;
 
+/** @param {THREE.Scene} scene */
 function addLights(scene) {
   scene.add(new THREE.HemisphereLight(0xdcebff, 0x40382a, legacy(0.55)));
   for (const [x, z] of [[-2, -2], [2, 2]]) {
@@ -122,6 +158,15 @@ function addLights(scene) {
   sun.target.position.set(0, 0, (ROOM.frontZ + ROOM.backZ) / 2);
 }
 
+/**
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {number} w
+ * @param {number} h
+ * @param {number} count
+ * @param {number} alpha
+ * @param {number} sizeW
+ * @param {number} sizeH
+ */
 function noise(ctx, w, h, count, alpha, sizeW, sizeH) {
   for (let k = 0; k < count; k++) {
     ctx.fillStyle = 'rgba(0,0,0,' + Math.random() * alpha + ')';
@@ -130,12 +175,19 @@ function noise(ctx, w, h, count, alpha, sizeW, sizeH) {
 }
 
 // Sets the board font at `size` px, or smaller if the text would be wider than `maxWidth`.
+/**
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {string} text
+ * @param {number} size
+ * @param {number} maxWidth
+ */
 function fitText(ctx, text, size, maxWidth) {
   ctx.font = '600 ' + size + 'px Fredoka, sans-serif';
   const width = ctx.measureText(text).width;
   if (width > maxWidth) ctx.font = '600 ' + Math.floor(size * maxWidth / width) + 'px Fredoka, sans-serif';
 }
 
+/** @param {THREE.Scene} scene */
 function buildChalkboard(scene) {
   const W = 4.6, H = 2.1, CY = 1.85;
   const boardTex = canvasTexture((ctx, w, h) => {
@@ -170,7 +222,7 @@ function buildChalkboard(scene) {
   }, 1024, 512);
   const board = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.MeshStandardMaterial({ map: boardTex, roughness: 0.85 }));
   board.name = 'chalkboard';
-  onLanguageChange(() => boardTex.userData.redraw());
+  onLanguageChange(() => redrawTexture(boardTex));
   board.position.set(0, CY, ROOM.frontZ + 0.03);
   board.receiveShadow = true;
   scene.add(board);
@@ -196,6 +248,7 @@ function buildChalkboard(scene) {
   scene.add(tray);
 }
 
+/** @param {THREE.Scene} scene */
 export function buildRoom(scene) {
   scene.background = new THREE.Color(0xece2c8);
   scene.fog = new THREE.Fog(0xece2c8, 10, 23);
@@ -354,6 +407,15 @@ const teacherWood = new THREE.MeshStandardMaterial({ color: 0x6e4526, roughness:
 const teacherWoodDark = new THREE.MeshStandardMaterial({ color: 0x54331b, roughness: 0.65 });
 const handleMat = new THREE.MeshStandardMaterial({ color: 0xc9c2b0, roughness: 0.35, metalness: 0.6 });
 
+/**
+ * @param {number} w
+ * @param {number} h
+ * @param {number} d
+ * @param {THREE.Material} mat
+ * @param {number} x
+ * @param {number} y
+ * @param {number} z
+ */
 function box(w, h, d, mat, x, y, z) {
   const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
   m.position.set(x, y, z);
@@ -404,8 +466,15 @@ function buildTeacherDesk() {
   return enableShadows(g);
 }
 
-// Eight name cards pinned to the board in two rows. Returns id -> {mesh, position}.
+/** @typedef {{mesh: THREE.Mesh, position: THREE.Vector3}} Card */
+
+/**
+ * Eight name cards pinned to the board in two rows.
+ * @param {THREE.Scene} scene
+ * @param {import('./data.js').StudentConfig[]} students
+ */
 export function buildAttendanceCards(scene, students) {
+  /** @type {Record<string, Card>} */
   const cards = {};
   const colX = [-1.65, -0.55, 0.55, 1.65];
   const rowY = [2.2, 1.55];
@@ -425,6 +494,11 @@ export function buildAttendanceCards(scene, students) {
       ctx.strokeStyle = '#141c16';
       ctx.lineWidth = 2;
       ctx.lineJoin = 'round';
+      /**
+       * @param {string} text
+       * @param {number} x
+       * @param {number} y
+       */
       const write = (text, x, y) => {
         ctx.strokeText(text, x, y);
         ctx.fillText(text, x, y);

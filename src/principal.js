@@ -2,13 +2,14 @@
 import { t } from './strings.js';
 import { S, name } from './session.js';
 import { ROOM } from './scene.js';
-import { setWalking } from './characters.js';
+import { partsOf, setWalking } from './characters.js';
 import { ensurePrincipal, world } from './world.js';
 import { pushLog } from './log.js';
 import { requestLook } from './pointer.js';
 
 const PRINCIPAL_WAIT_MS = 8000; // longest the class waits for the principal's model to arrive
 
+/** @param {string} id the student he collects */
 export function startPrincipal(id) {
   pushLog(t('log.principal', { name: name(id) }));
   const g = world.students[id];
@@ -22,6 +23,7 @@ export function startPrincipal(id) {
   // A download that stalls must never freeze the class: after PRINCIPAL_WAIT_MS the student
   // goes to the office on their own, exactly as when the download fails outright.
   let settled = false;
+  /** @param {unknown} err */
   const giveUp = (err) => {
     if (settled || S.principalSeq !== seq) return;
     settled = true;
@@ -43,6 +45,10 @@ export function startPrincipal(id) {
 function beginPrincipalWalk() {
   if (!S.principalSeq) return;
   const p = world.principal;
+  if (!p) {
+    finishPrincipal('log.principalNoShow');
+    return;
+  }
   p.visible = true;
   p.position.set(ROOM.doorX, 0, ROOM.backZ - 0.3);
   p.rotation.set(0, 0, 0);
@@ -66,13 +72,15 @@ function finishPrincipal(logKey = 'log.principalDone') {
   if (S.running) requestLook();
 }
 
+/** @param {number} dt */
 export function updatePrincipal(dt) {
   const seq = S.principalSeq;
-  if (!seq || seq.phase === 'waiting' || S.paused) return;
   const p = world.principal;
+  // he only walks once his model is here (the visit waits for it, or goes on without him)
+  if (!seq || !p || seq.phase === 'waiting' || S.paused) return;
   const g = world.students[seq.id];
   seq.t += dt;
-  if (p.userData.parts.mixer) p.userData.parts.mixer.update(dt);
+  partsOf(p).mixer.update(dt);
   const doorX = ROOM.doorX, doorZ = ROOM.backZ - 0.1;
   const standX = seq.startX, standZ = seq.startZ - 0.9;
   if (seq.phase === 'walkIn') {

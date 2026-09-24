@@ -134,9 +134,13 @@ The browser tests need Chromium for Playwright. On a fresh machine, install it o
 every push and pull request.
 
 The type check (`tsconfig.json`) reads the JavaScript as it is, with `checkJs`: types come from
-three.js's type definitions, from what TypeScript infers and from the JSDoc on the functions
-that need it. It runs several of strict mode's checks, but not yet `strictNullChecks` or
-`noImplicitAny`.
+three.js's type definitions, from what TypeScript infers and from the JSDoc in `src/` (the
+rules' `Game`, `GameEvent` and `Outcome` in `rules.js`, the roster's `StudentConfig` in
+`data.js`, a character's `CharacterData` in `characters.js`). It runs in `strict` mode, so null
+checks are on and nothing is implicitly `any`: a page element, a model part or a translation
+that might be missing has to be checked for before it is used. Page elements are looked up
+through `$()` in `src/dom.js`, which names a missing id at start-up, and
+`test/unit/dom.test.js` checks that every id the code asks for is in `index.html`.
 
 ### Project layout
 

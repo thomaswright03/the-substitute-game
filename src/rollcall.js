@@ -7,13 +7,18 @@ import { el } from './dom.js';
 import { S, frozen, name } from './session.js';
 import { project, world } from './world.js';
 import { player } from './player.js';
+import { characterData } from './characters.js';
 import { pushLog } from './log.js';
 import { emit } from './bus.js';
 
 const ANSWER_SECONDS = 9; // of play: a pause doesn't use them up
+/** @type {string | null} */
 let lastRollLine = null;
 
-// Angle to a world point from where the teacher faces: 0 ahead, +PI/2 right, +-PI behind.
+/**
+ * Angle to a world point from where the teacher faces: 0 ahead, +PI/2 right, +-PI behind.
+ * @param {THREE.Vector3} worldPos
+ */
 function relativeDirection(worldPos) {
   const dx = worldPos.x - player.x, dz = worldPos.z - player.z;
   const f = dx * -Math.sin(player.yaw) + dz * -Math.cos(player.yaw);
@@ -21,6 +26,7 @@ function relativeDirection(worldPos) {
   return Math.atan2(r, f);
 }
 
+/** @param {number} angle */
 function directionWords(angle) {
   const a = Math.abs(angle) * 180 / Math.PI;
   const side = angle >= 0 ? 'Right' : 'Left';
@@ -37,13 +43,16 @@ export function askRollCall() {
   emit('rulesChanged');
 }
 
+/** @param {string} id who answers */
 export function showRollCallAnswer(id) {
-  const lines = lookup('rollCall.lines') || [];
+  const table = lookup('rollCall.lines');
+  /** @type {string[]} */
+  const lines = Array.isArray(table) ? table : [];
   let line = lines[Math.floor(Math.random() * lines.length)] || '';
   if (lines.length > 1 && line === lastRollLine) line = lines[(lines.indexOf(line) + 1) % lines.length];
   lastRollLine = line;
   const g = world.students[id];
-  const where = directionWords(relativeDirection(g.userData.headWorld || g.position));
+  const where = directionWords(relativeDirection(characterData(g).headWorld || g.position));
   S.speech = { id, until: S.game.elapsed + ANSWER_SECONDS, answer: t('attendance.answered', { name: name(id), where, line }) };
   pushLog(S.speech.answer);
   el.bubbleText.textContent = line;
@@ -65,7 +74,7 @@ export function updateSpeech() {
     clearSpeech();
     return;
   }
-  const head = world.students[speech.id].userData.headWorld;
+  const head = characterData(world.students[speech.id]).headWorld;
   if (!head) return;
   const pos = project(bubbleAnchor.copy(head).setY(head.y + 0.3));
   const safe = freeArea();
@@ -77,7 +86,7 @@ export function updateSpeech() {
     el.dirArrow.hidden = true;
     el.speechBubble.hidden = false;
     // the bubble's size only changes with its text: measure it once, the first frame it shows
-    if (!speech.bw) {
+    if (!speech.bw || !speech.bh) {
       speech.bw = el.speechBubble.offsetWidth;
       speech.bh = el.speechBubble.offsetHeight;
     }
@@ -115,6 +124,7 @@ export function updateSpeech() {
 // only when the stage or one of those panels changes size (including appearing or hiding).
 const free = { left: 0, right: 0, top: 0, bottom: 0 };
 let freeStale = true;
+/** @type {ResizeObserver | null} */
 let freeObserver = null;
 export function freeArea() {
   if (!freeObserver) {
