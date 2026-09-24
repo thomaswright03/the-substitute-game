@@ -444,3 +444,17 @@ describe('ticking', () => {
     }
   });
 });
+
+describe('messages', () => {
+  test('two friends acting up together are announced once, not twice', () => {
+    const game = newGame();
+    game.spawnTimer = Infinity;
+    for (const id of ['nina', 'ruby']) {
+      const st = game.students[id];
+      st.active = true;
+      st.activatedAt = 0;
+    }
+    run(game, 1);
+    assert.equal(eventsOf(game, 'eggedOn').length, 1);
+  });
+});

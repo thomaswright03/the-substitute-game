@@ -1,0 +1,202 @@
+import { test, expect } from '@playwright/test';
+import {
+  activate, faceCard, faceStudent, freezeRandomness, hooks, lastLog, openGame, startRound,
+} from './helpers.js';
+
+test.beforeEach(async ({ page }) => {
+  await openGame(page);
+  await startRound(page);
+});
+
+test('an idle round does not end on the win screen', async ({ page }) => {
+  await hooks(page, (s) => s.fastForward(s.tuning.period + 5));
+  await expect(page.locator('#endOverlay')).toBeVisible();
+  await expect(page.locator('#endTitle')).not.toHaveText('You Made It');
+});
+
+test('attendance: pick up a card, get rejected by the wrong student, deliver to the right one', async ({ page }) => {
+  await freezeRandomness(page);
+  await faceCard(page, 'nina');
+  await page.keyboard.press('e');
+  await expect(page.locator('#attQuestion')).toHaveText('Carrying Gabe Iches Okafor’s card');
+
+  await faceStudent(page, 'ruby');
+  await page.keyboard.press('e');
+  await expect(lastLog(page)).toContainText('That’s not my name');
+  expect(await hooks(page, (s) => s.game.attendance.holding)).toBe('nina');
+
+  await faceStudent(page, 'nina');
+  await page.keyboard.press('e');
+  await expect(lastLog(page)).toContainText('Marked present');
+  await expect(page.locator('#attQuestion')).toHaveText('7 name cards left on the board');
+});
+
+test('roll call: the answer is readable without turning around', async ({ page }) => {
+  await freezeRandomness(page);
+  await faceCard(page, 'wyatt');
+  await page.keyboard.press('e');
+  await expect(page.locator('#actRollCall')).toBeVisible();
+  await page.keyboard.press('q');
+  const answer = page.locator('#attAnswer');
+  await expect(answer).toBeVisible();
+  await expect(answer).toContainText('Moe Lester answered from behind you');
+  await expect(page.locator('#dirArrow')).toBeVisible();
+});
+
+test('a student reaching 100% ends the round with the right copy', async ({ page }) => {
+  await freezeRandomness(page);
+  await activate(page, 'diego', 99);
+  await expect(page.locator('#endOverlay')).toBeVisible();
+  await expect(page.locator('#endTitle')).toHaveText('Someone Got Hurt');
+  await expect(page.locator('#endText')).toContainText('Steve tips too far back');
+  await expect(page.locator('#restartBtn')).toBeFocused();
+});
+
+test('unfinished attendance at the bell is a loss', async ({ page }) => {
+  await freezeRandomness(page);
+  await hooks(page, (s) => s.fastForward(s.tuning.period + 1));
+  await expect(page.locator('#endTitle')).toHaveText('Attendance Not Taken');
+  await expect(page.locator('#endText')).toContainText('8 students still unmarked');
+});
+
+test('discipline is refused for a student who is behaving', async ({ page }) => {
+  await freezeRandomness(page);
+  await faceStudent(page, 'priya');
+  await expect(page.locator('#prompt')).toContainText('Dixie Normous is behaving');
+  await page.keyboard.press('f');
+  await expect(lastLog(page)).toContainText('Dixie Normous isn’t acting up');
+  await expect(page.locator('#disciplineOverlay')).toBeHidden();
+});
+
+test('discipline menu: shows costs, traps focus, and detention runs out', async ({ page }) => {
+  await freezeRandomness(page);
+  for (const [i, id] of ['ruby', 'diego', 'wyatt'].entries()) {
+    await activate(page, id, 20);
+    await faceStudent(page, id);
+    await page.keyboard.press('f');
+    const dialog = page.locator('#disciplineOverlay');
+    await expect(dialog).toBeVisible();
+    await expect(page.locator('#discTalk')).toBeFocused();
+    if (i === 0) {
+      await expect(page.locator('#discDetentionNote')).toContainText('2 of 2 left');
+      await expect(page.locator('#discPrincipalNote')).toContainText('1 of 1 left');
+      await expect(page.locator('#discZapNote')).toContainText('sets another student off');
+      // Tab and Shift+Tab stay inside the menu
+      for (let k = 0; k < 6; k++) {
+        await page.keyboard.press('Tab');
+        expect(await page.evaluate(() => document.getElementById('disciplineOverlay').contains(document.activeElement))).toBe(true);
+      }
+      await page.keyboard.press('Shift+Tab');
+      expect(await page.evaluate(() => document.getElementById('disciplineOverlay').contains(document.activeElement))).toBe(true);
+    }
+    if (i < 2) {
+      await page.keyboard.press('2');
+      await expect(dialog).toBeHidden();
+      await expect(lastLog(page)).toContainText('gets detention');
+    } else {
+      await expect(page.locator('#discDetention')).toBeDisabled();
+      await expect(page.locator('#discDetentionNote')).toHaveText('No detention slips left this period.');
+      await page.keyboard.press('Escape');
+      await expect(dialog).toBeHidden();
+    }
+  }
+  expect(await hooks(page, (s) => s.game.counters.detentions)).toBe(2);
+});
+
+test('calling the principal marches the student out', async ({ page }) => {
+  await freezeRandomness(page);
+  await activate(page, 'cole', 40);
+  await faceStudent(page, 'cole');
+  await page.keyboard.press('f');
+  await page.keyboard.press('3');
+  await expect(lastLog(page)).toContainText('marched out by the principal', { timeout: 60_000 });
+  expect(await hooks(page, (s) => ({ removed: s.game.students.cole.removed, visible: s.world.students.cole.visible })))
+    .toEqual({ removed: true, visible: false });
+});
+
+test('seat swaps change escalation and the game says why', async ({ page }) => {
+  await freezeRandomness(page);
+  const before = await hooks(page, (s) => s.rules.escalationRate(s.game, 'ruby'));
+  await page.keyboard.press('r');
+  await expect(page.locator('#seatChart')).toBeVisible();
+  await expect(page.locator('#seatGrid .seat').first()).toBeFocused();
+  await page.locator('#seatGrid .seat', { hasText: 'Mike Oxlong' }).click();
+  await page.locator('#seatGrid .seat', { hasText: 'Hugh Jass' }).click();
+  await expect(page.locator('#log')).toContainText('Gabe Iches and Mike Oxlong are split up');
+  const after = await hooks(page, (s) => s.rules.escalationRate(s.game, 'ruby'));
+  expect(after).toBeLessThan(before);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#seatChart')).toBeHidden();
+});
+
+test('getting hit by a throw has a visible cost', async ({ page }) => {
+  await freezeRandomness(page);
+  await activate(page, 'diego', 10);
+  // stand at the board, back to the class, then someone throws
+  await hooks(page, (s) => s.lookAt(0, 1.9, -6.2, 0, -4.5));
+  await page.waitForFunction(() => window.__substitute.camera.position.z < -4);
+  await hooks(page, (s) => { s.game.throw = { id: 'priya', phase: 'windup', t: 0 }; });
+  await expect(page.locator('#log')).toContainText('hits you in the back of the head');
+  await expect(page.locator('#log')).toContainText('Getting hit costs you');
+  const esc = await hooks(page, (s) => ({ diego: s.game.students.diego.escalation, priya: s.game.students.priya.escalation }));
+  expect(esc.diego).toBeGreaterThanOrEqual(18);
+  expect(esc.priya).toBeGreaterThanOrEqual(20);
+});
+
+test('the phone and the arguer explain their rules before you act', async ({ page }) => {
+  await freezeRandomness(page);
+  await activate(page, 'marcus', 30);
+  await faceStudent(page, 'marcus');
+  await expect(page.locator('#prompt')).toContainText('It takes two presses');
+  await page.keyboard.press('e');
+  await expect(page.locator('#prompt')).toContainText('Press again now to take Ben Dover’s phone');
+
+  await activate(page, 'cole', 30);
+  await hooks(page, (s) => { s.game.students.cole.activatedAt = s.game.elapsed - 1.5; });
+  await faceStudent(page, 'cole');
+  await expect(page.locator('#prompt')).toContainText('Wait for the green glow');
+});
+
+test('Esc pauses the class and freezes the clock; Resume carries on', async ({ page }) => {
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#pauseOverlay')).toBeVisible();
+  await expect(page.locator('#resumeBtn')).toBeFocused();
+  const t0 = await hooks(page, (s) => s.game.elapsed);
+  await page.waitForTimeout(1500);
+  expect(await hooks(page, (s) => s.game.elapsed)).toBe(t0);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#pauseOverlay')).toBeHidden();
+});
+
+test('arrow keys turn the view, so the game needs no mouse', async ({ page }) => {
+  const yaw0 = await hooks(page, (s) => s.player.yaw);
+  await page.keyboard.down('ArrowLeft');
+  await page.waitForTimeout(800);
+  await page.keyboard.up('ArrowLeft');
+  expect(await hooks(page, (s) => s.player.yaw)).toBeGreaterThan(yaw0 + 0.2);
+});
+
+test('a won round reports removals, detentions and every intervention', async ({ page }) => {
+  await freezeRandomness(page);
+  await hooks(page, (s) => {
+    const g = s.game, R = s.rules;
+    for (const id of [...g.attendance.remaining]) { R.pickupCard(g, id); R.deliverCard(g, id); }
+    const act = (id) => { const st = g.students[id]; st.active = true; st.escalation = 30; st.activatedAt = g.elapsed; };
+    act('wyatt'); R.discipline(g, 'wyatt', 'principal');
+    act('diego'); R.discipline(g, 'diego', 'detention');
+    act('ruby'); R.discipline(g, 'ruby', 'detention');
+    act('nina'); R.help(g, 'nina');
+  });
+  await expect(page.locator('#log')).toContainText('marched out', { timeout: 60_000 });
+  await freezeRandomness(page);
+  await hooks(page, (s) => s.fastForward(s.tuning.period + 1));
+  await expect(page.locator('#endTitle')).toHaveText('You Made It');
+  const text = page.locator('#endText');
+  await expect(text).toContainText('Moe Lester spent the rest of the period in the principal’s office');
+  await expect(text).toContainText('Steve and Mike Oxlong served detention');
+  await expect(text).not.toContainText('Every kid stayed in their seat');
+  await expect(page.locator('#statInterventions')).toHaveText('4');
+  await expect(page.locator('#statDetentions')).toHaveText('2');
+  await expect(page.locator('#statPrincipal')).toHaveText('1');
+  await expect(page.locator('#gradeValue')).toHaveText('C');
+});

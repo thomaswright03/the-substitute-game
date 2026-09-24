@@ -230,6 +230,8 @@ export function tick(game, dt, view = {}) {
     const friend = adjacentFriend(game, s.id);
     if (friend && !st.eggedOnNoted) {
       st.eggedOnNoted = true;
+      // one message for the pair, even when both of them are acting up
+      if (game.students[friend].active) game.students[friend].eggedOnNoted = true;
       emit(game, 'eggedOn', { id: s.id, friendId: friend });
     }
     st.escalation += escalationRate(game, s.id) * dt;
