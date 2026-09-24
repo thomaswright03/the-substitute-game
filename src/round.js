@@ -7,11 +7,13 @@ import { S, name } from './session.js';
 import { resetStudentVisuals } from './world.js';
 import { releaseKeys, resetPlayer } from './player.js';
 import { closeDialog, openDialog } from './dialogs.js';
-import { clearLog, invalidateAttendancePanel, pushLog } from './hud.js';
+import { clearLog, pushLog } from './log.js';
+import { invalidateAttendancePanel } from './hud.js';
 import { clearSpeech } from './rollcall.js';
 import { closeSeatChartForRoundEnd } from './seating.js';
 import { clearProjectile } from './effects.js';
-import { releaseLook, requestLook, stopHoverLook } from './input.js';
+import { releaseLook, requestLook, stopHoverLook } from './pointer.js';
+import { on } from './bus.js';
 import { play } from './audio.js';
 import { difficulty, onDifficultyChange } from './settings.js';
 
@@ -208,6 +210,7 @@ export function setupRound() {
     S.paused = false;
     startRound();
   });
+  on('pauseRequested', () => setPaused(true));
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) setPaused(true);
   });

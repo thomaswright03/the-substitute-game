@@ -4,9 +4,9 @@ import { t } from './strings.js';
 import { $, el } from './dom.js';
 import { S, name } from './session.js';
 import { openDialog, closeDialog } from './dialogs.js';
-import { drainEvents } from './events.js';
-import { pushLog } from './hud.js';
-import { releaseLook, requestLook, stopHoverLook } from './input.js';
+import { pushLog } from './log.js';
+import { releaseLook, requestLook, stopHoverLook } from './pointer.js';
+import { emit } from './bus.js';
 
 const buttons = {
   talk: $('discTalk'), detention: $('discDetention'), principal: $('discPrincipal'), zap: $('discZap'),
@@ -56,7 +56,7 @@ export function chooseDiscipline(option) {
   const id = S.disciplineTarget;
   if (!R.discipline(S.game, id, option)) return;
   closeDiscipline();
-  drainEvents();
+  emit('rulesChanged');
 }
 
 export function setupDiscipline() {

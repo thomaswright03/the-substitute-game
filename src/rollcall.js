@@ -7,8 +7,8 @@ import { el } from './dom.js';
 import { S, frozen, name } from './session.js';
 import { project, world } from './world.js';
 import { player } from './player.js';
-import { drainEvents } from './events.js';
-import { pushLog } from './hud.js';
+import { pushLog } from './log.js';
+import { emit } from './bus.js';
 
 const ANSWER_SECONDS = 9; // of play: a pause doesn't use them up
 let lastRollLine = null;
@@ -34,7 +34,7 @@ function directionWords(angle) {
 export function askRollCall() {
   if (!S.running || frozen()) return;
   R.rollCall(S.game);
-  drainEvents();
+  emit('rulesChanged');
 }
 
 export function showRollCallAnswer(id) {

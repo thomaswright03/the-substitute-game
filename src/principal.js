@@ -4,8 +4,8 @@ import { S, name } from './session.js';
 import { ROOM } from './scene.js';
 import { setWalking } from './characters.js';
 import { ensurePrincipal, world } from './world.js';
-import { pushLog } from './hud.js';
-import { requestLook } from './input.js';
+import { pushLog } from './log.js';
+import { requestLook } from './pointer.js';
 
 const PRINCIPAL_WAIT_MS = 8000; // longest the class waits for the principal's model to arrive
 

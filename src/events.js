@@ -2,7 +2,7 @@
 import { t } from './strings.js';
 import { S, name } from './session.js';
 import { flashPose, stereoPan, world } from './world.js';
-import { pushLog } from './hud.js';
+import { pushLog } from './log.js';
 import { showRollCallAnswer } from './rollcall.js';
 import { onSwap, renderSeatChart } from './seating.js';
 import { openDiscipline } from './discipline.js';
@@ -10,6 +10,12 @@ import { clearProjectile, hitFlash, launchProjectile, zapVisual } from './effect
 import { startPrincipal } from './principal.js';
 import { endRound } from './round.js';
 import { play } from './audio.js';
+import { on } from './bus.js';
+
+// Player actions ask for their events to be handled at once (see bus.js).
+export function setupEvents() {
+  on('rulesChanged', drainEvents);
+}
 
 export function drainEvents() {
   if (!S.game) return;

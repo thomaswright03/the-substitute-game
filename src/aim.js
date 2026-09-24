@@ -5,7 +5,7 @@ import * as R from './rules.js';
 import { S, frozen } from './session.js';
 import { camera, world } from './world.js';
 import { camForward } from './player.js';
-import { drainEvents } from './events.js';
+import { emit } from './bus.js';
 import { pickSeat } from './seating.js';
 import { openDiscipline } from './discipline.js';
 
@@ -82,7 +82,7 @@ export function primaryAction() {
     case 'caught': openDiscipline(ctx.id); break;
     default: break;
   }
-  drainEvents();
+  emit('rulesChanged');
 }
 
 export function disciplineAction() {

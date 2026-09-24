@@ -5,9 +5,9 @@ import { t } from './strings.js';
 import { el } from './dom.js';
 import { S, frozen, name } from './session.js';
 import { animateSeatSwap } from './world.js';
-import { drainEvents } from './events.js';
-import { invalidateAttendancePanel, pushLog } from './hud.js';
-import { releaseLook, stopHoverLook } from './input.js';
+import { pushLog } from './log.js';
+import { releaseLook, requestLook, stopHoverLook } from './pointer.js';
+import { emit } from './bus.js';
 
 const FRIEND_COLORS = ['var(--friend-1)', 'var(--friend-2)', 'var(--friend-3)', 'var(--friend-4)'];
 const friendColor = {};
@@ -67,7 +67,6 @@ export function setSeatChart(open, focusFirst = false) {
   S.seatFirst = null;
   el.seatChart.hidden = !open;
   el.banner.hidden = true;
-  invalidateAttendancePanel();
   if (open) {
     releaseLook();
     stopHoverLook();
@@ -76,8 +75,9 @@ export function setSeatChart(open, focusFirst = false) {
       const first = el.seatGrid.querySelector('button:not([disabled])');
       if (first) first.focus({ preventScroll: true });
     }
-  } else if (el.seatChart.contains(document.activeElement)) {
-    el.canvas.focus({ preventScroll: true });
+  } else {
+    if (el.seatChart.contains(document.activeElement)) el.canvas.focus({ preventScroll: true });
+    requestLook(); // back to mouse-look, as after any other menu
   }
 }
 
@@ -95,7 +95,7 @@ export function pickSeat(id) {
   } else {
     R.swapSeats(S.game, S.seatFirst, id);
     S.seatFirst = null;
-    drainEvents();
+    emit('rulesChanged');
   }
   renderSeatChart();
 }

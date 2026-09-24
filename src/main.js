@@ -10,7 +10,7 @@ import { facingBoard, stepPlayer, syncCamera } from './player.js';
 import { setupDialogs, openDialog } from './dialogs.js';
 import { renderControlsLists, setTouch, setupInput } from './input.js';
 import { updateAim } from './aim.js';
-import { drainEvents } from './events.js';
+import { drainEvents, setupEvents } from './events.js';
 import {
   buildTags, invalidateAttendancePanel, setupActionButtons, updateAttendancePanel, updateHud, updatePromptAndActions,
   updateTags,
@@ -102,6 +102,7 @@ async function init() {
     return;
   }
   setupDialogs();
+  setupEvents();
   setupInput();
   setupActionButtons();
   setupSeating();

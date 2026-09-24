@@ -1,4 +1,4 @@
-// The heads-up display: log, clock, chaos meter, the rings over students' heads, the aim
+// The heads-up display: clock, chaos meter, the rings over students' heads, the aim
 // prompt, the action buttons and the attendance panel.
 import { ICON, STUDENTS } from './data.js';
 import * as R from './rules.js';
@@ -9,21 +9,6 @@ import { project, world } from './world.js';
 import { currentContext, disciplineAction, primaryAction } from './aim.js';
 import { askRollCall } from './rollcall.js';
 import { toggleSeatChart } from './seating.js';
-
-const LOG_LINES = 12; // kept in the log; CSS shows the newest few and fades the rest out
-
-/* ---------------- log ---------------- */
-
-export function pushLog(text) {
-  const line = document.createElement('div');
-  line.textContent = text;
-  el.log.appendChild(line);
-  while (el.log.children.length > LOG_LINES) el.log.removeChild(el.log.firstChild);
-}
-
-export function clearLog() {
-  el.log.textContent = '';
-}
 
 /* ---------------- rings and name tags over the students ---------------- */
 

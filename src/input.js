@@ -4,6 +4,7 @@ import { el } from './dom.js';
 import { S, frozen } from './session.js';
 import { applyLookDelta, joy, keys, look, releaseKeys } from './player.js';
 import { topDialog } from './dialogs.js';
+import { justPausedByEsc, requestLook, setupPointerLock, stopHoverLook, takeSkipNextMove } from './pointer.js';
 import { disciplineAction, primaryAction } from './aim.js';
 import { askRollCall } from './rollcall.js';
 import { setSeatChart, toggleSeatChart } from './seating.js';
@@ -16,9 +17,6 @@ const POINTER_LOCK_SENS = 0.0024;
 const MAX_LOCKED_DELTA = 250; // browsers sometimes report one huge jump right after locking
 const MOVEMENT_KEYS = new Set(['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright']);
 
-let ownUnlock = false;
-let pausedByUnlockAt = -Infinity;
-let skipNextLockedMove = false;
 let lastPX = 0, lastPY = 0;
 let touchLookId = null;
 
@@ -57,49 +55,10 @@ export function renderControlsLists() {
   });
 }
 
-/* ---------------- pointer lock and look ---------------- */
-
-export function requestLook() {
-  if (S.isTouch || look.pointerLocked || !S.running || frozen() || S.seatChartOpen || !el.canvas.requestPointerLock) return;
-  try {
-    const p = el.canvas.requestPointerLock();
-    if (p && p.catch) p.catch(() => { /* refused: hover-look still works */ });
-  } catch { /* unsupported: hover-look still works */ }
-}
-
-export function releaseLook() {
-  if (!look.pointerLocked || !document.exitPointerLock) return;
-  ownUnlock = true;
-  document.exitPointerLock();
-}
-
-export function stopHoverLook() {
-  look.hoverInside = false;
-  look.edgeX = look.edgeY = 0;
-}
-
-// An Esc that released pointer lock also paused the game; don't let the same key unpause it.
-export function justPausedByEsc() {
-  return performance.now() - pausedByUnlockAt < 400;
-}
+/* ---------------- mouse and touch look ---------------- */
 
 function setupPointer() {
-  document.addEventListener('pointerlockchange', () => {
-    look.pointerLocked = document.pointerLockElement === el.canvas;
-    el.stage.classList.toggle('locked', look.pointerLocked);
-    if (look.pointerLocked) {
-      stopHoverLook();
-      skipNextLockedMove = true;
-      return;
-    }
-    // the browser releases the lock itself when the player presses Esc: treat that as "pause"
-    if (ownUnlock) ownUnlock = false;
-    else if (S.running && !frozen() && !S.seatChartOpen) {
-      pausedByUnlockAt = performance.now();
-      setPaused(true);
-    }
-  });
-
+  setupPointerLock();
   el.canvas.addEventListener('click', () => {
     if (!S.isTouch) requestLook();
   });
@@ -143,10 +102,7 @@ function setupPointer() {
   window.addEventListener('mousemove', (e) => {
     if (!look.pointerLocked || !S.running || frozen()) return;
     const dx = e.movementX || 0, dy = e.movementY || 0;
-    if (skipNextLockedMove || Math.abs(dx) > MAX_LOCKED_DELTA || Math.abs(dy) > MAX_LOCKED_DELTA) {
-      skipNextLockedMove = false;
-      return;
-    }
+    if (takeSkipNextMove() || Math.abs(dx) > MAX_LOCKED_DELTA || Math.abs(dy) > MAX_LOCKED_DELTA) return;
     applyLookDelta(dx, dy, POINTER_LOCK_SENS);
   });
 }

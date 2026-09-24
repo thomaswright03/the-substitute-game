@@ -11,7 +11,7 @@
     "test": "npm run lint && npm run test:unit && npm run test:e2e",
     "test:unit": "node --test \"test/unit/**/*.test.js\"",
     "test:e2e": "playwright test",
-    "lint": "eslint .",
+    "lint": "eslint . && node scripts/check-cycles.mjs",
     "optimize-assets": "node scripts/optimize-assets.mjs",
     "vendor-three": "node scripts/vendor-three.mjs"
   },
