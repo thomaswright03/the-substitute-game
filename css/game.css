@@ -518,6 +518,25 @@ body.touch .log div:nth-last-child(n+3) { display: none; }
   font: inherit; font-size: var(--fs-2); color: var(--ink); background: var(--paper-deep);
   border: 2px solid var(--ink); border-radius: 8px; min-height: 36px; padding: var(--space-1) var(--space-4); cursor: pointer;
 }
+/* The start menu: what to play (difficulty, best grade, language and sound) comes first, then
+   how to play. On a wide stage the two sit side by side, so nothing needs scrolling. */
+.menuRules h2:first-child { margin-top: var(--space-4); }
+.menuSetup .stats { display: flex; justify-content: center; margin: 0 0 var(--space-5); }
+.menuSetup .stats div { min-width: calc(160 * var(--px)); }
+@container stage (min-width: 860px) and (min-height: 560px) {
+  .menuPanel {
+    max-width: 960px; display: grid; column-gap: var(--space-10); align-items: start;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); grid-template-rows: auto 1fr auto;
+    grid-template-areas: "intro rules" "setup rules" "footer footer";
+  }
+  .menuIntro { grid-area: intro; }
+  .menuSetup { grid-area: setup; }
+  .menuRules { grid-area: rules; }
+  .menuRules h2:first-child { margin-top: 0; }
+  .menuPanel .panelFooter { grid-area: footer; }
+  .menuPanel .settings { margin-bottom: 0; }
+}
+
 /* the main button stays in reach while a long panel scrolls behind it */
 .panelFooter {
   /* reaches out over the panel's padding, so it spans the panel and meets its bottom edge */
@@ -526,6 +545,14 @@ body.touch .log div:nth-last-child(n+3) { display: none; }
   background: var(--chalk); border-radius: 0 0 16px 16px; box-shadow: 0 -8px 12px -10px color-mix(in srgb, var(--shadow) 35%, transparent);
 }
 .btnStack { display: flex; flex-direction: column; align-items: center; gap: var(--space-5); }
+.linkRow { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-2) var(--space-6); }
+.bestLine { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: var(--space-2) var(--space-4); }
+.panel p.bestLine { margin-bottom: 0; }
+.bestLine strong { font-family: var(--font-display); font-size: var(--fs-4); color: var(--notebook-blue); }
+.newBest {
+  font-family: var(--font-display); font-weight: 600; font-size: var(--fs-1); letter-spacing: 0.06em; text-transform: uppercase;
+  background: var(--pencil-yellow); color: var(--ink); border-radius: 6px; padding: var(--space-1) var(--space-4);
+}
 .btn {
   font-family: var(--font-display); font-weight: 600; font-size: var(--fs-3); background: var(--pencil-yellow); color: var(--ink);
   border: 2px solid var(--ink); border-radius: 10px; padding: var(--space-6) var(--space-9); min-height: var(--touch); cursor: pointer; box-shadow: 0 4px 0 var(--frame-dark);
@@ -534,6 +561,7 @@ body.touch .log div:nth-last-child(n+3) { display: none; }
 .btn:hover { transform: translateY(1px); box-shadow: 0 3px 0 var(--frame-dark); }
 .btn:active { transform: translateY(4px); box-shadow: 0 0 0 var(--frame-dark); }
 .btn.secondary { background: var(--paper-deep); }
+.btn.danger { background: var(--marker-red); color: var(--white); }
 .linkBtn { background: none; border: none; color: var(--muted-ink); text-decoration: underline; font-size: var(--fs-2); cursor: pointer; min-height: var(--touch); padding: 0 var(--space-6); }
 
 /* discipline menu */
@@ -558,6 +586,9 @@ body.touch .log div:nth-last-child(n+3) { display: none; }
 .discOpt[disabled] { cursor: not-allowed; transform: none; box-shadow: none; border-style: dashed; background: transparent; color: var(--muted-ink); }
 .discOpt[disabled] .key { background: var(--muted-ink); }
 .discCancel { margin-top: var(--space-4); }
+.confirmPanel h2 { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-5); margin: 0 0 var(--space-4); }
+.confirmPanel p { font-size: var(--fs-2); line-height: 1.55; color: var(--muted-ink); margin: 0 auto var(--space-8); max-width: 36ch; }
+.confirmPanel .btn { min-width: min(100%, 240px); }
 
 @media (prefers-reduced-motion: reduce) {
   .stage.hit, .tag.critical .ring-wrap, .final-bell .stage, .threatCue { animation: none; }

@@ -76,6 +76,7 @@ const EN = {
       },
     ],
     controlsTitle: 'Controls',
+    rulesTitle: 'How to play',
     best: 'Best grade',
     bestNone: '—',
     start: 'Start class',
@@ -120,6 +121,17 @@ const EN = {
     body: 'The clock and the kids are frozen. Resume whenever you’re ready.',
     resume: 'Resume',
     restart: 'Restart the period',
+    menu: 'Back to menu',
+  },
+  // asked before a period in progress is thrown away
+  confirm: {
+    restartTitle: 'Restart the period?',
+    restartBody: 'This period’s progress is lost and the clock goes back to 9:05.',
+    restartYes: 'Restart',
+    menuTitle: 'Leave this period?',
+    menuBody: 'This period’s progress is lost. You go back to the menu, where you can change the difficulty.',
+    menuYes: 'Leave the period',
+    cancel: 'Keep this period',
   },
   end: {
     wonKicker: 'Bell Rings · 9:50',
@@ -157,6 +169,9 @@ const EN = {
     statZaps: 'Zaps',
     statHits: 'Hits Taken',
     again: 'Sub again',
+    menu: 'Back to menu',
+    best: 'Best grade · {difficulty}',
+    newBest: 'New personal best!',
     tipLabel: 'Tip:',
     // shown on a lost round: for running out of time, or for the kind of student who was lost
     tip: {

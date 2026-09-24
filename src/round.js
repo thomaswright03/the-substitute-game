@@ -27,15 +27,21 @@ function bestGrade(level) {
   try { return localStorage.getItem(BEST_GRADE_KEYS[level]); } catch { return null; }
 }
 
+// Keeps `grade` if it beats the best so far at this difficulty; says whether it did.
 function saveBestGrade(level, grade) {
   const prev = bestGrade(level);
-  if (prev && GRADE_ORDER.indexOf(prev) <= GRADE_ORDER.indexOf(grade)) return;
+  if (prev && GRADE_ORDER.indexOf(prev) <= GRADE_ORDER.indexOf(grade)) return false;
   try { localStorage.setItem(BEST_GRADE_KEYS[level], grade); } catch { /* storage unavailable */ }
+  return true;
 }
 
-// The best grade at the difficulty that is currently chosen.
+// The best grade at the difficulty that is currently chosen (start menu), and at the
+// difficulty the last period was played at (end screen).
 export function showBest() {
   el.bestStart.textContent = bestGrade(difficulty()) || t('start.bestNone');
+  const level = S.game ? S.game.difficulty : difficulty();
+  el.endBestLabel.textContent = t('end.best', { difficulty: t('settings.' + level) });
+  el.endBestGrade.textContent = bestGrade(level) || t('start.bestNone');
 }
 
 /* ---------------- pause ---------------- */
@@ -87,7 +93,7 @@ export function startRound() {
   S.paused = false;
   S.disciplineTarget = null;
   S.running = true;
-  for (const node of [el.startOverlay, el.endOverlay, el.pauseOverlay, el.discOverlay]) {
+  for (const node of [el.confirmOverlay, el.startOverlay, el.endOverlay, el.pauseOverlay, el.discOverlay]) {
     if (!node.hidden) closeDialog(node);
   }
   el.canvas.focus({ preventScroll: true });
@@ -147,14 +153,15 @@ function showReportCard(game) {
     li.textContent = line;
     notes.append(li);
   }
-  saveBestGrade(game.difficulty, r.grade);
   S.lastBestGrade = r.grade;
+  return saveBestGrade(game.difficulty, r.grade);
 }
 
 export function endRound(outcome) {
   const game = S.game;
   S.running = false;
   if (S.disciplineTarget !== null) { S.disciplineTarget = null; closeDialog(el.discOverlay); }
+  cancelConfirm();
   if (!el.pauseOverlay.hidden) { S.paused = false; closeDialog(el.pauseOverlay); }
   closeSeatChartForRoundEnd();
   el.attPanel.hidden = true;
@@ -171,13 +178,14 @@ export function endRound(outcome) {
   $('endTip').hidden = !tip;
   $('endTipText').textContent = tip ? t(tip) : '';
 
+  let newBest = false;
   if (outcome.won) {
     emoji.textContent = '🔔';
     kicker.textContent = t('end.wonKicker');
     title.textContent = t('end.wonTitle');
     text.textContent = describeWin(game);
     reportCard.hidden = false;
-    showReportCard(game);
+    newBest = showReportCard(game);
   } else if (outcome.reason === 'attendance') {
     emoji.textContent = '📋';
     kicker.textContent = t('end.lostAttendanceKicker');
@@ -194,7 +202,58 @@ export function endRound(outcome) {
     reportCard.hidden = true;
   }
   showBest();
+  el.endNewBest.hidden = !newBest;
   openDialog(el.endOverlay, el.restartBtn);
+}
+
+/* ---------------- the menu, and leaving a period ---------------- */
+
+// Back to the start menu (difficulty, rules, best grade), with a fresh classroom behind it.
+export function backToMenu() {
+  S.running = false;
+  S.paused = false;
+  S.disciplineTarget = null;
+  for (const node of [el.confirmOverlay, el.pauseOverlay, el.endOverlay, el.discOverlay]) {
+    if (!node.hidden) closeDialog(node);
+  }
+  releaseLook();
+  releaseKeys();
+  S.game = R.createGame({ difficulty: difficulty() });
+  resetVisuals();
+  resetPlayer();
+  el.attPanel.hidden = true;
+  el.cabinet.classList.remove('final-bell');
+  refreshButtonLabels();
+  showBest();
+  openDialog(el.startOverlay, el.startBtn);
+}
+
+// Asks before a period in progress is thrown away; Escape or "Keep this period" says no.
+let onConfirm = null;
+function confirmLeaving(kind, action) {
+  onConfirm = action;
+  el.confirmTitle.textContent = t('confirm.' + kind + 'Title');
+  el.confirmBody.textContent = t('confirm.' + kind + 'Body');
+  el.confirmYes.textContent = t('confirm.' + kind + 'Yes');
+  openDialog(el.confirmOverlay, el.confirmNo);
+}
+
+export function cancelConfirm() {
+  if (el.confirmOverlay.hidden) return;
+  onConfirm = null;
+  closeDialog(el.confirmOverlay);
+}
+
+function acceptConfirm() {
+  const action = onConfirm;
+  cancelConfirm();
+  if (action) action();
+}
+
+function restartPeriod() {
+  closeDialog(el.pauseOverlay);
+  S.paused = false;
+  startRound();
 }
 
 /* ---------------- buttons, fullscreen and a hidden tab ---------------- */
@@ -205,11 +264,11 @@ export function setupRound() {
   el.restartBtn.addEventListener('click', startRound);
   el.pauseBtn.addEventListener('click', () => setPaused(!S.paused));
   el.resumeBtn.addEventListener('click', () => setPaused(false));
-  el.restartFromPause.addEventListener('click', () => {
-    closeDialog(el.pauseOverlay);
-    S.paused = false;
-    startRound();
-  });
+  el.endMenuBtn.addEventListener('click', backToMenu);
+  el.restartFromPause.addEventListener('click', () => confirmLeaving('restart', restartPeriod));
+  el.pauseMenuBtn.addEventListener('click', () => confirmLeaving('menu', backToMenu));
+  el.confirmYes.addEventListener('click', acceptConfirm);
+  el.confirmNo.addEventListener('click', cancelConfirm);
   on('pauseRequested', () => setPaused(true));
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) setPaused(true);

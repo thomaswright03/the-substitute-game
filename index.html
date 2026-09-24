@@ -113,30 +113,37 @@
     <div class="hitVignette" id="hitVignette"></div>
 
     <div class="overlay" id="startOverlay" role="dialog" aria-modal="true" aria-labelledby="startTitle" hidden>
-      <div class="panel">
-        <span class="apple" aria-hidden="true">🍎</span>
-        <div class="kicker" data-i18n="start.kicker">First Day Sub Plans</div>
-        <h1 id="startTitle" data-i18n="start.title">The Substitute</h1>
-        <p class="lead" data-i18n="start.intro">Keep Room 204 in one piece until the bell at 9:50.</p>
-        <ol class="rules">
-          <li><strong data-i18n="start.rules.0.lead"></strong> <span data-i18n="start.rules.0.body"></span></li>
-          <li><strong data-i18n="start.rules.1.lead"></strong> <span data-i18n="start.rules.1.body"></span></li>
-          <li><strong data-i18n="start.rules.2.lead"></strong> <span data-i18n="start.rules.2.body"></span></li>
-          <li><strong data-i18n="start.rules.3.lead"></strong> <span data-i18n="start.rules.3.body"></span></li>
-          <li><strong data-i18n="start.rules.4.lead"></strong> <span data-i18n="start.rules.4.body"></span></li>
-        </ol>
-        <h2 data-i18n="start.controlsTitle">Controls</h2>
-        <dl class="controls" data-controls></dl>
-        <fieldset class="difficulty">
-          <legend data-i18n="settings.difficulty">Difficulty</legend>
-          <label><input type="radio" name="difficulty" value="relaxed"> <span><strong data-i18n="settings.relaxed">Relaxed</strong> <small data-i18n="settings.relaxedNote">A four-minute period and a calmer class</small></span></label>
-          <label><input type="radio" name="difficulty" value="standard"> <span><strong data-i18n="settings.standard">Standard</strong> <small data-i18n="settings.standardNote">Two minutes, and they don’t wait</small></span></label>
-        </fieldset>
-        <div class="stats"><div><span data-i18n="start.best">Best grade</span><strong id="bestStart">—</strong></div></div>
-        <div class="settings" data-settings>
-          <label class="toggle"><input type="checkbox" data-sound checked> <span data-i18n="settings.sound">Sound</span></label>
-          <label class="volume"><span data-i18n="settings.volume">Volume</span> <input type="range" min="0" max="100" step="5" value="70" data-volume></label>
-          <label class="language"><span data-i18n="settings.language">Language</span> <select data-language></select></label>
+      <div class="panel menuPanel">
+        <div class="menuIntro">
+          <span class="apple" aria-hidden="true">🍎</span>
+          <div class="kicker" data-i18n="start.kicker">First Day Sub Plans</div>
+          <h1 id="startTitle" data-i18n="start.title">The Substitute</h1>
+          <p class="lead" data-i18n="start.intro">Keep Room 204 in one piece until the bell at 9:50.</p>
+        </div>
+        <div class="menuSetup">
+          <fieldset class="difficulty">
+            <legend data-i18n="settings.difficulty">Difficulty</legend>
+            <label><input type="radio" name="difficulty" value="relaxed"> <span><strong data-i18n="settings.relaxed">Relaxed</strong> <small data-i18n="settings.relaxedNote">A four-minute period and a calmer class</small></span></label>
+            <label><input type="radio" name="difficulty" value="standard"> <span><strong data-i18n="settings.standard">Standard</strong> <small data-i18n="settings.standardNote">Two minutes, and they don’t wait</small></span></label>
+          </fieldset>
+          <div class="stats"><div><span data-i18n="start.best">Best grade</span><strong id="bestStart">—</strong></div></div>
+          <div class="settings" data-settings>
+            <label class="language"><span data-i18n="settings.language">Language</span> <select data-language></select></label>
+            <label class="toggle"><input type="checkbox" data-sound checked> <span data-i18n="settings.sound">Sound</span></label>
+            <label class="volume"><span data-i18n="settings.volume">Volume</span> <input type="range" min="0" max="100" step="5" value="70" data-volume></label>
+          </div>
+        </div>
+        <div class="menuRules">
+          <h2 data-i18n="start.rulesTitle">How to play</h2>
+          <ol class="rules">
+            <li><strong data-i18n="start.rules.0.lead"></strong> <span data-i18n="start.rules.0.body"></span></li>
+            <li><strong data-i18n="start.rules.1.lead"></strong> <span data-i18n="start.rules.1.body"></span></li>
+            <li><strong data-i18n="start.rules.2.lead"></strong> <span data-i18n="start.rules.2.body"></span></li>
+            <li><strong data-i18n="start.rules.3.lead"></strong> <span data-i18n="start.rules.3.body"></span></li>
+            <li><strong data-i18n="start.rules.4.lead"></strong> <span data-i18n="start.rules.4.body"></span></li>
+          </ol>
+          <h2 data-i18n="start.controlsTitle">Controls</h2>
+          <dl class="controls" data-controls></dl>
         </div>
         <div class="panelFooter"><button class="btn" id="startBtn" type="button"><span data-i18n="start.start">Start class</span> ▸</button></div>
       </div>
@@ -164,7 +171,11 @@
           <div><span data-i18n="end.statPrincipal">Principal</span><strong id="statPrincipal">0</strong></div>
           <div><span data-i18n="end.statZaps">Zaps</span><strong id="statZaps">0</strong></div>
         </div>
-        <div class="panelFooter"><button class="btn" id="restartBtn" type="button"><span data-i18n="end.again">Sub again</span> ▸</button></div>
+        <p class="bestLine" id="endBest"><span id="endBestLabel"></span> <strong id="endBestGrade">—</strong> <span class="newBest" id="endNewBest" data-i18n="end.newBest" hidden>New personal best!</span></p>
+        <div class="btnStack panelFooter">
+          <button class="btn" id="restartBtn" type="button"><span data-i18n="end.again">Sub again</span> ▸</button>
+          <button class="linkBtn" id="endMenuBtn" type="button" data-i18n="end.menu">Back to menu</button>
+        </div>
       </div>
     </div>
 
@@ -183,7 +194,21 @@
         </div>
         <div class="btnStack panelFooter">
           <button class="btn" id="resumeBtn" type="button"><span data-i18n="pause.resume">Resume</span> ▸</button>
-          <button class="linkBtn" id="restartFromPause" type="button" data-i18n="pause.restart">Restart the period</button>
+          <div class="linkRow">
+            <button class="linkBtn" id="restartFromPause" type="button" data-i18n="pause.restart">Restart the period</button>
+            <button class="linkBtn" id="pauseMenuBtn" type="button" data-i18n="pause.menu">Back to menu</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay" id="confirmOverlay" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmBody" hidden>
+      <div class="discPanel confirmPanel">
+        <h2 id="confirmTitle"></h2>
+        <p id="confirmBody"></p>
+        <div class="btnStack">
+          <button class="btn danger" id="confirmYes" type="button"></button>
+          <button class="btn secondary" id="confirmNo" type="button" data-i18n="confirm.cancel">Keep this period</button>
         </div>
       </div>
     </div>

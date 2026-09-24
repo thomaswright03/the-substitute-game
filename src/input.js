@@ -9,7 +9,7 @@ import { disciplineAction, primaryAction } from './aim.js';
 import { askRollCall } from './rollcall.js';
 import { setSeatChart, toggleSeatChart } from './seating.js';
 import { chooseDiscipline, closeDiscipline } from './discipline.js';
-import { refreshButtonLabels, setPaused } from './round.js';
+import { cancelConfirm, refreshButtonLabels, setPaused } from './round.js';
 import { audioPrefs, setMuted } from './audio.js';
 
 const LOOK_SENS = 0.0034;
@@ -151,6 +151,10 @@ function onKeyDown(e) {
     const option = { 1: 'talk', 2: 'detention', 3: 'principal', 4: 'zap' }[k];
     if (option) { e.preventDefault(); chooseDiscipline(option); }
     else if (k === 'escape') { e.preventDefault(); closeDiscipline(); }
+    return;
+  }
+  if (top === el.confirmOverlay) {
+    if (k === 'escape') { e.preventDefault(); cancelConfirm(); }
     return;
   }
   if (top === el.pauseOverlay) {
