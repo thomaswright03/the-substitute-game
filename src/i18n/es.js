@@ -266,6 +266,7 @@ export default {
   },
   seating: {
     title: 'Plano de asientos',
+    live: 'La clase sigue mientras planeas: el reloj no se detiene.',
     hint: 'Elige dos alumnos para intercambiar sus sitios. Los amigos (mismo color) sentados juntos se animan entre sí.',
     front: 'Frente del aula · pizarra',
     empty: 'Pupitre vacío',

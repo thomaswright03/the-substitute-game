@@ -266,6 +266,7 @@ export default {
   },
   seating: {
     title: 'Plan de classe',
+    live: 'Le cours continue pendant que vous réfléchissez : l’horloge tourne toujours.',
     hint: 'Choisissez deux élèves pour échanger leurs places. Des amis (même couleur) assis côte à côte s’encouragent.',
     front: 'Devant · tableau',
     empty: 'Bureau vide',

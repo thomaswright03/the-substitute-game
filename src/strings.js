@@ -281,6 +281,8 @@ const EN = {
   },
   seating: {
     title: 'Seating chart',
+    // the class isn't paused while the chart is open, and the chart says so
+    live: 'The class keeps going while you plan: the clock is still running.',
     hint: 'Pick two students to swap their seats. Friends (same colour) sitting side by side egg each other on.',
     front: 'Front of the room · chalkboard',
     empty: 'Empty desk',

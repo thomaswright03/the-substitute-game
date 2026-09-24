@@ -169,6 +169,16 @@ test('seat swaps change escalation and the game says why', async ({ page }) => {
   await expect(page.locator('#seatChart')).toBeHidden();
 });
 
+test('the seating chart says the class keeps going, and the clock does', async ({ page }) => {
+  await page.keyboard.press('r');
+  await expect(page.locator('#seatChart')).toBeVisible();
+  await expect(page.locator('#seatLive')).toBeVisible();
+  await expect(page.locator('#seatLive')).toHaveText('The class keeps going while you plan: the clock is still running.');
+  const start = await hooks(page, (s) => s.game.elapsed);
+  await page.waitForFunction((t) => window.__substitute.game.elapsed > t + 1, start);
+  expect(await hooks(page, (s) => s.seatChartOpen)).toBe(true);
+});
+
 test('getting hit by a throw has a visible cost', async ({ page }) => {
   await freezeRandomness(page);
   await activate(page, 'steve', 10);
