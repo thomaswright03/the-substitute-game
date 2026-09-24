@@ -17,6 +17,8 @@ import { updatePrincipal } from './principal.js';
 
 let cameraOverride = null; // look at the scene from anywhere
 let fault = null; // an error the next frame throws
+let heldTime = null; // ms: while set, frames play this time instead of the browser's (see holdTime)
+let frameCount = 0;
 
 // Called by the frame loop: throws the error a test asked for, once.
 export function testFault() {
@@ -24,6 +26,12 @@ export function testFault() {
   const message = fault;
   fault = null;
   throw new Error(message);
+}
+
+// Called by the frame loop with the browser's frame time: the time the frame plays.
+export function testFrameTime(now) {
+  frameCount++;
+  return heldTime === null ? now : heldTime;
 }
 
 export function applyCameraOverride() {
@@ -106,6 +114,20 @@ export function exposeTestHooks() {
       renderControlsLists();
     },
     bestGrade: () => S.lastBestGrade,
+    // Stops the game's clock: from here on, time passes only by advance(), so a held key moves
+    // the teacher by the same amount on a fast machine and a loaded one.
+    holdTime() {
+      heldTime = performance.now();
+    },
+    // lets `ms` of play pass, and resolves once a frame has played it
+    advance(ms) {
+      heldTime += ms;
+      const seen = frameCount;
+      return new Promise((resolve) => {
+        const check = () => (frameCount > seen ? resolve() : requestAnimationFrame(check));
+        requestAnimationFrame(check);
+      });
+    },
     // makes the next frame throw, as a bug would
     failNextFrame(message = 'test fault') {
       fault = message;

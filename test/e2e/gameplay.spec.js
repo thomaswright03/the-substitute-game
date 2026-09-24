@@ -37,6 +37,10 @@ test('roll call: the answer is readable without turning around', async ({ page }
   await page.keyboard.press('e');
   await expect(page.locator('#actRollCall')).toBeVisible();
   await page.keyboard.press('q');
+  // the answer stays for 9 seconds of play; give it longer so a loaded machine can't use them
+  // up before the first look
+  await expect.poll(() => hooks(page, (s) => !!s.speech && s.game.attendance.asked)).toBe(true);
+  await hooks(page, (s) => { s.speech.until = s.game.elapsed + 600; });
   const answer = page.locator('#attAnswer');
   await expect(answer).toBeVisible();
   await expect(answer).toContainText('Moe Lester answered from behind you');

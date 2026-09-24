@@ -32,6 +32,8 @@ test('while the mouse is captured the action buttons are key hints, and buttons 
   // Resume captures the mouse again, and they are key hints again
   await page.locator('#resumeBtn').click();
   await expect.poll(() => locked(page)).toBe(true);
+  // (the page hears of the lock by an event that can come a frame after the lock itself)
+  await expect(page.locator('#stage')).toHaveClass(/\blocked\b/);
   expect((await style()).pointerEvents).toBe('none');
 });
 

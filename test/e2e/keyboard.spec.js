@@ -114,27 +114,33 @@ test.describe('where the browser cannot tell the layout', () => {
 });
 
 test('keyboard only: look up at the board and take a top-row card while the bottom row is full', async ({ page }) => {
-  // The page's clock is the test's: frames come 16 ms apart however busy the machine is, so a
-  // held key moves the teacher by the same amount every run.
-  await page.clock.install();
-  // small and at the cheapest graphics, so each of those frames draws quickly
+  // small and at the cheapest graphics, so each frame draws quickly
   await page.setViewportSize({ width: 480, height: 320 });
   await page.addInitScript(() => localStorage.setItem('substitute.quality', 'minimum'));
   await openGame(page);
   await expect(page.locator('#startOverlay .controls')).toContainText('look up / down');
+  // the mouse rests mid-screen: the test's mouse starts in the corner, where hovering turns the
+  // view until the pointer is captured
+  await page.mouse.move(240, 160);
   await page.keyboard.press('Enter');
-  await page.waitForFunction(() => window.__substitute.running, null, { polling: 100 });
+  await page.waitForFunction(() => window.__substitute.running);
   await freezeRandomness(page);
-  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
-  const hold = async (key, done) => {
+  // The game's clock is the test's: each step is 50 ms of play however busy the machine is, so
+  // a held key moves the teacher by the same amount every run.
+  await hooks(page, (s) => s.holdTime());
+  // holds a key down while `play` lets the game run on, in 50 ms steps
+  const hold = async (key, play) => {
     await page.keyboard.down(key);
-    for (let i = 0; i < 200 && !(await done()); i++) await page.clock.runFor(50);
+    await play();
     await page.keyboard.up(key);
-    await page.clock.runFor(50);
+    await page.evaluate(() => window.__substitute.advance(50));
   };
   // walk up the middle aisle until the board is in reach, a step back from it, where the cards
   // are in view
-  await hold('w', () => hooks(page, (s) => s.player.z < -3.7));
+  await hold('w', () => page.evaluate(async () => {
+    const s = window.__substitute;
+    for (let i = 0; i < 400 && s.player.z >= -3.7; i++) await s.advance(50);
+  }));
   const z = await hooks(page, (s) => s.player.z);
   expect(z).toBeLessThan(-3.7);
   expect(z).toBeGreaterThan(-5.2);
@@ -145,11 +151,18 @@ test('keyboard only: look up at the board and take a top-row card while the bott
     return c && c.kind === 'pickup' && top.includes(c.id) ? c.id : null;
   }, TOP);
   expect(await topCard()).toBe(null);
-  await hold('PageUp', topCard);
+  await hold('PageUp', () => page.evaluate(async (top) => {
+    const s = window.__substitute;
+    const onTopCard = () => {
+      const c = s.context();
+      return c && c.kind === 'pickup' && top.includes(c.id);
+    };
+    for (let i = 0; i < 400 && !onTopCard(); i++) await s.advance(50);
+  }, TOP));
   const id = await topCard();
   expect(TOP).toContain(id);
   await page.keyboard.press('e');
-  await page.clock.runFor(100);
+  await page.evaluate(() => window.__substitute.advance(100));
   await expect(page.locator('#attQuestion')).toContainText('Carrying');
   const a = await hooks(page, (s) => ({ holding: s.game.attendance.holding, remaining: s.game.attendance.remaining }));
   expect(a.holding).toBe(id);

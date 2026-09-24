@@ -24,7 +24,7 @@ import { refreshButtonLabels, setupRound, showBest, updateCountdown } from './ro
 import { setupAudio } from './audio.js';
 import { difficulty, setupGraphicsSettings, setupLanguage, setupSettings } from './settings.js';
 import { noteFrame, setupQuality } from './quality.js';
-import { applyCameraOverride, exposeTestHooks, testFault } from './testhooks.js';
+import { applyCameraOverride, exposeTestHooks, testFault, testFrameTime } from './testhooks.js';
 import { registerServiceWorker } from './offline.js';
 import { onKeyLabelsChange, setupKeyLabels } from './keys.js';
 
@@ -48,7 +48,7 @@ function frame(now) {
   if (stopped) return;
   requestAnimationFrame(frame);
   try {
-    step(now);
+    step(TEST_MODE ? testFrameTime(now) : now);
   } catch (err) {
     // the same error would come back every frame: stop once, and say so (with no round in
     // play, freeing the mouse doesn't also open the pause screen over the message)

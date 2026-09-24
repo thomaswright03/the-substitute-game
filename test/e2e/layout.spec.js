@@ -1,6 +1,13 @@
 import { test, expect } from '@playwright/test';
 import { activate, faceCard, faceStudent, freezeRandomness, hooks, openGame, startRound } from './helpers.js';
 
+// These tests measure the page, not the 3D view: draw the view at the cheapest graphics level,
+// so that the frames that update the HUD come quickly under software rendering, even on a
+// 2560x1440 page.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('substitute.quality', 'minimum'));
+});
+
 const HUD_PARTS = ['#chaosBadge', '.btnRow', '.hint', '#log', '#attendancePanel', '.badge.clock', '#actions'];
 
 async function boxes(page) {
