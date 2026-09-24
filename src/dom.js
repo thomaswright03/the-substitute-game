@@ -18,7 +18,7 @@ export const el = {
   discOverlay: $('disciplineOverlay'), discName: $('discName'), discCancel: $('discCancel'),
   flash: $('flash'), hitVignette: $('hitVignette'),
   attPanel: $('attendancePanel'), attQuestion: $('attQuestion'), attHint: $('attHint'), attAnswer: $('attAnswer'),
-  banner: $('reassignBanner'), seatChart: $('seatChart'), seatGrid: $('seatGrid'), seatClose: $('seatClose'),
+  banner: $('reassignBanner'), seatChart: $('seatChart'), seatThreat: $('seatThreat'), seatGrid: $('seatGrid'), seatClose: $('seatClose'),
   actions: $('actions'), actPrimary: $('actPrimary'), actDiscipline: $('actDiscipline'), actRollCall: $('actRollCall'), actSeats: $('actSeats'),
   joystick: $('joystick'), knob: $('knob'),
 };

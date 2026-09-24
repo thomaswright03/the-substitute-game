@@ -4,6 +4,7 @@ import { el, restartAnimation } from './dom.js';
 import { S } from './session.js';
 import { scene, world } from './world.js';
 import { EYE_HEIGHT, player } from './player.js';
+import { freeArea } from './rollcall.js';
 
 export function hitFlash() {
   restartAnimation(el.hitVignette, 'show');
@@ -40,19 +41,35 @@ export function launchProjectile(id) {
   mesh.position.copy(from);
   scene.add(mesh);
   S.projectile = { mesh, from };
-  el.threatCue.hidden = false;
+  showThreatCue();
 }
 
 export function clearProjectile() {
   el.threatCue.hidden = true;
+  el.seatThreat.hidden = true;
   if (!S.projectile) return;
   scene.remove(S.projectile.mesh);
   S.projectile = null;
 }
 
+// The warning goes at the top of the free play area, under the attendance panel or the banner,
+// so it never covers what the player is reading. While the seating chart is open (which can
+// fill a small screen) it is shown inside the chart instead.
+let cueTop = null;
+function showThreatCue() {
+  if (el.threatCue.hidden !== S.seatChartOpen) el.threatCue.hidden = S.seatChartOpen;
+  if (el.seatThreat.hidden === S.seatChartOpen) el.seatThreat.hidden = !S.seatChartOpen;
+  if (S.seatChartOpen) return;
+  const top = Math.round(freeArea().top);
+  if (top === cueTop) return;
+  cueTop = top;
+  el.threatCue.style.top = top + 'px';
+}
+
 export function updateProjectile() {
   const game = S.game;
   if (!S.projectile || !game.throw || game.throw.phase !== 'flight') return;
+  showThreatCue();
   const k = Math.min(1, game.throw.t / game.tuning.throwFlight);
   flightTarget.set(player.x, EYE_HEIGHT - 0.08, player.z);
   S.projectile.mesh.position.lerpVectors(S.projectile.from, flightTarget, k);

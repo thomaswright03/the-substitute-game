@@ -265,6 +265,12 @@ canvas#gl { position: absolute; inset: 0; display: block; width: 100%; height: 1
 .seatChart p { font-size: var(--fs-1); line-height: 1.4; color: var(--muted-ink); margin: 0 0 var(--space-4); }
 /* shown at every size: the chart does not pause the class */
 .seatChart p.seatLive { display: block; font-weight: 700; color: var(--text-red); margin: 0 0 var(--space-2); }
+/* the throw warning, inside the chart while it is open (see effects.js) */
+.seatChart p.seatThreat {
+  display: block; margin: 0 0 var(--space-3); padding: var(--space-2) var(--space-4); border-radius: 8px;
+  font-family: var(--font-display); font-weight: 700; font-size: var(--fs-2); color: var(--white);
+  background: var(--marker-red); box-shadow: 0 3px 0 var(--marker-red-dark);
+}
 .seatFront { font-family: var(--font-display); font-size: var(--fs-1); font-weight: 600; color: var(--white); background: var(--board-green); border-radius: 6px; padding: var(--space-2); margin-bottom: var(--space-3); }
 .seatGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-3); }
 .seat {
@@ -316,7 +322,9 @@ canvas#gl { position: absolute; inset: 0; display: block; width: 100%; height: 1
 .prompt .promptLine { display: block; }
 .prompt .promptLine + .promptLine { margin-top: var(--space-2); }
 .threatCue {
+  /* top: set in effects.js, at the top of the free play area */
   position: absolute; left: 50%; top: 30%; transform: translateX(-50%); z-index: 6; pointer-events: none;
+  max-width: calc(100% - 2 * var(--gutter)); width: max-content; text-align: center;
   font-family: var(--font-display); font-weight: 700; font-size: var(--fs-3);
   background: var(--marker-red); color: var(--white); padding: var(--space-3) var(--space-6); border-radius: 10px; box-shadow: 0 3px 0 var(--marker-red-dark);
   animation: cuePulse 0.35s ease-in-out infinite alternate;

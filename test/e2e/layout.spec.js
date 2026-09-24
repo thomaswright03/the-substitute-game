@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { activate, faceStudent, freezeRandomness, hooks, openGame, startRound } from './helpers.js';
+import { activate, faceCard, faceStudent, freezeRandomness, hooks, openGame, startRound } from './helpers.js';
 
 const HUD_PARTS = ['#chaosBadge', '.btnRow', '.hint', '#log', '#attendancePanel', '.badge.clock', '#actions'];
 
@@ -41,6 +41,62 @@ for (const [w, h] of [[375, 667], [390, 844], [768, 1024], [1440, 900], [2560, 1
     const clipped = await page.evaluate(() => [...document.querySelectorAll('#chaosBadge .label, #chaosBadge .value')]
       .some((n) => n.scrollWidth > n.clientWidth + 1));
     expect(clipped).toBe(false);
+  });
+}
+
+// the "Turn around!" warning, over a roll-call answer in the attendance panel
+for (const [w, h] of [[800, 500], [1024, 640], [1280, 800], [1440, 900], [375, 667], [2560, 1440]]) {
+  test(`the throw warning covers no panel at ${w}×${h}`, async ({ page }) => {
+    test.setTimeout(180_000);
+    await page.setViewportSize({ width: w, height: h });
+    await openGame(page);
+    await startRound(page);
+    await freezeRandomness(page);
+    await faceCard(page, 'moeLester');
+    await page.keyboard.press('e');
+    await page.keyboard.press('q');
+    await expect(page.locator('#attAnswer')).toBeVisible();
+    // a throw that stays in the air while the page is measured
+    await hooks(page, (s) => {
+      s.game.tuning.throwFlight = 600;
+      s.game.throw = { id: 'dixieNormous', phase: 'windup', t: 0 };
+    });
+    const cue = page.locator('#threatCue');
+    await expect(cue).toBeVisible();
+    await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+    const r = await page.evaluate(() => {
+      const box = (n) => {
+        const b = n.getBoundingClientRect();
+        return { x: b.left, y: b.top, w: b.width, h: b.height };
+      };
+      const out = { cue: box(document.getElementById('threatCue')), stage: box(document.getElementById('stage')), others: {} };
+      for (const sel of ['#attendancePanel', '#seatChart', '#banner', '#log', '#actions', '.hud', '.hint']) {
+        const n = document.querySelector(sel);
+        if (!n || !n.checkVisibility()) continue;
+        out.others[sel] = box(n);
+      }
+      return out;
+    });
+    expect(Object.keys(r.others)).toEqual(expect.arrayContaining(['#attendancePanel', '#log']));
+    for (const [sel, b] of Object.entries(r.others)) expect(overlaps(r.cue, b), `the warning overlaps ${sel}`).toBe(false);
+    // and it is on the stage, in the upper part of the view where the player is looking
+    expect(r.cue.x).toBeGreaterThanOrEqual(r.stage.x);
+    expect(r.cue.x + r.cue.w).toBeLessThanOrEqual(r.stage.x + r.stage.w);
+    expect(r.cue.y + r.cue.h).toBeLessThan(r.stage.y + r.stage.h * 0.75);
+
+    // with the seating chart open (it can fill a small screen) the warning is inside the chart
+    await page.keyboard.press('r');
+    await expect(page.locator('#seatChart')).toBeVisible();
+    await expect(cue).toBeHidden();
+    const inChart = page.locator('#seatThreat');
+    await expect(inChart).toBeVisible();
+    const [chart, line] = [await page.locator('#seatChart').boundingBox(), await inChart.boundingBox()];
+    expect(line.y).toBeGreaterThanOrEqual(chart.y);
+    expect(line.y + line.height).toBeLessThanOrEqual(chart.y + chart.height);
+    // and back on the view once the chart closes
+    await page.keyboard.press('Escape');
+    await expect(inChart).toBeHidden();
+    await expect(cue).toBeVisible();
   });
 }
 

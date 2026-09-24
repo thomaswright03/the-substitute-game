@@ -116,7 +116,7 @@ export function updateSpeech() {
 const free = { left: 0, right: 0, top: 0, bottom: 0 };
 let freeStale = true;
 let freeObserver = null;
-function freeArea() {
+export function freeArea() {
   if (!freeObserver) {
     freeObserver = new ResizeObserver(() => { freeStale = true; });
     for (const node of [el.stage, el.hud, el.attPanel, el.banner, el.seatChart, el.log, el.actions]) freeObserver.observe(node);
