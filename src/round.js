@@ -10,6 +10,8 @@ import { closeDialog, openDialog } from './dialogs.js';
 import { clearLog, pushLog } from './log.js';
 import { invalidateAttendancePanel } from './hud.js';
 import { clearSpeech } from './rollcall.js';
+import { clearShout } from './shout.js';
+import { silenceVoices } from './voice.js';
 import { closeSeatChartForRoundEnd } from './seating.js';
 import { clearProjectile } from './effects.js';
 import { releaseLook, requestLook, stopHoverLook } from './pointer.js';
@@ -86,6 +88,7 @@ export function setPaused(p) {
   refreshButtonLabels();
   releaseKeys();
   if (p) {
+    silenceVoices();
     releaseLook();
     stopHoverLook();
     openDialog(el.pauseOverlay, el.resumeBtn);
@@ -101,6 +104,8 @@ function resetVisuals() {
   resetStudentVisuals();
   clearProjectile();
   clearSpeech();
+  clearShout();
+  silenceVoices();
   clearLog();
   closeSeatChartForRoundEnd();
   S.principalSeq = null;
@@ -196,6 +201,7 @@ function showReportCard(game) {
 export function endRound(outcome) {
   const game = S.game;
   S.running = false;
+  silenceVoices();
   if (S.disciplineTarget !== null) { S.disciplineTarget = null; closeDialog(el.discOverlay); }
   cancelConfirm();
   if (!el.pauseOverlay.hidden) { S.paused = false; closeDialog(el.pauseOverlay); }

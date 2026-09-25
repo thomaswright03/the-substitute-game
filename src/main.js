@@ -16,6 +16,8 @@ import {
   updatePromptAndActions, updateTags,
 } from './hud.js';
 import { refreshSpeech, updateSpeech } from './rollcall.js';
+import { refreshShout, updateShout } from './shout.js';
+import { setupVoices } from './voice.js';
 import { renderSeatChart, setupSeating } from './seating.js';
 import { setupDiscipline } from './discipline.js';
 import { updateProjectile } from './effects.js';
@@ -87,6 +89,7 @@ function step(now) {
   updatePromptAndActions();
   updateAttendancePanel();
   updateSpeech();
+  updateShout();
   updateCountdown();
   updateHud();
   render();
@@ -100,6 +103,7 @@ function refreshDrawnText() {
   renderControlsLists();
   refreshButtonLabels();
   refreshSpeech();
+  refreshShout();
   invalidateAttendancePanel();
   invalidateTags();
   invalidateHud();
@@ -117,6 +121,7 @@ async function init() {
   setTouch(window.matchMedia('(pointer: coarse)').matches);
   renderControlsLists();
   setupAudio();
+  setupVoices();
   setupSettings();
   if (boot.blocked) return;
   try {

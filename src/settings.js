@@ -1,6 +1,6 @@
 // The player's settings on the start and pause screens, and the mute button in the HUD. Every
 // copy of a control shows the same value.
-import { audioPrefs, onAudioPrefsChange, setMuted, setVolume } from './audio.js';
+import { audioPrefs, onAudioPrefsChange, setMuted, setVoices, setVolume } from './audio.js';
 import { $, allInputs, allSelects } from './dom.js';
 import { LANGUAGES, currentLanguage, onLanguageChange, setLanguage, t } from './strings.js';
 import { DEFAULT_DIFFICULTY, isDifficulty } from './data.js';
@@ -44,6 +44,10 @@ function setDifficulty(value) {
 /** @param {import('./audio.js').AudioPrefs} prefs */
 function renderSound(prefs) {
   allInputs('[data-sound]').forEach((box) => { box.checked = !prefs.muted; });
+  allInputs('[data-voices]').forEach((box) => {
+    box.checked = prefs.voices;
+    box.disabled = prefs.muted;
+  });
   allInputs('[data-volume]').forEach((range) => {
     range.value = String(Math.round(prefs.volume * 100));
     range.disabled = prefs.muted;
@@ -122,6 +126,9 @@ function renderQuality() {
 export function setupSettings() {
   allInputs('[data-sound]').forEach((box) => {
     box.addEventListener('change', () => setMuted(!box.checked));
+  });
+  allInputs('[data-voices]').forEach((box) => {
+    box.addEventListener('change', () => setVoices(box.checked));
   });
   allInputs('[data-volume]').forEach((range) => {
     range.addEventListener('input', () => setVolume(Number(range.value) / 100));

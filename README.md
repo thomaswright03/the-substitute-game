@@ -192,7 +192,8 @@ through `$()` in `src/dom.js`, which names a missing id at start-up, and
 | `src/seating.js`, `src/discipline.js`, `src/principal.js`, `src/effects.js` | Seating chart, discipline menu, the principal's visit, hit / zap / throw effects |
 | `src/events.js`, `src/round.js`, `src/session.js`, `src/dom.js` | Rule events to log lines and effects; starting, pausing and ending a round; shared UI state; the page elements the game drives |
 | `src/bus.js`, `src/pointer.js`, `src/log.js` | The small event bus that keeps the UI modules free of import cycles (`npm run lint` checks for cycles); pointer lock; the play log |
-| `src/audio.js`, `src/settings.js` | Synthesised sound cues; the sound, volume, language, graphics and difficulty controls |
+| `src/audio.js`, `src/settings.js` | Synthesised sound cues (including the students' grunts, sighs and yelps); the sound, voices, volume, language, graphics and difficulty controls |
+| `src/voice.js`, `src/shout.js` | The students' spoken lines (the browser's speech voices, a pitch and speed per student); what they blurt out and the bubble that shows who said it |
 | `src/offline.js` | Registers the service worker on a deployed build only |
 | `src/testhooks.js` | The `?test` API for the browser tests |
 | `src/scene.js`, `src/characters.js` | The classroom, and the character models: seating, arm poses and body language |
@@ -226,9 +227,15 @@ bell ring while the teacher can barely move.
 **Sound.** `src/audio.js` synthesises every cue with the Web Audio API, so there are no
 audio files: the school bell at the start and end of the period, a tick for each of the last
 ten seconds, a thrower's wind-up (panned toward where they sit), the hit or the catch, the zap
-and the principal's knock. Nothing plays until the first tap, click or key press. Sound can be
-switched off and the volume set on the start and pause screens, with the HUD speaker button or
-with M; the choice is kept in the browser's local storage.
+and the principal's knock. Students react out loud: a stern talking-to gets a grunt and a
+sigh, detention a groan, a zap a yelp, and a hit the thrower's laugh, each at that student's
+own pitch. What they say (roll-call answers, lines when they start acting up or get told off)
+is read aloud by `src/voice.js` with the browser's built-in speech voices, each student with
+their own voice where the device has several and always their own pitch and speed, while
+`src/shout.js` shows the line in a bubble over their head with their name. Nothing plays until
+the first tap, click or key press. Sound can be switched off and the volume set on the start
+and pause screens, with the HUD speaker button or with M, and "Student voices" turns off just
+the speaking; the choices are kept in the browser's local storage.
 
 **Text and translation.** The game is in English, Spanish and French. Static page text is
 tagged with `data-i18n` and filled from `src/strings.js`, and all text built during play

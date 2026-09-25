@@ -97,6 +97,7 @@ export default {
     sound: 'Sonido',
     volume: 'Volumen',
     mute: 'Silenciar',
+    voices: 'Voces de los alumnos',
     language: 'Idioma',
     graphics: 'Gráficos',
     quality: {
@@ -299,6 +300,29 @@ export default {
     caught: '¡Pillado! Te giras justo a tiempo para pillar a {name} con las manos en la masa.',
     notEligible: '{name} no se está portando mal. Solo puedes disciplinar a quien sí lo hace.',
     detainedAlready: '{name} ya está en castigo.',
+  },
+  shout: {
+    active: {
+      notes: ['¡Pásala, pásala!', '¡No la leas, pásala!', 'Vale, esta es buena.'],
+      phone: ['Espera, tengo que contestar.', '¡Un segundo, es mi madre!', '¿Has visto esto?'],
+      plane: ['¡Allá va!', '¡Despejen la pista!', '¡Mira cómo vuela!'],
+      tip: ['¡Mira, sin manos!', '¡Apuesto a que llego más lejos!', '¡Tranqui, tranqui, lo tengo!'],
+      argue: ['¡Eso ni siquiera es verdad!', '¿Quién lo dice?', '¡Demuéstralo!'],
+      sleep: ['Cinco minutitos más…', 'Despiértame con el timbre.', 'Solo descanso los ojos.'],
+      snack: ['¿Qué? ¡Tengo hambre!', '¿Alguien quiere una patata?', 'No he desayunado, ¿vale?'],
+      spin: ['¡Yujuuu!', '¡Todo da vueltas!', '¡Más rápido, más rápido!'],
+    },
+    talk: ['Uf. Vale.', 'Vale, vale, qué pesado.', 'Lo que tú digas.'],
+    detention: ['¿Castigo? ¿En serio?', '¡Esto es injustísimo!', '¡Ni siquiera eres nuestro profe de verdad!'],
+    principal: ['¡Venga ya!', 'Qué rollo.', '¡Si no he hecho nada!'],
+    zap: ['¡Ay!', '¡Eh! ¡Eso duele!', '¡Au! ¿Qué ha sido eso?'],
+    caught: ['¡No he sido yo!', '¡Se me ha escapado!', '¡Apuntaba a la papelera!'],
+    hit: ['¡En el blanco!', '¡Te pillé!', '¡Ja! ¡No lo has visto venir!'],
+    warn: ['¡Cinco segundos más!', '¡Ya casi acabo!', '¡Un mensaje más!'],
+    calm: ['Vale…', 'Vale, perdón.', 'Sí, sí.'],
+    wrongStudent: ['Ese no es mi nombre.', '¡Te has equivocado!', '¿Tengo pinta de llamarme así?'],
+    delivered: ['¡Aquí!', '¡Soy yo!', '¡Presente!'],
+    nearlyLost: ['¡No aguanto más!', '¡Estoy a punto de estallar!', '¡Yo me largo!'],
   },
   students: {
     dixieNormous: {
