@@ -23,6 +23,8 @@ test('a stern talking-to gets a grunt, a sigh and a line said aloud over the stu
   await openGame(page);
   await startRound(page);
   await freezeRandomness(page);
+  // the bubble lasts a few seconds of play: hold the clock so a slow frame can't use them up
+  await hooks(page, (s) => s.holdTime());
   await activate(page, 'steve');
   await faceStudent(page, 'steve');
   await page.keyboard.press('f');
@@ -52,6 +54,7 @@ test('each student has their own voice, and muting or switching voices off silen
   await openGame(page);
   await startRound(page);
   await freezeRandomness(page);
+  await hooks(page, (s) => s.holdTime());
   const ids = await hooks(page, (s) => Object.keys(s.world.students));
   expect(ids).toHaveLength(8);
   for (const [i, id] of ids.entries()) {
