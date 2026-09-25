@@ -30,8 +30,10 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm test
-      - run: npm run build
-      - uses: actions/configure-pages@v5
+      - id: pages
+        uses: actions/configure-pages@v5
+      # the site's path on Pages (/the-substitute-game), which the 404 page links back to
+      - run: npm run build -- --base "${{ steps.pages.outputs.base_path }}/"
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

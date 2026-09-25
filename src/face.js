@@ -12,13 +12,60 @@
 import * as THREE from 'three';
 import './three-setup.js';
 
+/** @typedef {{s: number, v: number, f: number}} FaceCoords a point across (s), up (v) and forward (f) from between the eyes, in metres */
+/** @typedef {{centre: THREE.Vector3, right: THREE.Vector3, up: THREE.Vector3, forward: THREE.Vector3, coords: (p: THREE.Vector3) => FaceCoords, box: THREE.Box3}} FaceFrame */
+/** @typedef {{minS: number, maxS: number, minV: number, maxV: number, front: number}} EyeExtent */
+/** @typedef {{L: EyeExtent, R: EyeExtent}} Eyes */
+/** @typedef {(c: FaceCoords) => ({s?: number, v?: number} | null)} ShapeFn how far a vertex moves in a shape */
+/** @typedef {THREE.Mesh<THREE.BufferGeometry, THREE.Material | THREE.Material[]>} AnyMesh */
+
+/**
+ * A character's expressive face: every mesh with blend shapes, and which of them is which.
+ * @typedef {object} Face
+ * @property {AnyMesh[]} meshes
+ * @property {AnyMesh | null} mouth
+ * @property {AnyMesh[]} brows
+ * @property {AnyMesh} eyes
+ * @property {THREE.Object3D} root the character it belongs to
+ * @property {THREE.Object3D} headGroup the costume's head
+ */
+
+/**
+ * @param {THREE.Object3D} o
+ * @returns {o is AnyMesh}
+ */
+export function isMesh(o) {
+  return /** @type {THREE.Mesh} */ (o).isMesh === true;
+}
+
+/**
+ * @param {THREE.Object3D} o
+ * @returns {o is THREE.SkinnedMesh}
+ */
+function isSkinned(o) {
+  return /** @type {THREE.SkinnedMesh} */ (o).isSkinnedMesh === true;
+}
+
+/**
+ * The name of a mesh's material ('' for none, or for several).
+ * @param {AnyMesh} mesh
+ */
+function materialName(mesh) {
+  return mesh.material && !Array.isArray(mesh.material) ? mesh.material.name : '';
+}
+
 const MOUTH_COLOUR = 0x1e0806;
 const _v = new THREE.Vector3();
 const _m = new THREE.Matrix4();
 const _sum = new THREE.Matrix4();
 const _n3 = new THREE.Matrix3();
 
+/**
+ * @param {THREE.Object3D} root
+ * @returns {THREE.Object3D | null}
+ */
 function findHeadGroup(root) {
+  /** @type {THREE.Object3D | null} */
   let headGroup = null;
   root.traverse((o) => {
     if (o.type === 'Group' && /_Head$/.test(o.name)) headGroup = o;
@@ -26,9 +73,14 @@ function findHeadGroup(root) {
   return headGroup;
 }
 
-// The matrix that takes vertex `i` of `mesh` from its geometry's space to world space, as posed.
+/**
+ * The matrix that takes vertex `i` of `mesh` from its geometry's space to world space, as posed.
+ * @param {AnyMesh} mesh
+ * @param {number} i
+ * @param {THREE.Matrix4} target
+ */
 function vertexToWorld(mesh, i, target) {
-  if (!mesh.isSkinnedMesh) return target.copy(mesh.matrixWorld);
+  if (!isSkinned(mesh)) return target.copy(mesh.matrixWorld);
   const si = mesh.geometry.attributes.skinIndex, sw = mesh.geometry.attributes.skinWeight;
   const { bones, boneInverses } = mesh.skeleton;
   const e = _sum.elements.fill(0);
@@ -45,6 +97,11 @@ function vertexToWorld(mesh, i, target) {
   return target.copy(mesh.matrixWorld).multiply(mesh.bindMatrixInverse).multiply(_sum).multiply(mesh.bindMatrix);
 }
 
+/**
+ * @param {AnyMesh} mesh
+ * @param {number} i
+ * @param {THREE.Vector3} target
+ */
 function posedPosition(mesh, i, target) {
   mesh.getVertexPosition(i, target);
   return mesh.localToWorld(target);
@@ -52,6 +109,11 @@ function posedPosition(mesh, i, target) {
 
 // The frame the face is measured in: its centre between the eyes, and the character's right,
 // up and forward directions in world space.
+/**
+ * @param {THREE.Object3D} root
+ * @param {AnyMesh} eyes
+ * @returns {FaceFrame}
+ */
 function faceFrame(root, eyes) {
   root.updateMatrixWorld(true);
   const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(root.getWorldQuaternion(new THREE.Quaternion())).setY(0).normalize();
@@ -60,12 +122,19 @@ function faceFrame(root, eyes) {
   const box = new THREE.Box3();
   for (let i = 0; i < eyes.geometry.attributes.position.count; i++) box.expandByPoint(posedPosition(eyes, i, _v));
   const centre = box.getCenter(new THREE.Vector3());
+  /** @param {THREE.Vector3} p */
   const coords = (p) => ({ s: _v.copy(p).sub(centre).dot(right), v: _v.copy(p).sub(centre).dot(up), f: _v.copy(p).sub(centre).dot(forward) });
   return { centre, right, up, forward, coords, box };
 }
 
 // Each eye's extent, from the eye mesh's own vertices: {L, R} of {minS, maxS, minV, maxV, front}.
+/**
+ * @param {AnyMesh} eyes
+ * @param {FaceFrame} frame
+ * @returns {Eyes | null}
+ */
 function measureEyes(eyes, frame) {
+  /** @type {Partial<Eyes>} */
   const out = {};
   const p = new THREE.Vector3();
   for (let i = 0; i < eyes.geometry.attributes.position.count; i++) {
@@ -78,10 +147,15 @@ function measureEyes(eyes, frame) {
     e.maxV = Math.max(e.maxV, c.v);
     e.front = Math.max(e.front, c.f);
   }
-  return out.L && out.R ? out : null;
+  return out.L && out.R ? { L: out.L, R: out.R } : null;
 }
 
-// The share of a mesh's vertices, as posed, for which `test` holds of their face coordinates.
+/**
+ * The share of a mesh's vertices, as posed, for which `test` holds of their face coordinates.
+ * @param {AnyMesh} mesh
+ * @param {FaceFrame} frame
+ * @param {(c: FaceCoords) => boolean} test
+ */
 function shareOf(mesh, frame, test) {
   const n = mesh.geometry.attributes.position.count;
   const p = new THREE.Vector3();
@@ -95,6 +169,11 @@ function shareOf(mesh, frame, test) {
 // and up directions, in metres (or null to stay put). The movement is converted into the
 // geometry's own space (which, for a skinned mesh, is before the bones move it), so the
 // shapes ride along when the head nods or turns. Returns how many vertices the shapes move.
+/**
+ * @param {AnyMesh} mesh
+ * @param {FaceFrame} frame
+ * @param {Record<string, ShapeFn>} shapes
+ */
 function addShapes(mesh, frame, shapes) {
   const src = mesh.geometry;
   const geo = new THREE.BufferGeometry();
@@ -133,15 +212,24 @@ function addShapes(mesh, frame, shapes) {
   return moved;
 }
 
+/** @param {number} x */
 const clamp01 = (x) => Math.min(1, Math.max(0, x));
 
 // Eyelids: each eye's dark shape closes to a line, narrows, opens wider or drops its top edge.
+/** @param {Eyes} eye */
 function eyeShapes(eye) {
+  /** @type {Record<string, ShapeFn>} */
   const shapes = {};
-  for (const side of ['L', 'R']) {
+  for (const side of /** @type {const} */ (['L', 'R'])) {
     const e = eye[side];
     const mid = (e.minV + e.maxV) / 2, half = (e.maxV - e.minV) / 2;
+    /** @param {FaceCoords} c */
     const mine = (c) => (c.s < 0 ? 'L' : 'R') === side;
+    /**
+     * @param {number} centre
+     * @param {number} scale
+     * @returns {ShapeFn}
+     */
     const toward = (centre, scale) => (c) => (mine(c) ? { v: centre + (c.v - mid) * scale - c.v } : null);
     shapes['eyeBlink_' + side] = toward(mid - half * 0.45, 0.14);
     shapes['eyeSquint_' + side] = toward(mid - half * 0.25, 0.5);
@@ -153,20 +241,25 @@ function eyeShapes(eye) {
 
 // Brows: whatever dark strokes of the costume sit just above the eyes and in front of the face.
 // Frowning pulls them down, the inner ends most; worrying lifts the inner ends.
+/** @param {Eyes} eye */
 function browShapes(eye) {
   const top = Math.max(eye.L.maxV, eye.R.maxV);
   const h = top - Math.min(eye.L.minV, eye.R.minV);
   const outer = Math.max(-eye.L.minS, eye.R.maxS) * 1.3;
   const front = Math.min(eye.L.front, eye.R.front) - h * 0.6;
+  /** @param {FaceCoords} c */
   const isBrow = (c) => c.v > top - h * 0.5 && c.v < top + h * 2.2 && Math.abs(c.s) < outer && c.f > front;
   // 1 at the inner end of the brow (by the nose), 0 at the outer end
+  /** @param {FaceCoords} c */
   const inner = (c) => {
     const e = c.s < 0 ? eye.L : eye.R;
     const near = Math.min(Math.abs(e.minS), Math.abs(e.maxS)), far = Math.max(Math.abs(e.minS), Math.abs(e.maxS));
     return 1 - clamp01((Math.abs(c.s) - near) / ((far - near) || 1));
   };
+  /** @type {Record<string, ShapeFn>} */
   const shapes = {};
   for (const side of ['L', 'R']) {
+    /** @param {FaceCoords} c */
     const mine = (c) => isBrow(c) && (c.s < 0 ? 'L' : 'R') === side;
     shapes['browDown_' + side] = (c) => (mine(c) ? { v: -h * (0.3 + 0.5 * inner(c)) } : null);
   }
@@ -177,6 +270,12 @@ function browShapes(eye) {
 // Where the face's surface is, straight in front of the point `s` across and `v` up from the
 // centre between the eyes: {f (how far forward), normal} of the first surface a ray from in
 // front meets, or null.
+/**
+ * @param {FaceFrame} frame
+ * @param {THREE.Object3D[]} surfaces
+ * @param {number} s
+ * @param {number} v
+ */
 function surfaceAt(frame, surfaces, s, v) {
   const origin = frame.centre.clone().addScaledVector(frame.right, s).addScaledVector(frame.up, v).addScaledVector(frame.forward, 0.4);
   const hit = new THREE.Raycaster(origin, frame.forward.clone().negate(), 0, 0.8).intersectObjects(surfaces, false)[0];
@@ -187,6 +286,11 @@ function surfaceAt(frame, surfaces, s, v) {
 
 // Where the mouth goes: between the bottom of the nose and the bottom of the chin, found by
 // running down the middle of the face. Returns its height (v) or null.
+/**
+ * @param {FaceFrame} frame
+ * @param {THREE.Object3D[]} surfaces
+ * @param {number} eyeH
+ */
 function findMouthHeight(frame, surfaces, eyeH) {
   const step = eyeH * 0.1;
   const profile = [];
@@ -215,6 +319,12 @@ function findMouthHeight(frame, surfaces, eyeH) {
 
 // A mouth for a head that has none: a dark shape on the face below the nose, following the
 // curve of the face across, with its own blend shapes. Attached to the head bone.
+/**
+ * @param {FaceFrame} frame
+ * @param {Eyes} eye
+ * @param {THREE.Object3D[]} surfaces
+ * @param {THREE.Object3D} headBone
+ */
 function buildMouth(frame, eye, surfaces, headBone) {
   const spacing = ((eye.R.minS + eye.R.maxS) - (eye.L.minS + eye.L.maxS)) / 2; // centre to centre
   const eyeH = Math.max(eye.L.maxV - eye.L.minV, eye.R.maxV - eye.R.minV);
@@ -226,18 +336,26 @@ function buildMouth(frame, eye, surfaces, headBone) {
   const COLS = 8;
   // how far forward the face is along the mouth, column by column, so the mouth follows its
   // curve instead of sticking out at the corners (and stays in front when it opens)
-  const depth = [];
+  /** @type {(number | null)[]} */
+  const found = [];
   for (let i = 0; i <= COLS; i++) {
     const s = (-1 + (2 * i) / COLS) * halfW * 1.15;
-    const fs = [0, -openDrop].map((dv) => surfaceAt(frame, surfaces, s, mouthV + dv)).filter(Boolean).map((h) => h.f);
-    depth.push(fs.length ? Math.max(...fs) : null);
+    const fs = [];
+    for (const dv of [0, -openDrop]) {
+      const hit = surfaceAt(frame, surfaces, s, mouthV + dv);
+      if (hit) fs.push(hit.f);
+    }
+    found.push(fs.length ? Math.max(...fs) : null);
   }
-  if (depth[COLS / 2] === null) return null;
-  for (let i = 0; i <= COLS; i++) if (depth[i] === null) depth[i] = depth[COLS / 2];
-  const front = depth[COLS / 2];
+  const front = found[COLS / 2];
+  if (front === null) return null;
+  const depth = found.map((f) => (f === null ? front : f));
   const standOff = eyeH * 0.08;
 
-  const pos = [], index = [];
+  /** @type {number[]} */
+  const pos = [];
+  /** @type {number[]} */
+  const index = [];
   // two rows of vertices (upper and lower edge) in the face's frame, relative to the mouth's
   // centre: x toward the character's right, y up, z forward
   for (let row = 0; row < 2; row++) {
@@ -258,6 +376,7 @@ function buildMouth(frame, eye, surfaces, headBone) {
   const n = pos.length / 3;
   // a shape from a function of (u: -1 at the character's left corner to 1 at the right, edge)
   // to a move [across, as a fraction of the half-width; up, in metres]
+  /** @param {(u: number, edge: 'upper' | 'lower') => number[]} fn */
   const shape = (fn) => {
     const out = new Float32Array(n * 3);
     for (let k = 0; k < n; k++) {
@@ -267,11 +386,17 @@ function buildMouth(frame, eye, surfaces, headBone) {
     }
     return new THREE.Float32BufferAttribute(out, 3);
   };
+  /** @param {number} u */
   const corner = (u) => u * u; // 0 in the middle, 1 at the corners
   const lift = eyeH * 0.55;
+  /**
+   * @param {number} u
+   * @param {'L' | 'R'} side
+   */
   const onSide = (u, side) => ((side === 'L' ? u < 0 : u > 0) ? 1 : u === 0 ? 0.5 : 0);
   // a smile lifts the corners and drops the middle of the lower lip into a grin
-  const smile = (side) => (u, edge) => [
+  /** @param {'L' | 'R'} side */
+  const smile = (side) => (/** @type {number} */ u, /** @type {'upper' | 'lower'} */ edge) => [
     u * 0.12 * onSide(u, side),
     onSide(u, side) * (corner(u) * lift - (edge === 'lower' ? halfH * 1.4 * (1 - corner(u)) : 0)),
   ];
@@ -287,7 +412,7 @@ function buildMouth(frame, eye, surfaces, headBone) {
   ];
   geo.morphTargetsRelative = true;
   geo.computeBoundingSphere();
-  geo.boundingSphere.radius += eyeH * 2;
+  if (geo.boundingSphere) geo.boundingSphere.radius += eyeH * 2;
   const mouth = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: MOUTH_COLOUR, roughness: 0.9, flatShading: true, name: 'mouth', side: THREE.DoubleSide }));
   mouth.name = 'mouth';
   mouth.castShadow = false;
@@ -301,14 +426,19 @@ function buildMouth(frame, eye, surfaces, headBone) {
 
 // Gives the character's own head an expressive face. Returns the face (for applyExpression),
 // or null when the head doesn't have what is needed.
+/**
+ * @param {THREE.Object3D} root
+ * @param {THREE.Object3D | null} headBone
+ * @returns {Face | null}
+ */
 export function attachExpressiveFace(root, headBone) {
   const headGroup = findHeadGroup(root);
   if (!headGroup || !headBone) return null;
-  const meshes = headGroup.children.filter((c) => c.isMesh);
-  const skin = meshes.find((c) => c.material && c.material.name === 'Skin');
+  const meshes = headGroup.children.filter(isMesh);
+  const skin = meshes.find((c) => materialName(c) === 'Skin');
   // the eyes: the costume's small dark shapes at eye level (named "Eye" on the men's heads;
   // on the women's, the smallest mesh of the head)
-  const eyes = meshes.find((c) => c.material && c.material.name === 'Eye')
+  const eyes = meshes.find((c) => materialName(c) === 'Eye')
     || meshes.filter((c) => c !== skin).sort((a, b) => a.geometry.attributes.position.count - b.geometry.attributes.position.count)[0];
   if (!skin || !eyes) return null;
   root.updateMatrixWorld(true);
@@ -316,14 +446,15 @@ export function attachExpressiveFace(root, headBone) {
   const eye = measureEyes(eyes, frame);
   if (!eye) return null;
 
-  const face = { meshes: [], mouth: null, brows: [], eyes };
+  /** @type {Face} */
+  const face = { meshes: [], mouth: null, brows: [], eyes, root, headGroup };
   if (addShapes(eyes, frame, eyeShapes(eye))) face.meshes.push(eyes);
   const brows = browShapes(eye);
   for (const m of meshes) {
     if (m === skin || m === eyes) continue;
     // the brows: a mesh named for them (which may carry a beard too), or one that lies mostly
     // along the brow line; a hat's brim or a fringe that merely reaches it stays put
-    const named = /eyebrow/i.test(m.material && m.material.name);
+    const named = /eyebrow/i.test(materialName(m));
     if (!named && shareOf(m, frame, brows.isBrow) < 0.5) continue;
     if (addShapes(m, frame, brows.shapes)) {
       face.meshes.push(m);
@@ -337,11 +468,16 @@ export function attachExpressiveFace(root, headBone) {
 
 /* ---------------- expressions ---------------- */
 
-// Sets the face to one expression: every shape named in `weights` (0..1), all others back to 0.
+/**
+ * Sets the face to one expression: every shape named in `weights` (0..1), all others back to 0.
+ * @param {Face | null} face
+ * @param {Record<string, number> | null} weights
+ */
 export function applyExpression(face, weights) {
   if (!face) return;
   for (const mesh of face.meshes) {
     const infl = mesh.morphTargetInfluences, dict = mesh.morphTargetDictionary;
+    if (!infl || !dict) continue;
     for (let i = 0; i < infl.length; i++) infl[i] = 0;
     if (!weights) continue;
     for (const name in weights) {
@@ -355,10 +491,10 @@ export function applyExpression(face, weights) {
 
 // How far the mouth sits from the middle of the eyes, in metres, as posed now. Both ride on the
 // head, so this stays the same (give or take an expression) however the head moves.
-export function faceOffsetFromHead(group) {
-  const face = group.userData.parts.faceMesh;
+/** @param {Face | null} face */
+export function faceOffsetFromHead(face) {
   if (!face || !face.mouth) return null;
-  group.updateMatrixWorld(true);
+  face.root.updateMatrixWorld(true);
   const eyes = new THREE.Box3();
   const p = new THREE.Vector3();
   for (let i = 0; i < face.eyes.geometry.attributes.position.count; i++) eyes.expandByPoint(posedPosition(face.eyes, i, p));
@@ -368,12 +504,13 @@ export function faceOffsetFromHead(group) {
 
 // What the face is made of: the shapes each part can make, where the mouth sits relative to
 // the eyes, and how many parts of the costume's own head are hidden (none should be).
-export function faceReport(group) {
-  const p = group.userData.parts;
-  const face = p.faceMesh;
+/** @param {Face | null} face */
+export function faceReport(face) {
   if (!face) return null;
-  group.updateMatrixWorld(true);
+  face.root.updateMatrixWorld(true);
+  /** @param {AnyMesh | null} m */
   const shapes = (m) => (m && m.morphTargetDictionary ? Object.keys(m.morphTargetDictionary) : []);
+  /** @param {THREE.Object3D} o */
   const box = (o) => new THREE.Box3().setFromObject(o, true);
   const eyes = new THREE.Box3();
   const pos = new THREE.Vector3();
@@ -386,16 +523,17 @@ export function faceReport(group) {
     // metres: the mouth below the eyes, and its centre from the eyes' centre line
     mouthBelowEyes: mouth ? eyes.getCenter(new THREE.Vector3()).y - mouth.getCenter(new THREE.Vector3()).y : null,
     mouthOffCentre: mouth ? Math.abs(mouth.getCenter(new THREE.Vector3()).x - eyes.getCenter(new THREE.Vector3()).x) : null,
-    hiddenHeadParts: findHeadGroup(group).children.filter((c) => c.isMesh && !c.visible).length,
+    hiddenHeadParts: face.headGroup.children.filter((c) => isMesh(c) && !c.visible).length,
   };
 }
 
 // The mouth's and the eyes' height in metres, as posed now (the blend shapes applied), so a test
 // can see an expression change the face.
-export function faceMeasure(group) {
-  const face = group.userData.parts.faceMesh;
+/** @param {Face | null} face */
+export function faceMeasure(face) {
   if (!face) return null;
-  group.updateMatrixWorld(true);
+  face.root.updateMatrixWorld(true);
+  /** @param {AnyMesh} mesh */
   const measure = (mesh) => {
     const b = new THREE.Box3();
     const p = new THREE.Vector3();

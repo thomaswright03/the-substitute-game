@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#141c16">
+<meta name="robots" content="noindex">
+<title>Page not found · The Substitute</title>
+<link rel="icon" href="{{BASE}}assets/favicon.svg" type="image/svg+xml">
+<!-- The page GitHub Pages shows for an address that isn't part of the game (written into the
+     build by scripts/build-site.mjs, which fills in {{BASE}}, the site's root). It is drawn like
+     the game's own cards: cream paper in the wooden frame, with the same colours and fonts. -->
+<style>
+  @font-face { font-family: 'Fredoka'; src: url('{{BASE}}assets/fonts/fredoka.woff2') format('woff2'); font-weight: 300 700; font-display: swap; }
+  @font-face { font-family: 'Nunito'; src: url('{{BASE}}assets/fonts/nunito.woff2') format('woff2'); font-weight: 200 1000; font-display: swap; }
+  :root {
+    --ink: #141c16;
+    --frame: #7a4b28;
+    --frame-dark: #4e2f18;
+    --chalk: #f6f1e4;
+    --paper-deep: #e4dcc4;
+    --muted-ink: #4f4a3c;
+    --notebook-blue: #2f6a93;
+    --pencil-yellow: #f2b93b;
+    --board-green: #12241a;
+    --shadow: #000;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: 16px;
+    background: var(--ink); color: var(--ink); font-family: 'Nunito', system-ui, sans-serif;
+  }
+  .frame {
+    width: min(100%, 560px); padding: 12px; border-radius: 22px; background: var(--frame);
+    background-image: repeating-linear-gradient(115deg, color-mix(in srgb, var(--shadow) 5%, transparent) 0 2px, transparent 2px 9px);
+    box-shadow: 0 24px 60px color-mix(in srgb, var(--shadow) 55%, transparent), inset 0 0 0 3px var(--frame-dark);
+  }
+  .board { border-radius: 14px; background: var(--board-green); padding: 24px 16px; }
+  .card {
+    background: var(--chalk); border-radius: 16px; padding: 24px; text-align: center;
+    box-shadow: 0 10px 0 var(--frame-dark), 0 14px 30px color-mix(in srgb, var(--shadow) 40%, transparent);
+  }
+  .apple { font-size: 26px; display: block; margin-bottom: 2px; }
+  .kicker { font-family: 'Fredoka', system-ui, sans-serif; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; font-size: 12px; color: var(--notebook-blue); }
+  h1 { font-family: 'Fredoka', system-ui, sans-serif; font-weight: 700; font-size: clamp(26px, 6vw, 34px); line-height: 1.1; margin: 4px 0 8px; text-wrap: balance; }
+  p { font-size: 16px; line-height: 1.55; color: var(--muted-ink); margin: 0 auto 20px; max-width: 40ch; }
+  .btn {
+    display: inline-block; font-family: 'Fredoka', system-ui, sans-serif; font-weight: 600; font-size: 16px; color: var(--ink); text-decoration: none;
+    background: var(--pencil-yellow); border: 2px solid var(--ink); border-radius: 10px; padding: 12px 24px; min-height: 44px; box-shadow: 0 4px 0 var(--frame-dark);
+  }
+  .btn:hover { transform: translateY(1px); box-shadow: 0 3px 0 var(--frame-dark); }
+  .btn:focus-visible, .other a:focus-visible { outline: 3px solid var(--pencil-yellow); outline-offset: 2px; }
+  .other { list-style: none; margin: 24px 0 0; padding: 16px 0 0; border-top: 2px dashed var(--paper-deep); display: grid; gap: 8px; font-size: 14px; color: var(--muted-ink); }
+  .other a { color: var(--notebook-blue); font-weight: 700; }
+</style>
+</head>
+<body>
+<main class="frame">
+  <div class="board">
+    <div class="card">
+      <span class="apple" aria-hidden="true">🍎</span>
+      <div class="kicker">The Substitute · 404</div>
+      <h1>This page isn’t on the timetable</h1>
+      <p>There’s nothing at this address. Room 204 is this way, and the class is waiting.</p>
+      <a class="btn" id="home" href="{{BASE}}">Back to the classroom ▸</a>
+      <ul class="other">
+        <li lang="es">Esta página no está en el horario. <a href="{{BASE}}">Volver al aula</a></li>
+        <li lang="fr">Cette page n’est pas à l’emploi du temps. <a href="{{BASE}}">Retour en classe</a></li>
+      </ul>
+    </div>
+  </div>
+</main>
+</body>
+</html>

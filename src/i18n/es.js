@@ -1,29 +1,21 @@
 // Spanish. Same keys as the English table in strings.js (a unit test checks they match).
 // Student names are the characters' names and stay as they are.
+import '../boot-strings.js';
+
+const BOOT = globalThis.SubstituteBootStrings;
+
 export default {
   common: {
     listSeparator: ', ',
     listAnd: ' y ',
+    percent: '{value}\u00a0%',
+    clock: '{hours}:{minutes}',
   },
   pronoun: {
     he: { possessive: 'su' },
     she: { possessive: 'su' },
   },
-  boot: {
-    loading: 'Preparando el aula…',
-    loadingDetail: 'Cargando la clase ({percent} %)',
-    loadingSlow: 'Está tardando más de lo normal. Con una conexión lenta puede tardar un minuto; seguirá intentándolo.',
-    noWebglTitle: 'Tu navegador no puede mostrar gráficos 3D',
-    noWebglBody: 'El Sustituto necesita WebGL, que está desactivado o no disponible en este navegador. Prueba una versión reciente de Chrome, Firefox, Edge o Safari y comprueba que la aceleración por hardware (aceleración gráfica) esté activada en los ajustes del navegador.',
-    fileTitle: 'Abre el juego desde un servidor web local',
-    fileBody: 'Los navegadores bloquean un juego abierto directamente desde un archivo, así que el aula no puede cargarse de esta forma. En la carpeta del juego, ejecuta el comando de abajo y abre http://localhost:8000 en el navegador.',
-    fileCommand: 'npm start',
-    loadFailTitle: 'No se pudo cargar el aula',
-    loadFailBody: 'Algunos archivos del juego no llegaron. Comprueba tu conexión e inténtalo de nuevo.',
-    retry: 'Reintentar',
-    crashTitle: 'Algo ha salido mal',
-    crashBody: 'El juego ha tenido un problema del que no puede recuperarse. Al recargar, la clase empieza de nuevo.',
-  },
+  boot: BOOT.es,
   board: {
     room: 'Aula 204',
     motto: '3.ª hora · Sé amable, rebobina',
@@ -105,6 +97,7 @@ export default {
     sound: 'Sonido',
     volume: 'Volumen',
     mute: 'Silenciar',
+    voices: 'Voces de los alumnos',
     language: 'Idioma',
     graphics: 'Gráficos',
     quality: {
@@ -307,6 +300,29 @@ export default {
     caught: '¡Pillado! Te giras justo a tiempo para pillar a {name} con las manos en la masa.',
     notEligible: '{name} no se está portando mal. Solo puedes disciplinar a quien sí lo hace.',
     detainedAlready: '{name} ya está en castigo.',
+  },
+  shout: {
+    active: {
+      notes: ['¡Pásala, pásala!', '¡No la leas, pásala!', 'Vale, esta es buena.'],
+      phone: ['Espera, tengo que contestar.', '¡Un segundo, es mi madre!', '¿Has visto esto?'],
+      plane: ['¡Allá va!', '¡Despejen la pista!', '¡Mira cómo vuela!'],
+      tip: ['¡Mira, sin manos!', '¡Apuesto a que llego más lejos!', '¡Tranqui, tranqui, lo tengo!'],
+      argue: ['¡Eso ni siquiera es verdad!', '¿Quién lo dice?', '¡Demuéstralo!'],
+      sleep: ['Cinco minutitos más…', 'Despiértame con el timbre.', 'Solo descanso los ojos.'],
+      snack: ['¿Qué? ¡Tengo hambre!', '¿Alguien quiere una patata?', 'No he desayunado, ¿vale?'],
+      spin: ['¡Yujuuu!', '¡Todo da vueltas!', '¡Más rápido, más rápido!'],
+    },
+    talk: ['Uf. Vale.', 'Vale, vale, qué pesado.', 'Lo que tú digas.'],
+    detention: ['¿Castigo? ¿En serio?', '¡Esto es injustísimo!', '¡Ni siquiera eres nuestro profe de verdad!'],
+    principal: ['¡Venga ya!', 'Qué rollo.', '¡Si no he hecho nada!'],
+    zap: ['¡Ay!', '¡Eh! ¡Eso duele!', '¡Au! ¿Qué ha sido eso?'],
+    caught: ['¡No he sido yo!', '¡Se me ha escapado!', '¡Apuntaba a la papelera!'],
+    hit: ['¡En el blanco!', '¡Te pillé!', '¡Ja! ¡No lo has visto venir!'],
+    warn: ['¡Cinco segundos más!', '¡Ya casi acabo!', '¡Un mensaje más!'],
+    calm: ['Vale…', 'Vale, perdón.', 'Sí, sí.'],
+    wrongStudent: ['Ese no es mi nombre.', '¡Te has equivocado!', '¿Tengo pinta de llamarme así?'],
+    delivered: ['¡Aquí!', '¡Soy yo!', '¡Presente!'],
+    nearlyLost: ['¡No aguanto más!', '¡Estoy a punto de estallar!', '¡Yo me largo!'],
   },
   students: {
     dixieNormous: {

@@ -7,11 +7,13 @@
   "scripts": {
     "start": "node scripts/serve.mjs",
     "build": "node scripts/build-site.mjs",
-    "preview": "node scripts/build-site.mjs && node scripts/serve.mjs 8080 --root _site --base /the-substitute-game/",
-    "test": "npm run lint && npm run test:unit && npm run test:e2e",
+    "preview": "node scripts/build-site.mjs --base /the-substitute-game/ && node scripts/serve.mjs 8080 --root _site --base /the-substitute-game/",
+    "test": "npm run lint && npm run test:coverage && npm run test:e2e",
     "test:unit": "node --test \"test/unit/**/*.test.js\"",
+    "test:coverage": "node --test --experimental-test-coverage --test-coverage-include=src/rules.js --test-coverage-lines=95 --test-coverage-branches=85 --test-coverage-functions=90 \"test/unit/**/*.test.js\"",
     "test:e2e": "playwright test",
-    "lint": "eslint . && node scripts/check-cycles.mjs && npm run typecheck",
+    "lint": "eslint . && node scripts/check-cycles.mjs && npm run typecheck && npm run deadcode",
+    "deadcode": "knip",
     "typecheck": "tsc -p tsconfig.json",
     "optimize-assets": "node scripts/optimize-assets.mjs",
     "vendor-three": "node scripts/vendor-three.mjs"
@@ -29,6 +31,7 @@
     "esbuild": "0.28.2",
     "eslint": "9.39.5",
     "globals": "17.12.0",
+    "knip": "6.38.0",
     "meshoptimizer": "0.25.0",
     "three": "0.186.0",
     "typescript": "5.9.3"

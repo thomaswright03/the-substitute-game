@@ -1,33 +1,39 @@
 // The player's settings on the start and pause screens, and the mute button in the HUD. Every
 // copy of a control shows the same value.
-import { audioPrefs, onAudioPrefsChange, setMuted, setVolume } from './audio.js';
+import { audioPrefs, onAudioPrefsChange, setMuted, setVoices, setVolume } from './audio.js';
 import { $, allInputs, allSelects } from './dom.js';
 import { LANGUAGES, currentLanguage, onLanguageChange, setLanguage, t } from './strings.js';
-import { DEFAULT_DIFFICULTY, DIFFICULTY } from './data.js';
+import { DEFAULT_DIFFICULTY, isDifficulty } from './data.js';
 import { QUALITY_SETTINGS, onQualityChange, qualityLevel, qualitySetting, setQualitySetting } from './quality.js';
 import { QUALITY_LEVELS } from './world.js';
 
 const DIFFICULTY_KEY = 'substitute.difficulty';
+/** @typedef {import('./data.js').Difficulty} Difficulty */
+/** @type {((value: Difficulty) => void)[]} */
 const difficultyListeners = [];
+/** @type {Difficulty | null} */
 let current = null;
 
 // The difficulty the next period is played at: the player's last choice, or Relaxed for a
 // first visit.
+/** @returns {Difficulty} */
 export function difficulty() {
   if (current) return current;
   try {
     const saved = localStorage.getItem(DIFFICULTY_KEY);
-    if (DIFFICULTY[saved]) return saved;
+    if (isDifficulty(saved)) return saved;
   } catch { /* storage blocked: use the default */ }
   return DEFAULT_DIFFICULTY;
 }
 
+/** @param {(value: Difficulty) => void} fn */
 export function onDifficultyChange(fn) {
   difficultyListeners.push(fn);
 }
 
+/** @param {string} value */
 function setDifficulty(value) {
-  if (!DIFFICULTY[value]) return;
+  if (!isDifficulty(value)) return;
   try {
     localStorage.setItem(DIFFICULTY_KEY, value);
   } catch { /* storage blocked: the choice lasts until the page is closed */ }
@@ -35,15 +41,21 @@ function setDifficulty(value) {
   for (const fn of difficultyListeners) fn(value);
 }
 
+/** @param {import('./audio.js').AudioPrefs} prefs */
 function renderSound(prefs) {
   allInputs('[data-sound]').forEach((box) => { box.checked = !prefs.muted; });
+  allInputs('[data-voices]').forEach((box) => {
+    box.checked = prefs.voices;
+    box.disabled = prefs.muted;
+  });
   allInputs('[data-volume]').forEach((range) => {
     range.value = String(Math.round(prefs.volume * 100));
     range.disabled = prefs.muted;
   });
   const mute = $('muteBtn');
   mute.setAttribute('aria-pressed', String(prefs.muted));
-  mute.querySelector('[data-sound-icon]').textContent = prefs.muted ? '🔇' : '🔊';
+  const icon = mute.querySelector('[data-sound-icon]');
+  if (icon) icon.textContent = prefs.muted ? '🔇' : '🔊';
 }
 
 const LANGUAGE_KEY = 'substitute.language';
@@ -52,15 +64,16 @@ const LANGUAGE_KEY = 'substitute.language';
 function initialLanguage() {
   try {
     const saved = localStorage.getItem(LANGUAGE_KEY);
-    if (LANGUAGES[saved]) return saved;
+    if (saved && Object.hasOwn(LANGUAGES, saved)) return saved;
   } catch { /* storage blocked: fall back to the browser's languages */ }
   for (const tag of navigator.languages || [navigator.language || 'en']) {
     const code = String(tag).slice(0, 2).toLowerCase();
-    if (LANGUAGES[code]) return code;
+    if (Object.hasOwn(LANGUAGES, code)) return code;
   }
   return 'en';
 }
 
+/** @param {string} code */
 function chooseLanguage(code) {
   try {
     localStorage.setItem(LANGUAGE_KEY, code);
@@ -68,6 +81,7 @@ function chooseLanguage(code) {
   setLanguage(code);
 }
 
+/** @param {string} code */
 function renderLanguage(code) {
   allSelects('[data-language]').forEach((select) => { select.value = code; });
 }
@@ -112,6 +126,9 @@ function renderQuality() {
 export function setupSettings() {
   allInputs('[data-sound]').forEach((box) => {
     box.addEventListener('change', () => setMuted(!box.checked));
+  });
+  allInputs('[data-voices]').forEach((box) => {
+    box.addEventListener('change', () => setVoices(box.checked));
   });
   allInputs('[data-volume]').forEach((range) => {
     range.addEventListener('input', () => setVolume(Number(range.value) / 100));

@@ -7,13 +7,19 @@ import { el } from './dom.js';
 import { S, frozen, name } from './session.js';
 import { project, world } from './world.js';
 import { player } from './player.js';
+import { characterData } from './characters.js';
 import { pushLog } from './log.js';
 import { emit } from './bus.js';
+import { speak } from './voice.js';
 
 const ANSWER_SECONDS = 9; // of play: a pause doesn't use them up
-let lastRollLine = null;
+/** @type {number} the roll-call line used last, so the next answer is a different one */
+let lastRollLine = -1;
 
-// Angle to a world point from where the teacher faces: 0 ahead, +PI/2 right, +-PI behind.
+/**
+ * Angle to a world point from where the teacher faces: 0 ahead, +PI/2 right, +-PI behind.
+ * @param {THREE.Vector3} worldPos
+ */
 function relativeDirection(worldPos) {
   const dx = worldPos.x - player.x, dz = worldPos.z - player.z;
   const f = dx * -Math.sin(player.yaw) + dz * -Math.cos(player.yaw);
@@ -21,14 +27,43 @@ function relativeDirection(worldPos) {
   return Math.atan2(r, f);
 }
 
-function directionWords(angle) {
+/**
+ * Where the voice came from, as a key of the `where` texts.
+ * @param {number} angle
+ */
+function directionKey(angle) {
   const a = Math.abs(angle) * 180 / Math.PI;
   const side = angle >= 0 ? 'Right' : 'Left';
-  if (a < 25) return t('where.ahead');
-  if (a < 70) return t('where.ahead' + side);
-  if (a < 110) return t('where.' + side.toLowerCase());
-  if (a < 155) return t('where.behind' + side);
-  return t('where.behind');
+  if (a < 25) return 'where.ahead';
+  if (a < 70) return 'where.ahead' + side;
+  if (a < 110) return 'where.' + side.toLowerCase();
+  if (a < 155) return 'where.behind' + side;
+  return 'where.behind';
+}
+
+/** The roll-call answers in the current language. */
+function rollCallLines() {
+  const table = lookup('rollCall.lines');
+  return Array.isArray(table) ? table.filter((line) => typeof line === 'string') : [];
+}
+
+/**
+ * Writes an answer's text in the current language: the line the student says (in the bubble)
+ * and the sentence the attendance panel shows.
+ * @param {import('./session.js').Speech} speech
+ */
+function writeSpeech(speech) {
+  const line = rollCallLines()[speech.line] || '';
+  speech.answer = t('attendance.answered', { name: name(speech.id), where: t(speech.where), line });
+  el.bubbleText.textContent = line;
+  // the bubble is measured again, the next frame it shows
+  delete speech.bw;
+  delete speech.bh;
+}
+
+// After a change of language: the answer on screen is written again in the new language.
+export function refreshSpeech() {
+  if (S.speech) writeSpeech(S.speech);
 }
 
 export function askRollCall() {
@@ -37,16 +72,21 @@ export function askRollCall() {
   emit('rulesChanged');
 }
 
+/** @param {string} id who answers */
 export function showRollCallAnswer(id) {
-  const lines = lookup('rollCall.lines') || [];
-  let line = lines[Math.floor(Math.random() * lines.length)] || '';
-  if (lines.length > 1 && line === lastRollLine) line = lines[(lines.indexOf(line) + 1) % lines.length];
+  const count = rollCallLines().length;
+  let line = Math.floor(Math.random() * count);
+  if (count > 1 && line === lastRollLine) line = (line + 1) % count;
   lastRollLine = line;
   const g = world.students[id];
-  const where = directionWords(relativeDirection(g.userData.headWorld || g.position));
-  S.speech = { id, until: S.game.elapsed + ANSWER_SECONDS, answer: t('attendance.answered', { name: name(id), where, line }) };
-  pushLog(S.speech.answer);
-  el.bubbleText.textContent = line;
+  const where = directionKey(relativeDirection(characterData(g).headWorld || g.position));
+  /** @type {import('./session.js').Speech} */
+  const speech = { id, until: S.game.elapsed + ANSWER_SECONDS, line, where, answer: '' };
+  writeSpeech(speech);
+  S.speech = speech;
+  pushLog(speech.answer);
+  // the answer matters most: nothing else a student says cuts it off
+  speak(id, rollCallLines()[line] || '', { priority: 3 });
 }
 
 export function clearSpeech() {
@@ -65,7 +105,7 @@ export function updateSpeech() {
     clearSpeech();
     return;
   }
-  const head = world.students[speech.id].userData.headWorld;
+  const head = characterData(world.students[speech.id]).headWorld;
   if (!head) return;
   const pos = project(bubbleAnchor.copy(head).setY(head.y + 0.3));
   const safe = freeArea();
@@ -75,25 +115,7 @@ export function updateSpeech() {
     el.dirArrow.hidden = true;
   } else if (pos.onScreen) {
     el.dirArrow.hidden = true;
-    el.speechBubble.hidden = false;
-    // the bubble's size only changes with its text: measure it once, the first frame it shows
-    if (!speech.bw) {
-      speech.bw = el.speechBubble.offsetWidth;
-      speech.bh = el.speechBubble.offsetHeight;
-    }
-    // keep the whole bubble on screen and below the HUD; the tail still points at the speaker
-    const bw = speech.bw, bh = speech.bh;
-    const x = Math.round(Math.max(safe.left + bw / 2, Math.min(safe.right - bw / 2, pos.x)));
-    const y = Math.round(Math.max(safe.top + bh, pos.y));
-    const tail = Math.round(Math.max(-(bw / 2 - 16), Math.min(bw / 2 - 16, pos.x - x)));
-    if (x !== speech.x || y !== speech.y || tail !== speech.tail) {
-      speech.x = x;
-      speech.y = y;
-      speech.tail = tail;
-      el.speechBubble.style.left = x + 'px';
-      el.speechBubble.style.top = y + 'px';
-      el.speechBubble.style.setProperty('--tail', tail + 'px');
-    }
+    placeBubble(el.speechBubble, speech, pos, safe);
   } else {
     el.speechBubble.hidden = true;
     // an arrow at the edge of the free play area, pointing toward the student
@@ -110,11 +132,41 @@ export function updateSpeech() {
   }
 }
 
+/**
+ * Shows a speech bubble over a point on screen, kept whole on screen and below the HUD, with its
+ * tail still pointing at the speaker. `state` remembers the bubble's size (measured once, the
+ * first frame it shows: it only changes with the text) and where it was last put.
+ * @param {HTMLElement} bubble
+ * @param {{bw?: number, bh?: number, x?: number, y?: number, tail?: number}} state
+ * @param {{x: number, y: number}} pos
+ * @param {{left: number, right: number, top: number}} safe
+ */
+export function placeBubble(bubble, state, pos, safe) {
+  bubble.hidden = false;
+  if (!state.bw || !state.bh) {
+    state.bw = bubble.offsetWidth;
+    state.bh = bubble.offsetHeight;
+  }
+  const bw = state.bw, bh = state.bh;
+  const x = Math.round(Math.max(safe.left + bw / 2, Math.min(safe.right - bw / 2, pos.x)));
+  const y = Math.round(Math.max(safe.top + bh, pos.y));
+  const tail = Math.round(Math.max(-(bw / 2 - 16), Math.min(bw / 2 - 16, pos.x - x)));
+  if (x !== state.x || y !== state.y || tail !== state.tail) {
+    state.x = x;
+    state.y = y;
+    state.tail = tail;
+    bubble.style.left = x + 'px';
+    bubble.style.top = y + 'px';
+    bubble.style.setProperty('--tail', tail + 'px');
+  }
+}
+
 // The part of the stage not covered by HUD panels (top band, attendance panel, seating chart,
 // log and buttons), in stage pixels. Floating hints are kept inside it. It is measured again
 // only when the stage or one of those panels changes size (including appearing or hiding).
 const free = { left: 0, right: 0, top: 0, bottom: 0 };
 let freeStale = true;
+/** @type {ResizeObserver | null} */
 let freeObserver = null;
 export function freeArea() {
   if (!freeObserver) {

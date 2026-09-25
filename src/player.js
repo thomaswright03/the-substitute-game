@@ -20,7 +20,9 @@ const START = { x: 0, z: TEACHER.startZ, yaw: 0, pitch: -0.05 };
 export const player = { ...START };
 
 // Held keys by physical position (KeyboardEvent.code, see keys.js), the on-screen stick, and the mouse's hover-look state (set by input.js).
+/** @type {Record<string, boolean>} */
 export const keys = {};
+/** @type {{active: boolean, id: number | null, x: number, y: number}} */
 export const joy = { active: false, id: null, x: 0, y: 0 };
 export const look = { pointerLocked: false, hoverInside: false, edgeX: 0, edgeY: 0 };
 
@@ -38,12 +40,18 @@ function clampPitch() {
   player.pitch = Math.max(-1.3, Math.min(1.3, player.pitch));
 }
 
+/**
+ * @param {number} dx pixels the pointer moved
+ * @param {number} dy
+ * @param {number} sens radians per pixel
+ */
 export function applyLookDelta(dx, dy, sens) {
   player.yaw -= dx * sens;
   player.pitch -= dy * sens;
   clampPitch();
 }
 
+/** @param {number} dt */
 function movePlayer(dt) {
   // edge assist: only while the cursor is actually inside the canvas
   if (!look.pointerLocked && look.hoverInside && !S.seatChartOpen) {
@@ -107,6 +115,7 @@ function movePlayer(dt) {
 // Advances walking and turning by `dt` seconds, in short steps so it is stable at any frame rate.
 // The frame loop passes the same elapsed time it gives the rules, so on a slow machine the
 // teacher covers as much ground per second of the period as on a fast one.
+/** @param {number} dt */
 export function stepPlayer(dt) {
   let left = dt;
   while (left > 1e-6) {
@@ -116,6 +125,7 @@ export function stepPlayer(dt) {
   }
 }
 
+/** @param {THREE.Camera} camera */
 export function syncCamera(camera) {
   camera.position.set(player.x, EYE_HEIGHT, player.z);
   camera.rotation.set(player.pitch, player.yaw, 0);

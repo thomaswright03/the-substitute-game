@@ -12,10 +12,12 @@ import { renderControlsLists, setTouch, setupInput } from './input.js';
 import { updateAim } from './aim.js';
 import { drainEvents, setupEvents } from './events.js';
 import {
-  buildTags, invalidateAttendancePanel, setupActionButtons, updateAttendancePanel, updateHud, updatePromptAndActions,
-  updateTags,
+  buildTags, invalidateAttendancePanel, invalidateHud, invalidateTags, setupActionButtons, updateAttendancePanel, updateHud,
+  updatePromptAndActions, updateTags,
 } from './hud.js';
-import { updateSpeech } from './rollcall.js';
+import { refreshSpeech, updateSpeech } from './rollcall.js';
+import { refreshShout, updateShout } from './shout.js';
+import { setupVoices } from './voice.js';
 import { renderSeatChart, setupSeating } from './seating.js';
 import { setupDiscipline } from './discipline.js';
 import { updateProjectile } from './effects.js';
@@ -42,8 +44,10 @@ function resize() {
   resizeRenderer(Math.max(1, el.stage.clientWidth), Math.max(1, el.stage.clientHeight));
 }
 
+/** @type {number | null} */
 let lastT = null;
 let stopped = false;
+/** @param {number} now */
 function frame(now) {
   if (stopped) return;
   requestAnimationFrame(frame);
@@ -59,6 +63,7 @@ function frame(now) {
   }
 }
 
+/** @param {number} now ms, the frame's time */
 function step(now) {
   const nowS = now / 1000;
   const realDt = lastT === null ? 0 : Math.min(MAX_FRAME_DT, nowS - lastT);
@@ -70,34 +75,38 @@ function step(now) {
   applyCameraOverride();
 
   if (TEST_MODE) testFault();
-  const game = S.game;
-  if (game) {
-    if (S.running && !frozen()) {
-      // the rules advance by real elapsed time, so the period lasts the same on any machine
-      R.tick(game, realDt, { facingBoard: facingBoard() });
-    }
-    drainEvents();
-    updatePrincipal(Math.min(realDt, CUTSCENE_MAX_DT));
-    // the students hold still while the game is paused or a menu is open over the class
-    updateStudents(S.paused || S.disciplineTarget !== null ? 0 : realDt);
-    updateAim();
-    updateProjectile();
-    updateTags();
-    updatePromptAndActions();
-    updateAttendancePanel();
-    updateSpeech();
-    updateCountdown();
+  if (S.running && !frozen()) {
+    // the rules advance by real elapsed time, so the period lasts the same on any machine
+    R.tick(S.game, realDt, { facingBoard: facingBoard() });
   }
+  drainEvents();
+  updatePrincipal(Math.min(realDt, CUTSCENE_MAX_DT));
+  // the students hold still while the game is paused or a menu is open over the class
+  updateStudents(S.paused || S.disciplineTarget !== null ? 0 : realDt);
+  updateAim();
+  updateProjectile();
+  updateTags();
+  updatePromptAndActions();
+  updateAttendancePanel();
+  updateSpeech();
+  updateShout();
+  updateCountdown();
   updateHud();
   render();
 }
 
 // Text drawn by code, redrawn when the language changes or the keyboard's key names become known
-// (the page's own text is redrawn by applyStaticStrings).
+// (the page's own text is redrawn by applyStaticStrings). The prompt under the crosshair follows
+// by itself (hud.js compares the language each frame); everything else drawn over the classroom
+// is written again here, and shows in the new language on the next frame.
 function refreshDrawnText() {
   renderControlsLists();
   refreshButtonLabels();
+  refreshSpeech();
+  refreshShout();
   invalidateAttendancePanel();
+  invalidateTags();
+  invalidateHud();
   renderSeatChart();
   showBest();
 }
@@ -112,6 +121,7 @@ async function init() {
   setTouch(window.matchMedia('(pointer: coarse)').matches);
   renderControlsLists();
   setupAudio();
+  setupVoices();
   setupSettings();
   if (boot.blocked) return;
   try {
