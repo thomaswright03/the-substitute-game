@@ -28,7 +28,7 @@ ATTRIBUTION FOR THE TWO CC BY MODELS
   "Suit" and "Worker" (Ultimate Modular Women Pack) by Quaternius
   (https://quaternius.com), obtained from poly.pizza (https://poly.pizza),
   licensed under Creative Commons Attribution (CC BY).
-  Used unmodified; see "Changes" below for how the game uses them at runtime.
+  Modified: re-packed for web delivery and posed in code; see "Changes" below.
   The licensor provides the material as-is, without warranties; see the
   disclaimer of warranties in the licence.
 
@@ -40,40 +40,39 @@ ATTRIBUTION FOR THE TWO CC BY MODELS
   TODO (owner): confirm the version on the poly.pizza listing and keep only the
   matching link.
 
-This attribution is also shown in the game itself: start screen or end screen,
-"Credits, licences & privacy".
-
 
 CHANGES
 -------
 
-The .glb files are stored exactly as downloaded. SHA-256 of each file as committed:
+Stored files. For web delivery the files were re-packed with scripts/optimize-assets.mjs:
+animation clips the game never plays were removed (only "Idle_Neutral" is kept, plus "Walk"
+for business-man.glb), and the geometry was meshopt-compressed (EXT_meshopt_compression)
+with normals, UVs and skin weights quantized. The original rig and mesh shapes are
+otherwise unchanged. SHA-256 of each file as committed:
 
-  82b81257c1e94cd9ee48cb1dcbe5ff506e81c9ce67cd0c5af542d8712dca546e  business-man.glb
-  fea7e71271203e7073f1a073fa1208de7402df276f87f80e149bf7589b5d46b4  casual-man.glb
-  a2212729826b718e59e698211ed3951c22459b48733b1ee6a24fac0abf74dca8  casual-woman.glb
-  0de1bcd789d409214cf82f66f61daeb53d2f7de6d914b23e7b3660bfb3dee61e  hoodie-man.glb
-  94afa8718093cc7f9e51cdc0b35f4432c1c2f1901177f98fbbbcb4c6fd79b163  punk-man.glb
-  77cbb6838bf207fc948848ddb389ea43d4bb30c52ec62c5a2fc84bbf35c88c52  punk-woman.glb
-  12aece21fecd08fb079d2fa390faa40c705e26ea8f779b5005b8bf6cbe501837  suit-woman.glb
-  9c28614f465b7dc105f908c20c22fc045f4b07caf8c5ef0e9f8049eceb6dd38d  worker-man.glb
-  078e459440ae30ce6aa186f5fc1a5db075f308387c34eec4ada8c8f538ae2646  worker-woman.glb
+  1716dc257ffcc02600344cb7027e9034e1c1ec058339ab2570eb492020894c31  business-man.glb
+  6c5f8269572bd3c4781c6cf320f43cda82729e2b7aff714ea3d8364ca3b98a11  casual-man.glb
+  4ef387ade518db6b59469fc0d53aab2417a0caac32fb00358ba02e45246e4b4d  casual-woman.glb
+  4eaf4f2851b86106b565d0e39cf794c7d0c662fbc2f01136472e86baf06b80f9  hoodie-man.glb
+  c86f0ab1f251b6b7f9028136149ab56847b39d6be22b22bd84c8e44fad022b0f  punk-man.glb
+  d368e21ce561a1eff5eb48581f9e250badd0f902175a610290345c49e22ef86f  punk-woman.glb
+  99fa8446eabf2171c4393972133fab72119af545d3e6239eb6260da7256af577  suit-woman.glb
+  3c9f8e8f2c35d63fa4e3d367fe71eb34842de1e63bca214106c13bcc3143d978  worker-man.glb
+  56c9cead6fd7e48d97554a6f61132d0f6bb2435a06492b76cb3c9e129acc2adb  worker-woman.glb
 
-At runtime (index.html) the game, without changing the files:
-  - freezes each model on its "Idle_Neutral" animation clip and bends the leg,
-    head and arm bones to pose it seated at a desk and to animate "tells";
+At runtime the game, without further changing the files:
+  - freezes each model on its "Idle_Neutral" animation clip and bends the leg, head and
+    arm bones to pose it seated at a desk and to animate "tells";
   - applies scale, rotation and position offsets to place it in the classroom;
   - adds simple props (phone, notes, paper plane, snack) as separate meshes;
-  - ONLY IF an optional file assets/face.glb is present locally (it is not
-    shipped in this repository), hides the model's face-plate meshes (materials
-    "Skin", "Skin_Darker", "Eyebrows", "Eye" in the head group) and attaches a
-    separate expressive head in their place.
+  - gives each head an expressive face (src/face.js): blend shapes added to the head's own
+    eye and brow meshes, and a generated mouth. No third-party face model is used.
 
 
-WHAT THE FILES THEMSELVES SAY
------------------------------
+WHAT THE ORIGINAL FILES SAID
+----------------------------
 
-Checked on 2026-09-24 by reading each file's glTF JSON header: every file has
-asset.generator "FBX2glTF v0.9.7" and asset.version "2.0", and no copyright,
-author, licence or "extras" metadata. The files therefore do not name their
-creator or licence; the information above rests on the download record.
+Checked on 2026-09-24 by reading each as-downloaded file's glTF JSON header: every file had
+asset.generator "FBX2glTF v0.9.7" and asset.version "2.0", and no copyright, author,
+licence or "extras" metadata. The files therefore did not name their creator or licence;
+the information above rests on the download record.

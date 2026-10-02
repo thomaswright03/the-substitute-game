@@ -1,0 +1,21 @@
+{
+  // Type-checks the game's JavaScript as it is (no build, nothing emitted): `npm run typecheck`,
+  // which `npm run lint` runs. Types come from the JSDoc in src/ and from @types/three.
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "es2022",
+    "moduleResolution": "bundler",
+    "lib": ["es2023", "dom", "dom.iterable"],
+    "types": [],
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    // every strict check, null checks and no implicit any included
+    "strict": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["src/**/*.js", "types/**/*.d.ts"]
+}
