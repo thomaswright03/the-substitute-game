@@ -45,18 +45,18 @@ test('the Voice studio lists every line, for each student and for the whole clas
   await expect(page.locator('#studioTabs .studioTab')).toHaveCount(9);
   await expect(tab(page, 'Whole class')).toHaveAttribute('aria-selected', 'false');
   await expect(tab(page, 'Dixie Normous')).toHaveAttribute('aria-selected', 'true');
-  // the 8 ways of acting up have 3 lines each, so a student has their own 3, the 11 shared kinds, and the roll call
-  await expect(page.locator('#studioLines .lineRow')).toHaveCount(44);
+  // the 8 ways of acting up have 3 lines each, so a student has their own 3, the 11 shared kinds, and the roll call (and the note-passer, whose notes get read out, 3 more)
+  await expect(page.locator('#studioLines .lineRow')).toHaveCount(47);
   await expect(row(page, 'active.notes.0')).toContainText('Pass it on, pass it on!');
   await expect(row(page, 'active.notes.0')).toContainText('Placeholder voice');
-  await expect(page.locator('#studioCount')).toHaveText('0 of 44 lines recorded');
+  await expect(page.locator('#studioCount')).toHaveText('0 of 47 lines recorded');
 
   await tab(page, 'Moe Lester').click();
   await expect(row(page, 'active.plane.0')).toContainText('Incoming!');
   await expect(row(page, 'active.notes.0')).toHaveCount(0);
 
   await tab(page, 'Whole class').click();
-  await expect(page.locator('#studioLines .lineRow')).toHaveCount(65);
+  await expect(page.locator('#studioLines .lineRow')).toHaveCount(68);
   await expect(row(page, 'active.spin.2')).toContainText('Faster, faster!');
 });
 
@@ -91,16 +91,16 @@ test('replacing and removing a recording', async ({ page }) => {
   await expect(row(page, 'calm.0')).not.toContainText('first.wav');
   await row(page, 'calm.0').locator('[data-tool="remove"]').click();
   await expect(row(page, 'calm.0')).toContainText('Placeholder voice');
-  await expect(page.locator('#studioCount')).toHaveText('0 of 44 lines recorded');
+  await expect(page.locator('#studioCount')).toHaveText('0 of 47 lines recorded');
 
   // all of a student's recordings can go at once, after a second press
   await upload(page, 'calm.0', sound('a.wav'));
   await upload(page, 'calm.1', sound('b.wav'));
-  await expect(page.locator('#studioCount')).toHaveText('2 of 44 lines recorded');
+  await expect(page.locator('#studioCount')).toHaveText('2 of 47 lines recorded');
   await page.locator('#studioClear').click();
   await expect(page.locator('#studioClear')).toContainText('Tap again');
   await page.locator('#studioClear').click();
-  await expect(page.locator('#studioCount')).toHaveText('0 of 44 lines recorded');
+  await expect(page.locator('#studioCount')).toHaveText('0 of 47 lines recorded');
   await expect(page.locator('#studioClear')).toBeDisabled();
 });
 
@@ -112,7 +112,7 @@ test('a file that isn’t a sound, or is too big, is turned away and nothing is 
   await expect(row(page, 'zap.0')).toContainText('Placeholder voice');
   await upload(page, 'zap.1', { name: 'huge.wav', mimeType: 'audio/wav', buffer: Buffer.alloc(6 * 1024 * 1024 + 1) });
   await expect(row(page, 'zap.1').locator('.lineError')).toContainText('too big');
-  await expect(page.locator('#studioCount')).toHaveText('0 of 44 lines recorded');
+  await expect(page.locator('#studioCount')).toHaveText('0 of 47 lines recorded');
 });
 
 test('a line with a recording plays it, and the speech voice stays quiet', async ({ page }) => {
