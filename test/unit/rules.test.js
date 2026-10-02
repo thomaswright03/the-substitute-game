@@ -275,7 +275,7 @@ describe('discipline (F)', () => {
   test('is refused for a student who is not acting up', () => {
     const game = newGame();
     assert.deepEqual(disciplineEligibility(game, 'dixieNormous'), { ok: false, reason: 'calm' });
-    for (const option of ['talk', 'detention', 'principal', 'zap']) {
+    for (const option of ['talk', 'detention', 'principal', 'zap', 'read']) {
       assert.equal(discipline(game, 'dixieNormous', option), false, option);
     }
     assert.equal(game.students.dixieNormous.detained, false);
@@ -294,6 +294,20 @@ describe('discipline (F)', () => {
     assert.equal(game.students.mikeOxlong.escalation, 80 - TUNING.talkCalm);
     assert.equal(game.students.mikeOxlong.active, true);
     assert.equal(game.counters.talks, 1);
+  });
+
+  test('reading a note aloud is only for a note-passer: it settles them and the class howls', () => {
+    const game = newGame();
+    activateNow(game, 'mikeOxlong', 80);
+    assert.equal(disciplineMenu(game, 'mikeOxlong').read.available, false);
+    assert.equal(discipline(game, 'mikeOxlong', 'read'), false);
+    activateNow(game, 'dixieNormous', 60);
+    activateNow(game, 'steve', 20);
+    assert.equal(disciplineMenu(game, 'dixieNormous').read.available, true);
+    assert.equal(discipline(game, 'dixieNormous', 'read'), true);
+    assert.equal(game.students.dixieNormous.active, false);
+    assert.equal(game.students.steve.escalation, 20 + TUNING.readClassBump);
+    assert.equal(game.events.some((e) => e.type === 'readNote' && e.id === 'dixieNormous'), true);
   });
 
   test('detention silences the student, riles the class, and is limited per period', () => {
@@ -370,8 +384,9 @@ describe('discipline (F)', () => {
       detention: TUNING.detentionsPerPeriod < STUDENTS.length && TUNING.detentionClassBump > 0,
       principal: TUNING.principalCallsPerPeriod === 1 && TUNING.report.principal > 0,
       zap: TUNING.zapCooldown > 0 && TUNING.zapCommotionEscalation > 0,
+      read: TUNING.readClassBump > 0, // and only a note-passer has a note
     };
-    assert.deepEqual(menuCosts, { talk: true, detention: true, principal: true, zap: true });
+    assert.deepEqual(menuCosts, { talk: true, detention: true, principal: true, zap: true, read: true });
   });
 });
 

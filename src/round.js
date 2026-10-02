@@ -10,7 +10,7 @@ import { closeDialog, openDialog } from './dialogs.js';
 import { clearLog, pushLog } from './log.js';
 import { invalidateAttendancePanel } from './hud.js';
 import { clearSpeech } from './rollcall.js';
-import { clearShout } from './shout.js';
+import { clearNote, clearShout } from './shout.js';
 import { silenceVoices } from './voice.js';
 import { closeSeatChartForRoundEnd } from './seating.js';
 import { clearProjectile } from './effects.js';
@@ -106,6 +106,7 @@ function resetVisuals() {
   clearProjectile();
   clearSpeech();
   clearShout();
+  clearNote();
   silenceVoices();
   clearLog();
   closeSeatChartForRoundEnd();

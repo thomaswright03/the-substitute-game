@@ -1,5 +1,5 @@
 // Turns the rules' events into log lines, poses and effects.
-import { t } from './strings.js';
+import { lookup, t } from './strings.js';
 import { S, name } from './session.js';
 import { flashPose, stereoPan, world } from './world.js';
 import { pushLog } from './log.js';
@@ -11,7 +11,7 @@ import { startPrincipal } from './principal.js';
 import { endRound } from './round.js';
 import { play } from './audio.js';
 import { on } from './bus.js';
-import { studentReacts } from './shout.js';
+import { readNoteAloud, studentReacts } from './shout.js';
 import { STUDENTS } from './data.js';
 
 /** @type {Record<string, string>} how each student acts up, for what they say when they start */
@@ -78,6 +78,13 @@ function handleEvent(e) {
       zapVisual(e.id);
       if (e.setOffId) pushLog(t('log.zapSetOff', { name: name(e.setOffId) }));
       break;
+    case 'readNote': {
+      pushLog(t('log.readNote', { name: n }));
+      const texts = lookup('note.texts');
+      const list = Array.isArray(texts) ? texts.filter((x) => typeof x === 'string') : [];
+      if (list.length) readNoteAloud(e.id, list[Math.floor(Math.random() * list.length)]);
+      break;
+    }
     case 'swap': onSwap(e); break;
     case 'throwWindup':
       play('windup', { pan: stereoPan(world.students[e.id].position) });

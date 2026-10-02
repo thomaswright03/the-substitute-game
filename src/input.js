@@ -143,7 +143,7 @@ function setupJoystick() {
 /* ---------------- keyboard ---------------- */
 
 /** @type {Record<number, import('./rules.js').DisciplineOption>} */
-const MENU_OPTIONS = { 1: 'talk', 2: 'detention', 3: 'principal', 4: 'zap' };
+const MENU_OPTIONS = { 1: 'talk', 2: 'detention', 3: 'principal', 4: 'zap', 5: 'read' };
 
 /** @param {KeyboardEvent} e */
 function onKeyDown(e) {

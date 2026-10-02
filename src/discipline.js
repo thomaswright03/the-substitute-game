@@ -13,11 +13,11 @@ import { emit } from './bus.js';
 /** @type {Record<DisciplineOption, HTMLButtonElement>} */
 const buttons = {
   talk: $('discTalk', HTMLButtonElement), detention: $('discDetention', HTMLButtonElement),
-  principal: $('discPrincipal', HTMLButtonElement), zap: $('discZap', HTMLButtonElement),
+  principal: $('discPrincipal', HTMLButtonElement), zap: $('discZap', HTMLButtonElement), read: $('discRead', HTMLButtonElement),
 };
 /** @type {Record<DisciplineOption, HTMLElement>} */
 const notes = {
-  talk: $('discTalkNote'), detention: $('discDetentionNote'), principal: $('discPrincipalNote'), zap: $('discZapNote'),
+  talk: $('discTalkNote'), detention: $('discDetentionNote'), principal: $('discPrincipalNote'), zap: $('discZapNote'), read: $('discReadNote'),
 };
 
 /** @param {string} id */
@@ -44,6 +44,9 @@ export function openDiscipline(id) {
   notes.zap.textContent = menu.zap.cooldown > 0
     ? t('discipline.zapCooling', { seconds: Math.ceil(menu.zap.cooldown) })
     : t('discipline.zapNote', { cooldown: tu.zapCooldown });
+  notes.read.textContent = t('discipline.readNote', { bump: tu.readClassBump });
+  // only a student who is passing notes has a note to read
+  buttons.read.hidden = R.studentConfig(game, id)?.type !== 'notes';
   for (const option of R.DISCIPLINE_OPTIONS) buttons[option].disabled = !menu[option].available;
   releaseLook();
   stopHoverLook();

@@ -121,6 +121,7 @@ describe('which recording a line uses', () => {
   test('the count says how many of a student’s own lines are recorded', () => {
     const { own, total } = recordedCount('en', 'steve');
     assert.equal(total, 44);
+    assert.equal(recordedCount('en', 'dixieNormous').total, total + 3, 'the note-passer also has the lines for her note being read');
     assert.ok(own >= 1);
     assert.equal(clipKey('en', 'steve', 'talk.0'), 'en/steve/talk.0');
   });

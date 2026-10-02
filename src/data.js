@@ -168,6 +168,8 @@ export const TUNING = {
   principalClassCalm: 20,
   zapCooldown: 20,
   zapCommotionEscalation: 15,
+  // Reading a caught note-passer's note aloud: it settles the writer, but the class howls.
+  readClassBump: 8,
 
   // Thrown objects: only while the teacher faces the board.
   throwChanceAttendance: 0.18,

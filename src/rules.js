@@ -10,9 +10,9 @@ import { DIFFICULTY, STUDENTS, TUNING, isDifficulty } from './data.js';
 /** @typedef {import('./data.js').Tuning} Tuning */
 /** @typedef {import('./data.js').Difficulty} Difficulty */
 
-/** @typedef {'talk' | 'detention' | 'principal' | 'zap'} DisciplineOption */
+/** @typedef {'talk' | 'detention' | 'principal' | 'zap' | 'read'} DisciplineOption */
 /** @type {readonly DisciplineOption[]} */
-export const DISCIPLINE_OPTIONS = ['talk', 'detention', 'principal', 'zap'];
+export const DISCIPLINE_OPTIONS = ['talk', 'detention', 'principal', 'zap', 'read'];
 
 /**
  * @typedef {object} StudentState
@@ -52,6 +52,7 @@ export const DISCIPLINE_OPTIONS = ['talk', 'detention', 'principal', 'zap'];
  *   | {type: 'talk', id: string, stillActive: boolean}
  *   | {type: 'detention', id: string, left: number}
  *   | {type: 'zap', id: string, setOffId: string | null}
+ *   | {type: 'readNote', id: string}
  *   | {type: 'swap', a: string, b: string, separated: string[][], together: string[][]}
  *   | {type: 'hit', id: string, first: boolean}
  *   | {type: 'over', outcome: Outcome}} RuleEvent
@@ -576,6 +577,8 @@ export function disciplineMenu(game, id) {
     detention: { available: eligible && detentionsLeft > 0, left: detentionsLeft },
     principal: { available: eligible && principalLeft > 0, left: principalLeft },
     zap: { available: eligible && zapIn === 0, cooldown: zapIn },
+    // only a student who is passing notes has a note to read
+    read: { available: eligible && studentConfig(game, id)?.type === 'notes' },
   };
 }
 
@@ -611,6 +614,11 @@ export function discipline(game, id, option) {
       emit(game, { type: 'principal', id });
       bumpOthers(game, id, -t.principalClassCalm);
       resolveAttendanceForRemoved(game, id);
+      break;
+    case 'read':
+      calm(game, id);
+      emit(game, { type: 'readNote', id });
+      bumpOthers(game, id, t.readClassBump);
       break;
     case 'zap': {
       game.counters.zaps++;

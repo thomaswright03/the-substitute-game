@@ -32,6 +32,7 @@ export const HELD_KEYS = new Set([
 /** @type {Readonly<Record<string, number>>} */
 export const DIGITS = {
   Digit1: 1, Digit2: 2, Digit3: 3, Digit4: 4, Numpad1: 1, Numpad2: 2, Numpad3: 3, Numpad4: 4,
+  Digit5: 5, Numpad5: 5,
 };
 
 // Without KeyboardEvent.code (some on-screen keyboards), a letter stands for its US position.
@@ -40,7 +41,7 @@ export function eventCode(e) {
   if (e.code) return e.code;
   const k = String(e.key || '');
   if (/^[a-z]$/i.test(k)) return 'Key' + k.toUpperCase();
-  if (/^[1-4]$/.test(k)) return 'Digit' + k;
+  if (/^[1-5]$/.test(k)) return 'Digit' + k;
   return k;
 }
 

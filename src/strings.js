@@ -282,8 +282,19 @@ const EN = {
     zap: 'Zap with lightning',
     zapNote: 'Instant calm, but the commotion sets another student off. {cooldown}s cooldown.',
     zapCooling: 'Recharging: ready in {seconds}s.',
+    read: 'Read the note to the class',
+    readNote: 'Settles them for good, but the class howls (+{bump}% to others acting up). Free.',
     cancel: 'Never mind (Esc)',
     cancelTouch: 'Never mind',
+  },
+  // the notes a caught note-passer wrote, read out to the class (any of them, at random)
+  note: {
+    title: 'The note says',
+    texts: [
+      'Dear Ben, meet me by the vending machine at lunch. Don’t tell anyone. Love, D.',
+      'Roses are red, violets are blue, the sub has a mullet, and so would you. Pass it on.',
+      'Ben, I think the sub’s coat is actually a rug. Write back. Do NOT show Mike.',
+    ],
   },
   seating: {
     title: 'Seating chart',
@@ -343,6 +354,7 @@ const EN = {
       detention: 'When given detention',
       principal: 'When the principal is called',
       zap: 'When zapped',
+      read: 'After you read their note',
       caught: 'When caught throwing',
       hit: 'After hitting you',
       wrongStudent: 'When handed the wrong card',
@@ -375,6 +387,7 @@ const EN = {
     principalNoShow: 'The principal is held up in the office, so {name} walks down there alone.',
     zap: 'You zap {name} with a bolt of lightning. Attitude: adjusted.',
     zapSetOff: 'The commotion sets {name} off!',
+    readNote: 'You unfold {name}’s note and read it out. {name} turns beet red, and the class howls.',
     throwWindup: '{name} winds up while your back is turned…',
     throwCancelled: '{name} thinks better of it.',
     hit: 'Thwack! {name} hits you in the back of the head. The class laughs: {name} and everyone acting up get rowdier.',
@@ -399,6 +412,7 @@ const EN = {
     detention: ['Detention? Seriously?', 'This is so unfair!', 'You’re not even our real teacher!'],
     principal: ['Oh, come on!', 'This is so lame.', 'I didn’t even do anything!'],
     zap: ['Ow!', 'Hey! That hurt!', 'Ouch! What was that?'],
+    read: ['Noooo! Please stop!', 'That was private!', 'Why would you read that?!'],
     caught: ['It wasn’t me!', 'It slipped!', 'I was aiming at the bin!'],
     hit: ['Bullseye!', 'Got you!', 'Ha! Didn’t see that coming!'],
     warn: ['Five more seconds!', 'I’m almost done!', 'Just one more text!'],

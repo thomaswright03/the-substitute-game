@@ -13,6 +13,7 @@ import { speak, voicePitch } from './voice.js';
 import { slotOf } from './clips.js';
 
 const SHOUT_SECONDS = 3.5; // of play
+const NOTE_SECONDS = 8; // a note read to the class stays up this long, in play time
 // a newer, less important line doesn't replace one this young
 const PROTECT_SECONDS = 1.6;
 
@@ -28,6 +29,7 @@ const REACTIONS = {
   detention: { sounds: ['groan'], gap: 0.8, priority: 2, yell: true },
   principal: { sounds: ['sigh'], gap: 0.9, priority: 2 },
   zap: { sounds: ['yelp'], gap: 0.4, priority: 2, yell: true },
+  read: { sounds: ['gasp'], gap: 0.3, priority: 2, yell: true },
   caught: { sounds: ['gasp'], gap: 0.3, priority: 2 },
   hit: { sounds: ['laugh'], gap: 0.6, priority: 2, yell: true },
   warn: { sounds: ['grunt'], gap: 0.35, priority: 2 },
@@ -108,9 +110,33 @@ export function studentReacts(id, kind, behaviour) {
   else say();
 }
 
+/** @type {number | null} game time the note card on show was put up */
+let noteAt = null;
+
+/**
+ * Puts a note a caught student wrote up for everyone to read, and reads it out in the teacher's
+ * voice. The writer's mortified reaction follows once the reading is over.
+ * @param {string} id who wrote it
+ * @param {string} text
+ */
+export function readNoteAloud(id, text) {
+  el.noteText.textContent = text;
+  el.noteCard.hidden = false;
+  noteAt = S.game.elapsed;
+  speak('teacher', text, { priority: 2, placeholder: true });
+  // roughly how long the reading takes, with a beat to let the class react
+  const wait = Math.min(5.5, 1.5 + text.length * 0.055);
+  setTimeout(() => { if (noteAt !== null && S.running && !S.paused) studentReacts(id, 'read'); }, wait * 1000);
+}
+
 export function clearShout() {
   shout = null;
   el.shoutBubble.hidden = true;
+}
+
+export function clearNote() {
+  noteAt = null;
+  el.noteCard.hidden = true;
 }
 
 // After a change of language: the line on show is written again in the new language.
@@ -126,6 +152,7 @@ export function currentShout() {
 // the voice, and the log, say who it was.
 const anchor = new THREE.Vector3();
 export function updateShout() {
+  if (noteAt !== null && (!S.running || S.game.elapsed - noteAt > NOTE_SECONDS)) clearNote();
   if (!shout) return;
   if (!S.running || S.game.elapsed - shout.at > SHOUT_SECONDS) {
     clearShout();

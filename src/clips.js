@@ -26,7 +26,7 @@ const MANIFEST_URL = 'assets/voices/manifest.json';
  * line a student blurts out when they start acting up (it depends on how they act up).
  */
 export const SITUATIONS = [
-  'active', 'warn', 'calm', 'talk', 'detention', 'principal', 'zap', 'caught', 'hit',
+  'active', 'warn', 'calm', 'talk', 'detention', 'principal', 'zap', 'read', 'caught', 'hit',
   'wrongStudent', 'delivered', 'nearlyLost', 'rollcall',
 ];
 
@@ -127,6 +127,8 @@ export function lineCatalogue(who) {
   /** @type {{situation: string, behaviour: string | null, lines: LineInfo[]}[]} */
   const groups = [];
   for (const situation of SITUATIONS) {
+    // only a note-passer has a note to be read out
+    if (situation === 'read' && own && own.type !== 'notes') continue;
     if (situation !== 'active') {
       groups.push({ situation, behaviour: null, lines: linesOf(situation, null) });
       continue;

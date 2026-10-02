@@ -96,7 +96,7 @@
 
 /* Sizes are multiples of --px. They are declared again on each HUD layer so that there they
    follow the HUD's larger --px; a custom property takes its value where it is declared. */
-:root, .hud, .studentLayer, .topStack, .crosshair, .prompt, .threatCue, .speechBubble, .dirArrow, .bottomBar, .overlay {
+:root, .hud, .studentLayer, .topStack, .crosshair, .prompt, .threatCue, .speechBubble, .noteCard, .dirArrow, .bottomBar, .overlay {
   /* type scale: five steps, nothing below 12px (plus --fs-6 and --fs-7 for headings, above) */
   --fs-1: calc(12 * var(--px));
   --fs-2: calc(14 * var(--px));
@@ -126,7 +126,7 @@
 
 /* The HUD was laid out for a stage about 1100px wide (a 1280x720 window). On wider stages it
    grows in proportion, up to twice its size; on narrower ones, phones included, it keeps it. */
-.hud, .studentLayer, .topStack, .crosshair, .prompt, .threatCue, .speechBubble, .dirArrow, .bottomBar, .overlay {
+.hud, .studentLayer, .topStack, .crosshair, .prompt, .threatCue, .speechBubble, .noteCard, .dirArrow, .bottomBar, .overlay {
   --px: clamp(1px, 100cqw / 1100, 2px);
 }
 
@@ -479,6 +479,18 @@ select:hover { border-color: color-mix(in srgb, var(--chalk) 45%, transparent); 
   animation: popIn 0.22s var(--ease);
 }
 @keyframes popIn { from { opacity: 0; scale: 0.85; } }
+/* a caught student's note, unfolded for the class to read */
+.noteCard {
+  position: absolute; left: 50%; top: 26%; z-index: 6; width: min(86%, calc(340 * var(--px))); pointer-events: none;
+  transform: translateX(-50%) rotate(-1.5deg); padding: var(--space-7) var(--space-8);
+  background: var(--white); color: var(--ink); border-radius: calc(4 * var(--px));
+  background-image: repeating-linear-gradient(transparent 0 calc(23 * var(--px)), color-mix(in srgb, var(--ink) 14%, transparent) calc(23 * var(--px)) calc(24 * var(--px)));
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--shadow) 50%, transparent);
+  animation: noteIn 0.35s var(--ease);
+}
+@keyframes noteIn { from { opacity: 0; transform: translateX(-50%) translateY(calc(-14 * var(--px))) rotate(-6deg); } }
+.noteCard .noteKicker { font-family: var(--font-body); font-weight: 800; font-size: var(--fs-1); letter-spacing: 0.08em; text-transform: uppercase; color: var(--marker-red); margin-bottom: var(--space-3); }
+.noteCard p { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: var(--fs-3); line-height: calc(24 * var(--px)); text-wrap: pretty; }
 .speechBubble .bubbleText::after {
   content: ''; position: absolute; left: calc(50% + var(--tail, 0px)); top: 100%; transform: translateX(-50%);
   border: calc(7 * var(--px)) solid transparent; border-top-color: var(--white);
@@ -857,6 +869,7 @@ body.touch .log div:nth-last-child(n+3) { display: none; }
 .discOpt[data-option="detention"]::before { content: '📝'; }
 .discOpt[data-option="principal"]::before { content: '🚪'; }
 .discOpt[data-option="zap"]::before { content: '⚡'; }
+.discOpt[data-option="read"]::before { content: '💌'; }
 .discOpt:hover:not([disabled]) { background: color-mix(in srgb, var(--chalk) 14%, transparent); transform: translateY(-1px); box-shadow: inset 0 0 0 2px var(--pencil-yellow); }
 .discOpt:active:not([disabled]) { transform: scale(0.98); }
 .discOpt .key {
