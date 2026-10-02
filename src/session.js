@@ -28,7 +28,7 @@ import { createGame } from './rules.js';
  * @property {number} startZ
  */
 
-/** @typedef {{mesh: import('three').Mesh, from: import('three').Vector3}} Projectile */
+/** @typedef {{mesh: import('three').Object3D, from: import('three').Vector3}} Projectile */
 
 export const S = {
   // the current round (on the start screen, the fresh one the next period starts from)

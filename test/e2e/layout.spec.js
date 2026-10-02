@@ -66,7 +66,7 @@ for (const [w, h] of [[800, 500], [1024, 640], [1280, 800], [1440, 900], [375, 6
     // a throw that stays in the air while the page is measured
     await hooks(page, (s) => {
       s.game.tuning.throwFlight = 600;
-      s.game.throw = { id: 'dixieNormous', phase: 'windup', t: 0 };
+      s.game.throw = { id: 'dixieNormous', phase: 'windup', t: 0, item: s.game.kit[0] };
     });
     const cue = page.locator('#threatCue');
     await expect(cue).toBeVisible();

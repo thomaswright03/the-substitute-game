@@ -65,7 +65,7 @@ const EN = {
       },
       {
         lead: 'Watch your back.',
-        body: 'Face the board and someone may throw something: listen for the wind-up. A hit makes the thrower and the rest of the class rowdier. Turn around in time and you catch them.',
+        body: 'Face the board and someone may throw something off their desk: listen for the wind-up. A hit makes the thrower and the rest of the class rowdier, and nobody tells you who it was. Turn around, see what landed, then find the desk missing one. Turn around in time and you catch them.',
       },
       {
         lead: 'Split up friends.',
@@ -288,6 +288,15 @@ const EN = {
     cancelTouch: 'Never mind',
   },
   // the notes a caught note-passer wrote, read out to the class (any of them, at random)
+  // what students keep on their desks (and throw), with the article, for "On the floor: an apple"
+  items: {
+    eraser: 'an eraser',
+    pencil: 'a pencil',
+    paperBall: 'a paper ball',
+    apple: 'an apple',
+    marker: 'a marker',
+    ruler: 'a ruler',
+  },
   note: {
     title: 'The note says',
     texts: [
@@ -388,11 +397,11 @@ const EN = {
     zap: 'You zap {name} with a bolt of lightning. Attitude: adjusted.',
     zapSetOff: 'The commotion sets {name} off!',
     readNote: 'You unfold {name}’s note and read it out. {name} turns beet red, and the class howls.',
-    throwWindup: '{name} winds up while your back is turned…',
-    throwCancelled: '{name} thinks better of it.',
-    hit: 'Thwack! {name} hits you in the back of the head. The class laughs: {name} and everyone acting up get rowdier.',
-    hitFirst: 'Getting hit costs you: the thrower escalates and the whole class gets bolder. Turn around when you hear a wind-up.',
-    caught: 'Caught! You turn just in time to catch {name} red-handed.',
+    throwWindup: 'You hear someone winding up behind you…',
+    throwCancelled: 'Whoever it was thinks better of it.',
+    hit: 'Thwack! Something hits you in the back of the head and the class laughs. On the floor: {item}. Whose desk is missing one?',
+    hitFirst: 'Getting hit costs you: the thrower escalates and the whole class gets bolder. Turn around, see what landed, then look over the desks for the one missing it.',
+    caught: 'Caught! You turn just in time to catch {name} red-handed, and confiscate {item}.',
     notEligible: '{name} isn’t acting up. You can only discipline a student who is.',
     detainedAlready: '{name} is already in detention.',
   },

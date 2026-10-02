@@ -13,7 +13,7 @@ import { clearSpeech } from './rollcall.js';
 import { clearNote, clearShout } from './shout.js';
 import { silenceVoices } from './voice.js';
 import { closeSeatChartForRoundEnd } from './seating.js';
-import { clearProjectile } from './effects.js';
+import { clearFloor, clearProjectile } from './effects.js';
 import { releaseLook, requestLook, stopHoverLook } from './pointer.js';
 import { on } from './bus.js';
 import { play } from './audio.js';
@@ -104,6 +104,7 @@ export function setPaused(p) {
 function resetVisuals() {
   resetStudentVisuals();
   clearProjectile();
+  clearFloor();
   clearSpeech();
   clearShout();
   clearNote();

@@ -451,7 +451,7 @@ describe('seating', () => {
 
 describe('thrown objects', () => {
   function forceThrow(game, id) {
-    game.throw = { id, phase: 'windup', t: 0 };
+    game.throw = { id, phase: 'windup', t: 0, item: game.students[id].items[0] };
   }
 
   test('a hit riles the thrower and the rest of the class', () => {
@@ -476,6 +476,50 @@ describe('thrown objects', () => {
     assert.equal(game.counters.hits, 0);
     assert.equal(eventsOf(game, 'caught')[0].id, 'dixieNormous');
     assert.equal(disciplineEligibility(game, 'dixieNormous').ok, true);
+  });
+
+  test('every desk starts with the same three things, and a thrown one leaves its thrower’s desk', () => {
+    const game = newGame();
+    noSpawns(game);
+    assert.equal(game.kit.length, 3);
+    assert.equal(new Set(game.kit).size, 3);
+    for (const s of STUDENTS) assert.deepEqual(game.students[s.id].items, game.kit);
+    forceThrow(game, 'dixieNormous');
+    const thrown = game.throw.item;
+    run(game, TUNING.throwWindup + TUNING.throwFlight + 0.05, { facingBoard: true });
+    assert.equal(game.students.dixieNormous.items.length, 2);
+    assert.equal(game.students.dixieNormous.items.includes(thrown), false);
+    assert.equal(game.students.steve.items.length, 3);
+    assert.deepEqual(game.floor, [{ id: 'dixieNormous', item: thrown }]);
+    assert.equal(eventsOf(game, 'hit')[0].item, thrown);
+  });
+
+  test('a hit does not announce who threw it', () => {
+    const game = newGame();
+    noSpawns(game);
+    forceThrow(game, 'dixieNormous');
+    run(game, TUNING.throwWindup + TUNING.throwFlight + 0.05, { facingBoard: true });
+    assert.equal(game.students.dixieNormous.active, true);
+    assert.equal(eventsOf(game, 'activate').length, 0, 'no “starts acting up” event for the thrower');
+  });
+
+  test('a caught thrower’s item is confiscated, not left on the floor', () => {
+    const game = newGame();
+    noSpawns(game);
+    forceThrow(game, 'dixieNormous');
+    const thrown = game.throw.item;
+    run(game, TUNING.throwWindup + TUNING.throwFlight + 0.05, { facingBoard: false });
+    assert.deepEqual(game.floor, []);
+    assert.equal(eventsOf(game, 'caught')[0].item, thrown);
+    assert.equal(game.students.dixieNormous.items.length, 2);
+  });
+
+  test('a student with nothing left on the desk has nothing to throw', () => {
+    const game = newGame({ seed: 3 });
+    noSpawns(game);
+    for (const s of STUDENTS) game.students[s.id].items = [];
+    run(game, 60, { facingBoard: true });
+    assert.equal(eventsOf(game, 'throwWindup').length, 0);
   });
 
   test('throws only start while the teacher faces the board', () => {

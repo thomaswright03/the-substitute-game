@@ -52,7 +52,7 @@ export default {
       },
       {
         lead: 'Cuidado con la espalda.',
-        body: 'Si miras a la pizarra, alguien puede lanzarte algo: atento al impulso. Un impacto alborota al que lanza y al resto de la clase. Date la vuelta a tiempo y lo pillarás.',
+        body: 'Si miras a la pizarra, alguien puede lanzarte algo de su pupitre: atento al impulso. Un impacto alborota al que lanza y al resto de la clase, y nadie te dice quién ha sido. Date la vuelta, mira qué ha caído y busca el pupitre al que le falta. Si te giras a tiempo, lo pillas.',
       },
       {
         lead: 'Separa a los amigos.',
@@ -271,6 +271,14 @@ export default {
     cancel: 'Da igual (Esc)',
     cancelTouch: 'Da igual',
   },
+  items: {
+    eraser: 'una goma',
+    pencil: 'un lápiz',
+    paperBall: 'una bola de papel',
+    apple: 'una manzana',
+    marker: 'un rotulador',
+    ruler: 'una regla',
+  },
   note: {
     title: 'La nota dice',
     texts: [
@@ -370,11 +378,11 @@ export default {
     zap: 'Le lanzas un rayo a {name}. Actitud: corregida.',
     zapSetOff: '¡El alboroto altera a {name}!',
     readNote: 'Desdoblas la nota de {name} y la lees en voz alta. {name} se pone roja como un tomate y la clase se desternilla.',
-    throwWindup: '{name} toma impulso mientras estás de espaldas…',
-    throwCancelled: '{name} se lo piensa mejor.',
-    hit: '¡Zas! {name} te da en la nuca. La clase se ríe: {name} y todos los que se portan mal se alborotan más.',
-    hitFirst: 'Que te den tiene un coste: el que lanza se altera y toda la clase se envalentona. Date la vuelta cuando oigas que alguien toma impulso.',
-    caught: '¡Pillado! Te giras justo a tiempo para pillar a {name} con las manos en la masa.',
+    throwWindup: 'Oyes que alguien toma impulso a tu espalda…',
+    throwCancelled: 'Quienquiera que fuese se lo piensa mejor.',
+    hit: '¡Zas! Algo te da en la nuca y la clase se ríe. En el suelo: {item}. ¿A qué pupitre le falta uno?',
+    hitFirst: 'Que te den tiene un coste: el que lanza se altera y toda la clase se envalentona. Date la vuelta, mira qué ha caído y busca el pupitre al que le falta.',
+    caught: '¡Pillado! Te giras justo a tiempo para pillar a {name} con las manos en la masa y le confiscas {item}.',
     notEligible: '{name} no se está portando mal. Solo puedes disciplinar a quien sí lo hace.',
     detainedAlready: '{name} ya está en castigo.',
   },

@@ -8,6 +8,11 @@
 // (see TUNING.friendBoost). The starting chart deliberately seats three pairs of friends
 // together, so reassigning seats is worth the player's time.
 
+/** Things a student keeps on the desk, and may throw. Each class period uses ITEMS_PER_DESK of them, the same on every desk. */
+export const ITEMS = /** @type {const} */ (['eraser', 'pencil', 'paperBall', 'apple', 'marker', 'ruler']);
+export const ITEMS_PER_DESK = 3;
+/** @typedef {typeof ITEMS[number]} ItemId */
+
 /** @typedef {'notes' | 'phone' | 'plane' | 'tip' | 'argue' | 'sleep' | 'snack' | 'spin'} Behaviour */
 
 /**

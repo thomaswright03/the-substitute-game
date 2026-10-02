@@ -6,7 +6,7 @@ import { pushLog } from './log.js';
 import { showRollCallAnswer } from './rollcall.js';
 import { onSwap, renderSeatChart } from './seating.js';
 import { openDiscipline } from './discipline.js';
-import { clearProjectile, hitFlash, launchProjectile, zapVisual } from './effects.js';
+import { clearProjectile, dropOnFloor, hitFlash, launchProjectile, zapVisual } from './effects.js';
 import { startPrincipal } from './principal.js';
 import { endRound } from './round.js';
 import { play } from './audio.js';
@@ -88,22 +88,23 @@ function handleEvent(e) {
     case 'swap': onSwap(e); break;
     case 'throwWindup':
       play('windup', { pan: stereoPan(world.students[e.id].position) });
-      pushLog(t('log.throwWindup', { name: n }));
+      pushLog(t('log.throwWindup'));
       break;
-    case 'throwLaunched': launchProjectile(e.id); break;
-    case 'throwCancelled': clearProjectile(); pushLog(t('log.throwCancelled', { name: n })); break;
+    case 'throwLaunched': launchProjectile(e.id, e.item); break;
+    case 'throwCancelled': clearProjectile(); pushLog(t('log.throwCancelled')); break;
     case 'hit':
       clearProjectile();
       play('hit');
       hitFlash();
-      pushLog(t('log.hit', { name: n }));
+      dropOnFloor(e.item);
+      pushLog(t('log.hit', { item: t('items.' + e.item) }));
       studentReacts(e.id, 'hit');
       if (e.first) pushLog(t('log.hitFirst'));
       break;
     case 'caught':
       clearProjectile();
       play('caught');
-      pushLog(t('log.caught', { name: n }));
+      pushLog(t('log.caught', { name: n, item: t('items.' + e.item) }));
       studentReacts(e.id, 'caught');
       openDiscipline(e.id);
       break;

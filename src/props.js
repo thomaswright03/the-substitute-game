@@ -11,6 +11,8 @@ import { CHAIR, DESK, canvasTexture } from './scene.js';
 const DESK_Y = DESK.topY - CHAIR.seatTop;
 const DESK_MID_Z = -CHAIR.z + DESK.halfDepth / 2; // halfway between the desk's centre and its near edge
 const REST_L = [-0.15, DESK_Y + 0.05, DESK_MID_Z + 0.05];
+/** The desk's top at the middle of the student's side: what hangs off it is the things on the desk. */
+export const DESK_ITEMS_AT = [0, DESK_Y, DESK_MID_Z];
 /** @typedef {readonly number[]} Offset [x, y, z] from the top-centre of the chair seat */
 /** @type {Partial<Record<import('./data.js').Behaviour, {prop: Offset, R: Offset, L: Offset}>>} */
 export const TELL_POSES = {

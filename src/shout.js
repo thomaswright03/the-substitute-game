@@ -20,7 +20,7 @@ const PROTECT_SECONDS = 1.6;
 /**
  * What a student can react to: the sound they make first, how long after it they speak, how
  * important the line is (a more important line isn't cut off), and whether it is yelled.
- * @typedef {{sounds?: string[], gap?: number, priority: number, yell?: boolean}} Reaction
+ * @typedef {{sounds?: string[], gap?: number, priority: number, yell?: boolean, hidden?: boolean}} Reaction
  */
 /** @type {Record<string, Reaction>} */
 const REACTIONS = {
@@ -31,7 +31,8 @@ const REACTIONS = {
   zap: { sounds: ['yelp'], gap: 0.4, priority: 2, yell: true },
   read: { sounds: ['gasp'], gap: 0.3, priority: 2, yell: true },
   caught: { sounds: ['gasp'], gap: 0.3, priority: 2 },
-  hit: { sounds: ['laugh'], gap: 0.6, priority: 2, yell: true },
+  // the thrower laughs, but nothing on screen says who: the teacher has to find the empty spot on a desk
+  hit: { sounds: ['laugh'], gap: 0.6, priority: 2, yell: true, hidden: true },
   warn: { sounds: ['grunt'], gap: 0.35, priority: 2 },
   calm: { sounds: ['sigh'], gap: 0.9, priority: 1 },
   wrongStudent: { sounds: ['grunt'], gap: 0.35, priority: 1 },
@@ -92,8 +93,11 @@ export function studentReacts(id, kind, behaviour) {
   if (count > 1 && line === lastLine[key]) line = (line + 1) % count;
   lastLine[key] = line;
   const mine = { id, key, line, at: now, priority: reaction.priority };
-  shout = mine;
-  writeShout(mine);
+  // a hidden reaction is only heard: no bubble, nothing that names the speaker
+  if (!reaction.hidden) {
+    shout = mine;
+    writeShout(mine);
+  }
 
   const pan = stereoPan(world.students[id].position);
   const pitch = voicePitch(id);
@@ -106,7 +110,7 @@ export function studentReacts(id, kind, behaviour) {
   const say = () => speak(id, text, { priority: reaction.priority, yell: reaction.yell, slot: slotOf(key, line), pan });
   const wait = reaction.sounds ? (reaction.gap || 0) + delay - 0.55 : 0;
   // the line follows the sound, unless something newer was said or the game stopped meanwhile
-  if (wait > 0) setTimeout(() => { if (shout === mine && S.running && !S.paused) say(); }, wait * 1000);
+  if (wait > 0) setTimeout(() => { if ((reaction.hidden || shout === mine) && S.running && !S.paused) say(); }, wait * 1000);
   else say();
 }
 

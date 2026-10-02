@@ -214,9 +214,22 @@ test('getting hit by a throw has a visible cost', async ({ page }) => {
   // stand at the board, back to the class, then someone throws
   await hooks(page, (s) => s.lookAt(0, 1.9, -6.2, 0, -4.5));
   await page.waitForFunction(() => window.__substitute.camera.position.z < -4);
-  await hooks(page, (s) => { s.game.throw = { id: 'dixieNormous', phase: 'windup', t: 0 }; });
-  await expect(page.locator('#log')).toContainText('hits you in the back of the head');
+  const thrown = await hooks(page, (s) => {
+    s.game.throw = { id: 'dixieNormous', phase: 'windup', t: 0, item: s.game.kit[1] };
+    return s.game.kit[1];
+  });
+  await expect(page.locator('#log')).toContainText('Something hits you in the back of the head');
   await expect(page.locator('#log')).toContainText('Getting hit costs you');
+  // the log never says who it was: the item is on the floor, and one desk is missing it
+  await expect(page.locator('#log')).not.toContainText('Dixie Normous');
+  const clue = await hooks(page, (s) => ({
+    floor: s.game.floor,
+    missing: s.game.roster.filter((r) => !s.game.students[r.id].items.includes(s.game.kit[1])).map((r) => r.id),
+    desks: s.game.roster.every((r) => r.id === 'dixieNormous' || s.game.students[r.id].items.length === 3),
+  }));
+  expect(clue.floor).toEqual([{ id: 'dixieNormous', item: thrown }]);
+  expect(clue.missing).toEqual(['dixieNormous']);
+  expect(clue.desks).toBe(true);
   const esc = await hooks(page, (s) => ({ steve: s.game.students.steve.escalation, dixieNormous: s.game.students.dixieNormous.escalation }));
   expect(esc.steve).toBeGreaterThanOrEqual(18);
   expect(esc.dixieNormous).toBeGreaterThanOrEqual(20);

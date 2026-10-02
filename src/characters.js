@@ -11,7 +11,7 @@ import './three-setup.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
-import { PROP_BUILDERS, TELL_POSES } from './props.js';
+import { DESK_ITEMS_AT, PROP_BUILDERS, TELL_POSES } from './props.js';
 import { applyExpression, attachExpressiveFace, isMesh } from './face.js';
 
 /** @typedef {import('three/addons/loaders/GLTFLoader.js').GLTF} GLTF */
@@ -25,6 +25,7 @@ import { applyExpression, attachExpressiveFace, isMesh } from './face.js';
  * @property {THREE.Object3D | null} arm the right upper arm
  * @property {THREE.Object3D | null} hand the right wrist
  * @property {THREE.Object3D | null} prop the behaviour's prop, if it has one
+ * @property {THREE.Object3D | null} deskItems where the things on the student's desk are put (items.js); null for the standing
  * @property {Face | null} faceMesh
  * @property {THREE.AnimationMixer} mixer
  * @property {{idle?: THREE.AnimationAction, walk?: THREE.AnimationAction}} actions
@@ -334,6 +335,17 @@ export function buildCharacter(gltf, opts) {
     prop = built;
   }
 
+  // the things on the desk ride along with the student, so they stay on whichever desk they sit at
+  /** @type {THREE.Object3D | null} */
+  let deskItems = null;
+  if (seated) {
+    deskItems = new THREE.Object3D();
+    deskItems.name = 'deskItems';
+    deskItems.position.copy(seatSpace(DESK_ITEMS_AT));
+    g.updateMatrixWorld(true);
+    g.attach(deskItems);
+  }
+
   const faceMesh = attachExpressiveFace(g, head);
 
   // the direction the face points at rest, in the head bone's own space
@@ -348,7 +360,7 @@ export function buildCharacter(gltf, opts) {
   const data = {
     seatOffset,
     parts: {
-      head, arm, hand, prop, faceMesh, mixer, actions, armBones, armRestQ, tellPose, headForwardLocal,
+      head, arm, hand, prop, deskItems, faceMesh, mixer, actions, armBones, armRestQ, tellPose, headForwardLocal,
       headRest: head ? head.rotation.clone() : new THREE.Euler(),
       armRest: arm ? arm.rotation.clone() : new THREE.Euler(),
     },

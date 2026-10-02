@@ -52,7 +52,7 @@ export default {
       },
       {
         lead: 'Surveillez vos arrières.',
-        body: 'Face au tableau, quelqu’un risque de vous lancer quelque chose : guettez l’élan. Un projectile reçu excite le lanceur et le reste de la classe. Retournez-vous à temps et vous le prenez sur le fait.',
+        body: 'Face au tableau, quelqu’un risque de vous lancer un objet de son bureau : guettez l’élan. Un projectile reçu excite le lanceur et le reste de la classe, et personne ne vous dit qui c’était. Retournez-vous, regardez ce qui est tombé, puis cherchez le bureau où il manque. Si vous vous retournez à temps, vous le prenez sur le fait.',
       },
       {
         lead: 'Séparez les amis.',
@@ -271,6 +271,14 @@ export default {
     cancel: 'Laisser tomber (Échap)',
     cancelTouch: 'Laisser tomber',
   },
+  items: {
+    eraser: 'une gomme',
+    pencil: 'un crayon',
+    paperBall: 'une boulette de papier',
+    apple: 'une pomme',
+    marker: 'un feutre',
+    ruler: 'une règle',
+  },
   note: {
     title: 'Le mot dit',
     texts: [
@@ -370,11 +378,11 @@ export default {
     zap: 'Vous frappez {name} d’un éclair. Attitude : corrigée.',
     zapSetOff: 'Le vacarme fait réagir {name} !',
     readNote: 'Vous dépliez le mot de {name} et le lisez à voix haute. {name} devient rouge pivoine et la classe hurle de rire.',
-    throwWindup: '{name} prend son élan pendant que vous avez le dos tourné…',
-    throwCancelled: '{name} se ravise.',
-    hit: 'Paf ! {name} vous touche derrière la tête. La classe rit : {name} et tous ceux qui chahutent s’excitent davantage.',
-    hitFirst: 'Être touché coûte cher : le lanceur s’agite et toute la classe s’enhardit. Retournez-vous quand vous entendez quelqu’un prendre son élan.',
-    caught: 'Pris sur le fait ! Vous vous retournez juste à temps pour surprendre {name}.',
+    throwWindup: 'Vous entendez quelqu’un prendre son élan dans votre dos…',
+    throwCancelled: 'Qui que ce soit, il se ravise.',
+    hit: 'Paf ! Quelque chose vous touche derrière la tête et la classe rit. Par terre : {item}. À quel bureau en manque-t-il un ?',
+    hitFirst: 'Être touché coûte cher : le lanceur s’agite et toute la classe s’enhardit. Retournez-vous, regardez ce qui est tombé, puis cherchez le bureau où il manque.',
+    caught: 'Pris sur le fait ! Vous vous retournez juste à temps pour surprendre {name} et lui confisquer {item}.',
     notEligible: '{name} ne chahute pas. Vous ne pouvez sanctionner qu’un élève qui chahute.',
     detainedAlready: '{name} est déjà en retenue.',
   },

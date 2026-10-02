@@ -4,7 +4,7 @@
 // the unpaused real time that passed, plus the player's action functions (pickupCard, help,
 // discipline, ...). The rules never produce text: they push semantic events onto
 // game.events, which the UI drains and turns into log lines, sounds and effects.
-import { DIFFICULTY, STUDENTS, TUNING, isDifficulty } from './data.js';
+import { DIFFICULTY, ITEMS, ITEMS_PER_DESK, STUDENTS, TUNING, isDifficulty } from './data.js';
 
 /** @typedef {import('./data.js').StudentConfig} StudentConfig */
 /** @typedef {import('./data.js').Tuning} Tuning */
@@ -26,6 +26,7 @@ export const DISCIPLINE_OPTIONS = ['talk', 'detention', 'principal', 'zap', 'rea
  * @property {number} caughtUntil caught throwing: can be disciplined until this game time
  * @property {number} lastHelpAt
  * @property {boolean} eggedOnNoted the "egging each other on" message was given
+ * @property {import('./data.js').ItemId[]} items what is still on their desk (the class's kit, less what they threw)
  */
 
 /** @typedef {{row: number, col: number}} Seat */
@@ -37,14 +38,15 @@ export const DISCIPLINE_OPTIONS = ['talk', 'detention', 'principal', 'zap', 'rea
  *   | {won: false, reason: 'student', culpritId: string}} Outcome
  */
 
-/** @typedef {{id: string, phase: 'windup' | 'flight', t: number}} Throw */
+/** @typedef {{id: string, phase: 'windup' | 'flight', t: number, item: import('./data.js').ItemId}} Throw */
 
 /** @typedef {'warned' | 'calmed' | 'eased' | 'missed'} HelpResult */
 
 /**
  * What the rules report to the UI, which turns each one into log lines, sounds and effects.
  * @typedef {{type: 'activate' | 'nearlyLost' | 'cardPicked' | 'cardDelivered' | 'cardResolvedByOffice'
- *     | 'rollCall' | 'principal' | 'throwWindup' | 'throwLaunched' | 'throwCancelled' | 'caught', id: string}
+ *     | 'rollCall' | 'principal' | 'throwWindup' | 'throwCancelled', id: string}
+ *   | {type: 'throwLaunched' | 'caught', id: string, item: import('./data.js').ItemId}
  *   | {type: 'eggedOn', id: string, friendId: string}
  *   | {type: 'wrongStudent', id: string, heldId: string}
  *   | {type: 'attendanceComplete'}
@@ -54,7 +56,7 @@ export const DISCIPLINE_OPTIONS = ['talk', 'detention', 'principal', 'zap', 'rea
  *   | {type: 'zap', id: string, setOffId: string | null}
  *   | {type: 'readNote', id: string}
  *   | {type: 'swap', a: string, b: string, separated: string[][], together: string[][]}
- *   | {type: 'hit', id: string, first: boolean}
+ *   | {type: 'hit', id: string, first: boolean, item: import('./data.js').ItemId}
  *   | {type: 'over', outcome: Outcome}} RuleEvent
  */
 /** @typedef {RuleEvent & {t: number}} GameEvent a RuleEvent, stamped with the game time */
@@ -75,6 +77,8 @@ export const DISCIPLINE_OPTIONS = ['talk', 'detention', 'principal', 'zap', 'rea
  * @property {{helps: number, talks: number, detentions: number, principalCalls: number, zaps: number, hits: number, catches: number}} counters
  * @property {number} zapReadyAt
  * @property {Throw | null} throw
+ * @property {import('./data.js').ItemId[]} kit the things on every desk this period
+ * @property {{id: string, item: import('./data.js').ItemId}[]} floor what has hit the teacher, and who threw it
  * @property {number} maxChaos the highest chaos this period
  * @property {GameEvent[]} events
  */
@@ -111,6 +115,8 @@ export function createGame(options = {}) {
     },
     zapReadyAt: 0,
     throw: null,
+    kit: pickKit(options.rng || Math.random),
+    floor: [],
     maxChaos: 0,
     events: [],
   };
@@ -127,9 +133,23 @@ export function createGame(options = {}) {
       caughtUntil: -1,
       lastHelpAt: -Infinity,
       eggedOnNoted: false,
+      items: [...game.kit],
     };
   }
   return game;
+}
+
+/**
+ * The few things that sit on every desk this period: a shuffle of the catalogue.
+ * @param {() => number} rng
+ */
+function pickKit(rng) {
+  const pool = [...ITEMS];
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, ITEMS_PER_DESK);
 }
 
 /* ---------------- queries ---------------- */
@@ -263,8 +283,9 @@ function isOver(game) {
  * @param {Game} game
  * @param {string} id
  * @param {number} [escalation]
+ * @param {boolean} [quiet] no event: the student starts acting up without anyone being told
  */
-function activate(game, id, escalation = 0) {
+function activate(game, id, escalation = 0, quiet = false) {
   const st = game.students[id];
   st.active = true;
   st.escalation = escalation;
@@ -272,7 +293,7 @@ function activate(game, id, escalation = 0) {
   st.warnedUntil = -1;
   st.warnedHigh = false;
   st.eggedOnNoted = false;
-  emit(game, { type: 'activate', id });
+  if (!quiet) emit(game, { type: 'activate', id });
 }
 
 /**
@@ -676,7 +697,7 @@ function throwCandidates(game) {
   return game.roster.filter((s) => {
     if (!canMisbehave(game, s.id)) return false;
     // while attendance is on, anyone might chance it; later only the kids already acting up
-    return game.phase === 'attendance' || game.students[s.id].active;
+    return game.students[s.id].items.length > 0 && (game.phase === 'attendance' || game.students[s.id].active);
   });
 }
 
@@ -696,7 +717,8 @@ function updateThrow(game, dt, facingBoard) {
       const pool = throwCandidates(game);
       if (!pool.length) return;
       const id = pick(game, pool).id;
-      game.throw = { id, phase: 'windup', t: 0 };
+      const items = game.students[id].items;
+      game.throw = { id, phase: 'windup', t: 0, item: items[Math.floor(game.rng() * items.length)] };
       emit(game, { type: 'throwWindup', id });
     }
     return;
@@ -710,24 +732,29 @@ function updateThrow(game, dt, facingBoard) {
   if (th.phase === 'windup' && th.t >= t.throwWindup) {
     th.phase = 'flight';
     th.t = 0;
-    emit(game, { type: 'throwLaunched', id: th.id });
+    // it leaves the desk as it is thrown
+    game.students[th.id].items = game.students[th.id].items.filter((i) => i !== th.item);
+    emit(game, { type: 'throwLaunched', id: th.id, item: th.item });
   } else if (th.phase === 'flight' && th.t >= t.throwFlight) {
     game.throw = null;
-    if (facingBoard) throwHit(game, th.id);
-    else throwCaught(game, th.id);
+    if (facingBoard) throwHit(game, th.id, th.item);
+    else throwCaught(game, th.id, th.item);
   }
 }
 
 /**
  * @param {Game} game
  * @param {string} id
+ * @param {import('./data.js').ItemId} item
  */
-function throwHit(game, id) {
+function throwHit(game, id, item) {
   const t = game.tuning;
   const st = game.students[id];
   game.counters.hits++;
-  emit(game, { type: 'hit', id, first: game.counters.hits === 1 });
-  if (!st.active) activate(game, id, 0);
+  game.floor.push({ id, item });
+  emit(game, { type: 'hit', id, first: game.counters.hits === 1, item });
+  // nobody announces who it was: the teacher has to work that out from the desks
+  if (!st.active) activate(game, id, 0, true);
   bumpOthers(game, id, t.hitClassBump);
   if (game.phase !== 'over') changeEscalation(game, id, t.hitThrowerBump);
 }
@@ -735,11 +762,12 @@ function throwHit(game, id) {
 /**
  * @param {Game} game
  * @param {string} id
+ * @param {import('./data.js').ItemId} item
  */
-function throwCaught(game, id) {
+function throwCaught(game, id, item) {
   game.counters.catches++;
   game.students[id].caughtUntil = game.elapsed + game.tuning.caughtWindow;
-  emit(game, { type: 'caught', id });
+  emit(game, { type: 'caught', id, item });
 }
 
 /* ---------------- end of period ---------------- */

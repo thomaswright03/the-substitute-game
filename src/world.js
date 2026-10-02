@@ -11,6 +11,7 @@ import * as R from './rules.js';
 import { el } from './dom.js';
 import { S } from './session.js';
 import { TEACHER_DESK, buildAttendanceCards, buildDesk, buildRoom, deskPosition, seatPosition } from './scene.js';
+import { showDeskItems } from './items.js';
 import { buildCharacter, characterData, loadAll, loadGLB, modelUrl, poseCharacter } from './characters.js';
 
 /** @typedef {import('./characters.js').PoseState} PoseState */
@@ -379,6 +380,7 @@ export function updateStudents(dt) {
       continue;
     }
     g.visible = true;
+    if (data.parts.deskItems) showDeskItems(data.parts.deskItems, S.game.kit, st.items);
     if (!beingMarchedOut) {
       const an = data.seatAnim;
       if (an) {
