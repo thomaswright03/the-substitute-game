@@ -50,7 +50,7 @@ export const el = {
   confirmOverlay: $('confirmOverlay'), confirmTitle: $('confirmTitle'), confirmBody: $('confirmBody'), confirmYes: $('confirmYes', HTMLButtonElement), confirmNo: $('confirmNo', HTMLButtonElement),
   discOverlay: $('disciplineOverlay'), discName: $('discName'), discCancel: $('discCancel', HTMLButtonElement),
   flash: $('flash'), hitVignette: $('hitVignette'),
-  attPanel: $('attendancePanel'), attQuestion: $('attQuestion'), attHint: $('attHint'), attAnswer: $('attAnswer'),
+  attPanel: $('attendancePanel'), attQuestion: $('attQuestion'), attHint: $('attHint'), attAnswer: $('attAnswer'), attPips: $('attPips'),
   banner: $('reassignBanner'), seatChart: $('seatChart'), seatThreat: $('seatThreat'), seatGrid: $('seatGrid'), seatClose: $('seatClose', HTMLButtonElement),
   actions: $('actions'), actPrimary: $('actPrimary', HTMLButtonElement), actDiscipline: $('actDiscipline', HTMLButtonElement), actRollCall: $('actRollCall', HTMLButtonElement), actSeats: $('actSeats', HTMLButtonElement),
   joystick: $('joystick'), knob: $('knob'),

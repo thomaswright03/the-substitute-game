@@ -68,3 +68,12 @@ export function name(id) {
   const s = STUDENTS.find((x) => x.id === id);
   return s ? s.name : id;
 }
+
+/**
+ * The student's place in the roster counting from 1, which picks their colour (data-who in the
+ * stylesheet).
+ * @param {string} id
+ */
+export function studentNumber(id) {
+  return STUDENTS.findIndex((x) => x.id === id) + 1;
+}

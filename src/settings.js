@@ -55,7 +55,7 @@ function renderSound(prefs) {
   const mute = $('muteBtn');
   mute.setAttribute('aria-pressed', String(prefs.muted));
   const icon = mute.querySelector('[data-sound-icon]');
-  if (icon) icon.textContent = prefs.muted ? '🔇' : '🔊';
+  if (icon) icon.setAttribute('href', prefs.muted ? '#i-mute' : '#i-sound');
 }
 
 const LANGUAGE_KEY = 'substitute.language';

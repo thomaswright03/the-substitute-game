@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import * as R from './rules.js';
 import { lookup, t } from './strings.js';
 import { el } from './dom.js';
-import { S, frozen, name } from './session.js';
+import { S, frozen, name, studentNumber } from './session.js';
 import { project, stereoPan, world } from './world.js';
 import { player } from './player.js';
 import { characterData } from './characters.js';
@@ -57,6 +57,7 @@ function writeSpeech(speech) {
   const line = rollCallLines()[speech.line] || '';
   speech.answer = t('attendance.answered', { name: name(speech.id), where: t(speech.where), line });
   el.bubbleText.textContent = line;
+  el.speechBubble.dataset.who = String(studentNumber(speech.id));
   // the bubble is measured again, the next frame it shows
   delete speech.bw;
   delete speech.bh;

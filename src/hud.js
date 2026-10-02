@@ -53,9 +53,10 @@ function part(tag, selector) {
 
 export function buildTags() {
   el.studentLayer.textContent = '';
-  for (const s of STUDENTS) {
+  for (const [i, s] of STUDENTS.entries()) {
     const tag = document.createElement('div');
     tag.className = 'tag';
+    tag.dataset.who = String(i + 1);
     tag.innerHTML =
       '<div class="ring-wrap"><svg class="ring" width="44" height="44" viewBox="0 0 44 44">' +
       '<circle class="track" cx="22" cy="22" r="' + RING_R + '" fill="none" stroke-width="4"></circle>' +
@@ -266,8 +267,8 @@ export function setupActionButtons() {
 
 /* ---------------- attendance panel ---------------- */
 
-/** @type {{valid: boolean, holding: string | null, remaining: number, answer: string | null}} */
-const attShown = { valid: false, holding: null, remaining: -1, answer: null };
+/** @type {{valid: boolean, holding: string | null, remaining: number, answer: string | null, pips: string}} */
+const attShown = { valid: false, holding: null, remaining: -1, answer: null, pips: '' };
 export function invalidateAttendancePanel() {
   attShown.valid = false;
 }
@@ -279,11 +280,20 @@ export function updateAttendancePanel() {
   if (!a) return;
   const speech = S.speech;
   const answerNow = speech ? speech.answer : null;
-  if (attShown.valid && attShown.holding === a.holding && attShown.remaining === a.remaining.length && attShown.answer === answerNow) return;
+  // one pip for each name card: done, in the teacher's hand, or still on the board
+  const pips = STUDENTS.map((s) => (s.id === a.holding ? 'h' : a.remaining.includes(s.id) ? 't' : 'd')).join('');
+  if (attShown.valid && attShown.holding === a.holding && attShown.remaining === a.remaining.length && attShown.answer === answerNow && attShown.pips === pips) return;
   attShown.valid = true;
   attShown.holding = a.holding;
   attShown.remaining = a.remaining.length;
   attShown.answer = answerNow;
+  attShown.pips = pips;
+  el.attPips.textContent = '';
+  for (const state of pips) {
+    const pip = document.createElement('i');
+    pip.className = 'attPip ' + (state === 'h' ? 'held' : state === 'd' ? 'done' : '');
+    el.attPips.append(pip);
+  }
   if (!a.holding) {
     const n = a.remaining.length;
     setText(el.attQuestion, t('attendance.cardsLeft', { count: n, cards: plural(n, 'attendance.card', 'attendance.cards') }));

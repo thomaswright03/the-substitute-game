@@ -60,25 +60,26 @@ export function showBest() {
 
 // The HUD buttons whose label depends on the state (and on the language).
 export function refreshButtonLabels() {
-  iconOf(el.pauseBtn).textContent = S.paused ? '▶' : '⏸';
+  setIcon(el.pauseBtn, S.paused ? 'play' : 'pause');
   const pauseLabel = t(S.paused ? 'hud.resume' : 'hud.pause');
   el.pauseBtn.setAttribute('aria-label', pauseLabel);
   el.pauseBtn.title = pauseLabel;
   const full = !!document.fullscreenElement;
-  iconOf(el.fullscreenBtn).textContent = full ? '⤡' : '⛶';
+  setIcon(el.fullscreenBtn, full ? 'unfull' : 'full');
   const fullLabel = t(full ? 'hud.exitFullscreen' : 'hud.fullscreen');
   el.fullscreenBtn.setAttribute('aria-label', fullLabel);
   el.fullscreenBtn.title = fullLabel;
 }
 
 /**
- * The icon inside one of the HUD's icon buttons.
+ * Draws one of the page's icons (see the sprite in index.html) inside an icon button.
  * @param {HTMLElement} button
+ * @param {string} icon
  */
-function iconOf(button) {
-  const icon = button.firstElementChild;
-  if (!icon) throw new Error('#' + button.id + ' has no icon');
-  return icon;
+function setIcon(button, icon) {
+  const use = button.querySelector('use');
+  if (!use) throw new Error('#' + button.id + ' has no icon');
+  use.setAttribute('href', '#i-' + icon);
 }
 
 /** @param {boolean} p */

@@ -73,7 +73,7 @@ discipline and close calls.
 | Seating chart | R (Tab / Enter to pick seats) | Seats button |
 | Roll call | Q | Roll call button |
 | Pause | Esc or P | pause button |
-| Sound on / off | M, or the speaker button | speaker button (on a narrow phone, the pause screen) |
+| Sound on / off | M, or the speaker button | speaker button (on a narrow phone, the start and pause screens) |
 
 Keys are bound by where they sit on the keyboard, not by the letter printed on them, so on a
 French AZERTY keyboard you walk with ZQSD, and roll call is the key marked A. The controls
@@ -104,7 +104,7 @@ under the `/the-substitute-game/` sub-path. To try the published build locally, 
 
 **The 404 page.** GitHub Pages answers an address that isn't part of the site with the site's
 `404.html`, from any depth, so that page can't use relative links. `scripts/404.html` is a
-self-contained page in the game's paper-and-chalk look, in English, Spanish and French, and the
+self-contained page in the game's chalkboard-and-glass look, in English, Spanish and French, and the
 build fills in the site's root path from `--base` (`npm run build -- --base /the-substitute-game/`;
 the Pages workflow passes the path that `actions/configure-pages` reports). `npm run preview`
 and the local server send it with a 404 status, as Pages does.
@@ -188,12 +188,13 @@ through `$()` in `src/dom.js`, which names a missing id at start-up, and
 | `src/main.js` | Start-up and the frame loop |
 | `src/world.js`, `src/quality.js`, `src/player.js` | The three.js renderer and classroom, the students' poses each frame; the graphics levels and the automatic step-down; the teacher's movement |
 | `src/input.js`, `src/keys.js`, `src/aim.js` | Keyboard, mouse, touch and stick input; the key bindings and the names of the player's keys; what the teacher is aiming at and what E / F do |
-| `src/hud.js`, `src/dialogs.js`, `src/rollcall.js` | HUD, log, prompts and buttons; modal dialogs and focus; roll-call bubble and arrow |
+| `src/hud.js`, `src/dialogs.js`, `src/sheets.js`, `src/rollcall.js` | HUD, log, prompts and buttons; modal dialogs and focus; the sheets that open over the start and pause screens (how to play, settings, Voice studio); roll-call bubble and arrow |
 | `src/seating.js`, `src/discipline.js`, `src/principal.js`, `src/effects.js` | Seating chart, discipline menu, the principal's visit, hit / zap / throw effects |
 | `src/events.js`, `src/round.js`, `src/session.js`, `src/dom.js` | Rule events to log lines and effects; starting, pausing and ending a round; shared UI state; the page elements the game drives |
 | `src/bus.js`, `src/pointer.js`, `src/log.js` | The small event bus that keeps the UI modules free of import cycles (`npm run lint` checks for cycles); pointer lock; the play log |
 | `src/audio.js`, `src/settings.js` | Synthesised sound cues (including the students' grunts, sighs and yelps); the sound, voices, volume, language, graphics and difficulty controls |
-| `src/voice.js`, `src/shout.js` | The students' spoken lines (the browser's speech voices, a pitch and speed per student); what they blurt out and the bubble that shows who said it |
+| `src/voice.js`, `src/shout.js` | The students' spoken lines (a recording when there is one, else the browser's speech voice with a pitch and speed per student); what they blurt out and the bubble that shows who said it |
+| `src/clips.js`, `src/studio.js` | The recordings of students' lines (uploaded in the browser, or listed in `assets/voices/manifest.json`); the Voice studio screen |
 | `src/offline.js` | Registers the service worker on a deployed build only |
 | `src/testhooks.js` | The `?test` API for the browser tests |
 | `src/scene.js`, `src/characters.js` | The classroom, and the character models: seating, arm poses and body language |
@@ -202,7 +203,8 @@ through `$()` in `src/dom.js`, which names a missing id at start-up, and
 | `tsconfig.json`, `types/` | The type check's settings, and the globals shared with `src/boot.js` |
 | `lib/three/` | The vendored three.js modules |
 | `docs/playtests.md` | How to run a playtest, and the notes from each one |
-| `scripts/` | Static server, site build and service worker, three.js vendoring, and the asset optimizer |
+| `assets/voices/` | Recordings of the students' lines that ship with the game, and the manifest listing them (see [Voice studio](#voice-studio-and-recorded-lines)) |
+| `scripts/` | Static server, site build and service worker, three.js vendoring, the asset optimizer, and the voices manifest |
 
 The rules advance on real elapsed time, not frames, so a period lasts the same on any machine:
 two minutes of unpaused play on Standard, four on Relaxed. The game pauses itself when the tab
@@ -216,8 +218,8 @@ seeded periods with a simulated first-time player that has to find each card's o
 call and walking, and sometimes tries the wrong desk, and checks the win-rate targets stated
 there. Notes from real playtests go in `docs/playtests.md`.
 
-**Graphics.** The start and pause screens have a Graphics setting, kept in the browser like
-the other settings. Automatic (the default) starts with the full look and, when frames keep
+**Graphics.** The Settings sheet (opened from the start and pause screens) has a Graphics setting,
+kept in the browser like the other settings. Automatic (the default) starts with the full look and, when frames keep
 taking longer than 50 ms (under 20 frames a second) for three seconds, steps down one level
 at a time: a pixel ratio of 1, then no glow, then no shadows, then drawing at 60% of the
 resolution. The setting then reads, for example, "Automatic · Low". Choosing a level fixes it.
@@ -234,34 +236,61 @@ is read aloud by `src/voice.js` with the browser's built-in speech voices, each 
 their own voice where the device has several and always their own pitch and speed, while
 `src/shout.js` shows the line in a bubble over their head with their name. Nothing plays until
 the first tap, click or key press. Sound can be switched off and the volume set on the start
-and pause screens, with the HUD speaker button or with M, and "Student voices" turns off just
-the speaking; the choices are kept in the browser's local storage.
+and pause screens' Settings sheet, with the HUD speaker button or with M, and "Student voices"
+turns off just the speaking; the choices are kept in the browser's local storage.
 
 **Text and translation.** The game is in English, Spanish and French. Static page text is
 tagged with `data-i18n` and filled from `src/strings.js`, and all text built during play
 (including the chalkboard, roll-call answers and every student's lines) goes through the same
 table. The Spanish and French tables in `src/i18n/` have exactly the English keys, list lengths
 and `{placeholders}`, which a unit test checks, and a second test fails if a key in the table
-isn't used by the source or the page. A language switcher sits on the start and pause screens;
-the choice is remembered, a first visit follows the browser's language, and the page's `lang`
+isn't used by the source or the page. A language switcher sits on the start screen and in the
+Settings sheet; the choice is remembered, a first visit follows the browser's language, and the page's `lang`
 attribute follows it. A key with a sibling named `<key>Touch` (for example `seating.close` and
 `seating.closeTouch`) supplies the text used on touch screens, so no phone player is told to
 press a key. To add a language, add a table with the same keys to `src/i18n/` and list it in
 `LANGUAGES` in `src/strings.js`.
 
-**Look and styling.** The game has one art direction on purpose: a dark wooden frame around the
-3D classroom, with the HUD and every dialog drawn as cream paper and chalk. It doesn't switch
-with the system's light or dark setting, because the classroom is lit the same either way and
-the paper panels already read as light on dark. Whether to keep a single theme is the project
-owner's call, recorded here so that nobody adds a light theme by accident; changing it means
-changing this paragraph. The one concession is the page around the frame: with the system set to
-light, the `--page` token turns that margin a light paper colour, and nothing inside the frame
-changes. `css/game.css` takes every colour from the
+**Look and styling.** The game has one art direction on purpose: a chalkboard-green interface of
+frosted glass, with chalk lettering, pencil-yellow for the main actions and a colour for each
+student (their name tag, speech bubble and seat). The 3D classroom fills the window, the HUD is
+drawn over it, and the start menu, the sheets (how to play, settings, the Voice studio) and the
+end screen are cards on the same board; the report card is the one piece of cream paper, pinned
+to it and stamped with the grade. The look was redone in October 2026 at the owner's request
+(it had been a wooden frame with cream paper panels). It doesn't switch with the system's light
+or dark setting, because the classroom is lit the same either way. Whether to keep a single
+theme is the project owner's call, recorded here so that nobody adds a light theme by accident;
+changing it means changing this paragraph. `css/game.css` takes every colour from the
 tokens at its top (translucent shades mix a token with `transparent`) and every margin, padding
-and gap from a ten-step spacing scale; a unit test (`test/unit/css.test.js`) fails on a raw
+and gap from a twelve-step spacing scale; a unit test (`test/unit/css.test.js`) fails on a raw
 colour or an off-scale space anywhere else. Sizes are multiples of `--px`, which is 1px except
-on the in-game HUD: there it grows with the stage, from 1px on a stage about 1100px wide to 2px,
-so the HUD keeps its share of a large monitor and phones keep text at 12px or more.
+on the in-game HUD and the screens over it: there it grows with the stage, from 1px on a stage
+about 1100px wide to 2px, so the HUD keeps its share of a large monitor and phones keep text at
+12px or more. Icons are drawn once, as an SVG sprite at the top of `index.html`, and used with
+`<use href="#i-name">`.
+
+**Voice studio and recorded lines.** Every line a student says (the ones they blurt out, and
+their roll-call answers) can have a recording of its own. Until it does, the browser's speech
+voice reads it as a placeholder. Open the **Voice studio** from the start menu or from the
+Settings sheet (which the start and pause screens both open): pick a student (or "Whole class"), then Play, Upload (or drop a file on the
+line), or Remove. A student's own recording beats the whole class's, which beats the placeholder.
+Recordings are filed per language, so the Spanish and French lines can have their own.
+
+There are two places a recording can come from, and an upload wins over a file of the same
+student and line:
+
+- *Uploads* are kept in the browser (IndexedDB) and never leave it, so they show up on the
+  machine they were made on. MP3, WAV, OGG, M4A and the like, up to 6 MB; the browser has to be
+  able to play the file, which the studio checks before keeping it.
+- *Files in the game's folder* ship with the game for everyone. Put a recording at
+  `assets/voices/<language>/<student id or "all">/<line>.<extension>`, for example
+  `assets/voices/en/benDover/talk.1.mp3`, and run `npm run voices` to list it in
+  `assets/voices/manifest.json`. A line's name is its situation and number (`talk.1`,
+  `active.phone.0`, `rollcall.3`); the studio shows the lines in order, and the script reports
+  any file whose name matches no line.
+
+Student ids are `dixieNormous`, `benDover`, `moeLester`, `steve`, `hughJass`, `mikeHunt`,
+`gabeIches` and `mikeOxlong`.
 
 **Test hooks.** Adding `?test` to the URL exposes `window.__substitute` for the browser
 tests. Nothing is exposed without it.

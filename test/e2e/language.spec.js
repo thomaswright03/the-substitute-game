@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import ES from '../../src/i18n/es.js';
 import FR from '../../src/i18n/fr.js';
-import { activate, faceStudent, freezeRandomness, hooks, openGame, startRound } from './helpers.js';
+import { activate, closeSheet, faceStudent, freezeRandomness, hooks, openGame, openSettings, startRound } from './helpers.js';
 
 // A French text with its {placeholders} filled.
 function french(text, params) {
@@ -11,7 +11,9 @@ function french(text, params) {
 async function switchLanguageFromPause(page, code) {
   await page.keyboard.press('Escape');
   await expect(page.locator('#pauseOverlay')).toBeVisible();
-  await page.locator('#pauseOverlay [data-language]').selectOption(code);
+  await openSettings(page);
+  await page.locator('#settingsOverlay [data-language]').selectOption(code);
+  await closeSheet(page);
   await page.locator('#resumeBtn').click();
   await expect(page.locator('#pauseOverlay')).toBeHidden();
 }
@@ -30,7 +32,7 @@ test('the language switcher changes the page, is remembered, and sets lang', asy
   await page.locator('#startOverlay [data-language]').selectOption('es');
   await expect(page.locator('html')).toHaveAttribute('lang', 'es');
   await expect(page.locator('#startTitle')).toHaveText('El Sustituto');
-  await expect(page.locator('#startOverlay .controls')).toContainText('pasar lista');
+  await expect(page.locator('#helpOverlay .controls')).toContainText('pasar lista');
 
   await openGame(page);
   await expect(page.locator('html')).toHaveAttribute('lang', 'es');
@@ -46,7 +48,8 @@ test('the language switcher changes the page, is remembered, and sets lang', asy
   // the pause screen has the switcher too
   await page.keyboard.press('Escape');
   await expect(page.locator('#pauseOverlay')).toBeVisible();
-  await page.locator('#pauseOverlay [data-language]').selectOption('fr');
+  await openSettings(page);
+  await page.locator('#settingsOverlay [data-language]').selectOption('fr');
   await expect(page.locator('#pauseTitle')).toHaveText('Respirez');
   await expect(page.locator('#resumeBtn')).toContainText('Reprendre');
   await expect(page.locator('html')).toHaveAttribute('lang', 'fr');
@@ -114,30 +117,32 @@ test('a roll-call answer on screen switches language too', async ({ page }) => {
   expect(await page.locator('#bubbleText').textContent()).toBe(FR.rollCall.lines[line]);
 });
 
-test('the pause screen repeats the five rules, in each language', async ({ page }) => {
+test('the five rules are one tap from the pause screen, in each language', async ({ page }) => {
   await openGame(page);
   await startRound(page);
   await freezeRandomness(page);
   await page.keyboard.press('Escape');
   await expect(page.locator('#pauseOverlay')).toBeVisible();
-  const rules = page.locator('#pauseRules');
-  // folded away until asked for, so the pause screen still leads with Resume
+  const rules = page.locator('#helpOverlay');
+  // a sheet of their own, so the pause screen still leads with Resume
   await expect(rules.locator('li').first()).toBeHidden();
-  await rules.locator('summary').click();
-  await expect(rules.locator('li')).toHaveCount(5);
-  await expect(rules.locator('li').first()).toBeVisible();
   const table = { en: null, es: ES, fr: FR };
   for (const code of ['en', 'es', 'fr']) {
-    await page.locator('#pauseOverlay [data-language]').selectOption(code);
+    await openSettings(page);
+    await page.locator('#settingsOverlay [data-language]').selectOption(code);
+    await closeSheet(page);
     await expect(page.locator('html')).toHaveAttribute('lang', code);
-    const onPause = await rules.locator('li').allTextContents();
-    const onStart = await page.locator('#startOverlay .rules li').allTextContents();
-    expect(onPause).toEqual(onStart);
-    expect(onPause.every((text) => text.trim().length > 20)).toBe(true);
+    await page.locator('#pauseHelpBtn').click();
+    await expect(rules).toBeVisible();
+    await expect(rules.locator('li')).toHaveCount(5);
+    await expect(rules.locator('li').first()).toBeVisible();
+    const shown = await rules.locator('li').allTextContents();
+    expect(shown.every((text) => text.trim().length > 20)).toBe(true);
     if (table[code]) {
-      await expect(rules.locator('summary')).toHaveText(table[code].start.rulesTitle);
-      for (const [i, rule] of table[code].start.rules.entries()) expect(onPause[i]).toContain(rule.lead);
+      await expect(page.locator('#helpTitle')).toHaveText(table[code].start.rulesTitle);
+      for (const [i, rule] of table[code].start.rules.entries()) expect(shown[i]).toContain(rule.lead);
     }
+    await closeSheet(page);
   }
 });
 

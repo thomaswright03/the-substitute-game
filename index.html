@@ -4,8 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#141c16" media="(prefers-color-scheme: dark)">
-<meta name="theme-color" content="#d8cfb8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#060b08">
 <meta name="description" content="The Substitute: a 3D classroom-management game. Take attendance, keep the class calm and survive until the bell.">
 <title>The Substitute</title>
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
@@ -56,6 +55,23 @@
       </div>
     </div>
 
+    <!-- icons: drawn once here, used wherever the page says <use href="#i-name"> -->
+    <svg class="sprite" aria-hidden="true" focusable="false">
+      <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14" stroke-width="3.2"/></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path class="solid" d="M7 4.5v15a1 1 0 001.5.9l12-7.5a1 1 0 000-1.8l-12-7.5A1 1 0 007 4.5z" fill="currentColor" stroke="none"/></symbol>
+      <symbol id="i-sound" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 010 7M19 6a8.5 8.5 0 010 12"/></symbol>
+      <symbol id="i-mute" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9.5l4.5 5M21.5 9.5l-4.5 5"/></symbol>
+      <symbol id="i-full" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
+      <symbol id="i-unfull" viewBox="0 0 24 24"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></symbol>
+      <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></symbol>
+      <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 016.5 3H20v15H6.5A2.5 2.5 0 004 20.5z"/><path d="M4 20.5A2.5 2.5 0 006.5 18H20v3H6.5A2.5 2.5 0 014 20.5zM9 8h6"/></symbol>
+      <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3M9 21h6"/></symbol>
+      <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></symbol>
+      <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></symbol>
+      <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2.5" fill="currentColor" stroke="none"/></symbol>
+      <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke-width="2.6"/></symbol>
+    </svg>
+
     <header class="hud" id="hud">
       <div class="badge clock">
         <div class="label" data-i18n="hud.clock">Bell Schedule</div>
@@ -72,9 +88,9 @@
         <div class="track"><div class="fill" id="chaosFill"></div></div>
       </div>
       <div class="btnRow">
-        <button class="iconBtn" id="pauseBtn" type="button" aria-label="Pause" title="Pause" data-i18n-attr="aria-label:hud.pause;title:hud.pause"><span aria-hidden="true">⏸</span></button>
-        <button class="iconBtn" id="muteBtn" type="button" aria-pressed="false" aria-label="Mute" title="Mute" data-i18n-attr="aria-label:settings.mute;title:settings.mute"><span aria-hidden="true" data-sound-icon>🔊</span></button>
-        <button class="iconBtn" id="fullscreenBtn" type="button" aria-label="Fullscreen" title="Fullscreen" data-i18n-attr="aria-label:hud.fullscreen;title:hud.fullscreen"><span aria-hidden="true">⛶</span></button>
+        <button class="iconBtn" id="pauseBtn" type="button" aria-label="Pause" title="Pause" data-i18n-attr="aria-label:hud.pause;title:hud.pause"><svg class="ico" aria-hidden="true"><use href="#i-pause"></use></svg></button>
+        <button class="iconBtn" id="muteBtn" type="button" aria-pressed="false" aria-label="Mute" title="Mute" data-i18n-attr="aria-label:settings.mute;title:settings.mute"><svg class="ico" aria-hidden="true"><use href="#i-sound" data-sound-icon></use></svg></button>
+        <button class="iconBtn" id="fullscreenBtn" type="button" aria-label="Fullscreen" title="Fullscreen" data-i18n-attr="aria-label:hud.fullscreen;title:hud.fullscreen"><svg class="ico" aria-hidden="true"><use href="#i-full"></use></svg></button>
       </div>
     </header>
 
@@ -86,6 +102,7 @@
         <div class="attQuestion" id="attQuestion"></div>
         <div class="attHint" id="attHint"></div>
         <div class="attAnswer" id="attAnswer" hidden></div>
+        <div class="attPips" id="attPips" aria-hidden="true"></div>
       </section>
       <div class="banner" id="reassignBanner" hidden></div>
       <section class="seatChart" id="seatChart" role="dialog" aria-modal="false" aria-labelledby="seatChartTitle" aria-describedby="seatLive" hidden>
@@ -122,31 +139,51 @@
     <div class="flash" id="flash"></div>
     <div class="hitVignette" id="hitVignette"></div>
 
-    <div class="overlay" id="startOverlay" role="dialog" aria-modal="true" aria-labelledby="startTitle" hidden>
-      <div class="panel menuPanel">
+    <!-- the start menu -->
+    <div class="overlay menuScreen" id="startOverlay" role="dialog" aria-modal="true" aria-labelledby="startTitle" hidden>
+      <div class="menuPanel">
         <div class="menuIntro">
           <span class="apple" aria-hidden="true">🍎</span>
           <div class="kicker" data-i18n="start.kicker">First Day Sub Plans</div>
           <h1 id="startTitle" data-i18n="start.title">The Substitute</h1>
           <p class="lead" data-i18n="start.intro">Keep Room 204 in one piece until the bell at 9:50.</p>
         </div>
-        <div class="menuSetup">
-          <fieldset class="difficulty">
-            <legend data-i18n="settings.difficulty">Difficulty</legend>
-            <label><input type="radio" name="difficulty" value="relaxed"> <span><strong data-i18n="settings.relaxed">Relaxed</strong> <small data-i18n="settings.relaxedNote">A four-minute period and a calmer class</small></span></label>
-            <label><input type="radio" name="difficulty" value="standard"> <span><strong data-i18n="settings.standard">Standard</strong> <small data-i18n="settings.standardNote">Two minutes, and they don’t wait</small></span></label>
-          </fieldset>
-          <div class="stats"><div><span data-i18n="start.best">Best grade</span><strong id="bestStart">—</strong></div></div>
-          <div class="settings" data-settings>
-            <label class="language"><span data-i18n="settings.language">Language</span> <select data-language></select></label>
-            <label class="toggle"><input type="checkbox" data-sound checked> <span data-i18n="settings.sound">Sound</span></label>
-            <label class="toggle"><input type="checkbox" data-voices checked> <span data-i18n="settings.voices">Student voices</span></label>
-            <label class="volume"><span data-i18n="settings.volume">Volume</span> <input type="range" min="0" max="100" step="5" value="70" data-volume></label>
-            <label class="quality"><span data-i18n="settings.graphics">Graphics</span> <select data-quality></select></label>
+        <ol class="steps">
+          <li data-i18n="start.step1">Hand out every name card</li>
+          <li data-i18n="start.step2">Calm the class before it boils over</li>
+          <li data-i18n="start.step3">Make it to the bell</li>
+        </ol>
+        <div class="difficulty" role="radiogroup" aria-labelledby="difficultyLabel">
+          <div class="difficultyHead">
+            <span class="difficultyLabel" id="difficultyLabel" data-i18n="settings.difficulty">Difficulty</span>
+            <span class="bestBadge"><span data-i18n="start.best">Best grade</span> <strong id="bestStart">—</strong></span>
+          </div>
+          <label><input type="radio" name="difficulty" value="relaxed"> <strong data-i18n="settings.relaxed">Relaxed</strong> <small data-i18n="settings.relaxedNote">A four-minute period and a calmer class</small></label>
+          <label><input type="radio" name="difficulty" value="standard"> <strong data-i18n="settings.standard">Standard</strong> <small data-i18n="settings.standardNote">Two minutes, and they don’t wait</small></label>
+        </div>
+        <div class="menuActions">
+          <button class="btn big" id="startBtn" type="button"><span data-i18n="start.start">Start class</span> <svg class="ico solid" aria-hidden="true"><use href="#i-play"></use></svg></button>
+          <div class="menuLinks">
+            <button class="btn secondary small" id="helpBtn" type="button" data-open="helpOverlay"><svg class="ico" aria-hidden="true"><use href="#i-book"></use></svg><span data-i18n="start.rulesTitle">How to play</span></button>
+            <button class="btn secondary small" id="settingsBtn" type="button" data-open="settingsOverlay"><svg class="ico" aria-hidden="true"><use href="#i-gear"></use></svg><span data-i18n="settings.title">Settings</span></button>
+            <button class="btn secondary small" id="studioBtn" type="button" data-open="studioOverlay"><svg class="ico" aria-hidden="true"><use href="#i-mic"></use></svg><span data-i18n="studio.title">Voice studio</span></button>
           </div>
         </div>
-        <div class="menuRules">
-          <h2 data-i18n="start.rulesTitle">How to play</h2>
+        <div class="menuQuick">
+          <label class="language"><span data-i18n="settings.language">Language</span> <select data-language></select></label>
+          <label class="toggle"><span data-i18n="settings.sound">Sound</span> <input type="checkbox" data-sound checked></label>
+        </div>
+      </div>
+    </div>
+
+    <!-- how to play -->
+    <div class="overlay sheetOverlay" id="helpOverlay" role="dialog" aria-modal="true" aria-labelledby="helpTitle" hidden>
+      <div class="sheet">
+        <div class="sheetHead">
+          <h2 id="helpTitle" data-i18n="start.rulesTitle">How to play</h2>
+          <button class="iconBtn" type="button" data-close aria-label="Close" data-i18n-attr="aria-label:common.close"><svg class="ico" aria-hidden="true"><use href="#i-close"></use></svg></button>
+        </div>
+        <div class="sheetBody">
           <ol class="rules">
             <li><strong data-i18n="start.rules.0.lead"></strong> <span data-i18n="start.rules.0.body"></span></li>
             <li><strong data-i18n="start.rules.1.lead"></strong> <span data-i18n="start.rules.1.body"></span></li>
@@ -154,15 +191,70 @@
             <li><strong data-i18n="start.rules.3.lead"></strong> <span data-i18n="start.rules.3.body"></span></li>
             <li><strong data-i18n="start.rules.4.lead"></strong> <span data-i18n="start.rules.4.body"></span></li>
           </ol>
-          <h2 data-i18n="start.controlsTitle">Controls</h2>
+          <h3 data-i18n="start.controlsTitle">Controls</h3>
           <dl class="controls" data-controls></dl>
         </div>
-        <div class="panelFooter"><button class="btn" id="startBtn" type="button"><span data-i18n="start.start">Start class</span> ▸</button></div>
+        <div class="sheetFoot"><button class="btn" type="button" data-close data-i18n="common.done">Done</button></div>
       </div>
     </div>
 
+    <!-- settings -->
+    <div class="overlay sheetOverlay" id="settingsOverlay" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" hidden>
+      <div class="sheet">
+        <div class="sheetHead">
+          <h2 id="settingsTitle" data-i18n="settings.title">Settings</h2>
+          <button class="iconBtn" type="button" data-close aria-label="Close" data-i18n-attr="aria-label:common.close"><svg class="ico" aria-hidden="true"><use href="#i-close"></use></svg></button>
+        </div>
+        <div class="sheetBody">
+          <h3 data-i18n="settings.soundGroup">Sound</h3>
+          <div class="group">
+            <label class="toggle settingsRow"><span data-i18n="settings.sound">Sound</span> <input type="checkbox" data-sound checked></label>
+            <label class="toggle settingsRow"><span><span data-i18n="settings.voices">Student voices</span><small data-i18n="settings.voicesNote">Students say their lines out loud</small></span> <input type="checkbox" data-voices checked></label>
+            <label class="field settingsRow"><span data-i18n="settings.volume">Volume</span> <input type="range" min="0" max="100" step="5" value="70" data-volume></label>
+          </div>
+          <h3 data-i18n="settings.gameGroup">Game</h3>
+          <div class="group">
+            <label class="field settingsRow language"><span data-i18n="settings.language">Language</span> <select data-language></select></label>
+            <label class="field settingsRow quality"><span data-i18n="settings.graphics">Graphics</span> <select data-quality></select></label>
+          </div>
+          <h3 data-i18n="studio.title">Voice studio</h3>
+          <div class="group">
+            <div class="field settingsRow"><span><span data-i18n="settings.studioLead">Your own voices</span><small data-i18n="settings.studioNote">Upload a recording for any line a student says</small></span> <button class="btn secondary small" type="button" data-open="studioOverlay"><svg class="ico" aria-hidden="true"><use href="#i-mic"></use></svg><span data-i18n="settings.studioOpen">Open</span></button></div>
+          </div>
+        </div>
+        <div class="sheetFoot"><button class="btn" type="button" data-close data-i18n="common.done">Done</button></div>
+      </div>
+    </div>
+
+    <!-- the voice studio -->
+    <div class="overlay sheetOverlay" id="studioOverlay" role="dialog" aria-modal="true" aria-labelledby="studioTitle" hidden>
+      <div class="sheet wide">
+        <div class="sheetHead">
+          <h2 id="studioTitle" data-i18n="studio.title">Voice studio</h2>
+          <button class="iconBtn" type="button" data-close aria-label="Close" data-i18n-attr="aria-label:common.close"><svg class="ico" aria-hidden="true"><use href="#i-close"></use></svg></button>
+        </div>
+        <div class="studioTabs" id="studioTabs" role="tablist" data-i18n-attr="aria-label:studio.students"></div>
+        <div class="sheetBody" id="studioBody">
+          <p class="sheetNote" id="studioIntro"></p>
+          <div class="studioSummary">
+            <span class="chip" id="studioCount"></span>
+            <div class="meter" aria-hidden="true"><i id="studioMeter"></i></div>
+            <button class="btn secondary small" id="studioClear" type="button"><svg class="ico" aria-hidden="true"><use href="#i-trash"></use></svg><span data-i18n="studio.clear">Remove my recordings</span></button>
+          </div>
+          <div class="studioNotice" id="studioNotice" role="status" hidden></div>
+          <div id="studioLines"></div>
+        </div>
+        <div class="sheetFoot studioFoot">
+          <p id="studioFolder"></p>
+          <button class="btn" type="button" data-close data-i18n="common.done">Done</button>
+        </div>
+        <input type="file" id="studioFile" accept="audio/*" hidden>
+      </div>
+    </div>
+
+    <!-- the end of the period -->
     <div class="overlay" id="endOverlay" role="dialog" aria-modal="true" aria-labelledby="endTitle" hidden>
-      <div class="panel">
+      <div class="panel endPanel">
         <span class="apple" id="endEmoji" aria-hidden="true">🔔</span>
         <div class="kicker" id="endKicker"></div>
         <h1 id="endTitle"></h1>
@@ -185,39 +277,25 @@
         </div>
         <p class="bestLine" id="endBest"><span id="endBestLabel"></span> <strong id="endBestGrade">—</strong> <span class="newBest" id="endNewBest" data-i18n="end.newBest" hidden>New personal best!</span></p>
         <div class="btnStack panelFooter">
-          <button class="btn" id="restartBtn" type="button"><span data-i18n="end.again">Sub again</span> ▸</button>
+          <button class="btn big" id="restartBtn" type="button"><span data-i18n="end.again">Sub again</span> <svg class="ico solid" aria-hidden="true"><use href="#i-play"></use></svg></button>
           <button class="linkBtn" id="endMenuBtn" type="button" data-i18n="end.menu">Back to menu</button>
         </div>
       </div>
     </div>
 
+    <!-- paused -->
     <div class="overlay" id="pauseOverlay" role="dialog" aria-modal="true" aria-labelledby="pauseTitle" hidden>
-      <div class="panel">
+      <div class="panel pausePanel">
         <span class="apple" aria-hidden="true">✏️</span>
         <div class="kicker" data-i18n="pause.kicker">Class Paused</div>
         <h1 id="pauseTitle" data-i18n="pause.title">Take a Breath</h1>
         <p data-i18n="pause.body">The clock and the kids are frozen. Resume whenever you’re ready.</p>
-        <details class="howTo" id="pauseRules">
-          <summary data-i18n="start.rulesTitle">How to play</summary>
-          <ol class="rules">
-            <li><strong data-i18n="start.rules.0.lead"></strong> <span data-i18n="start.rules.0.body"></span></li>
-            <li><strong data-i18n="start.rules.1.lead"></strong> <span data-i18n="start.rules.1.body"></span></li>
-            <li><strong data-i18n="start.rules.2.lead"></strong> <span data-i18n="start.rules.2.body"></span></li>
-            <li><strong data-i18n="start.rules.3.lead"></strong> <span data-i18n="start.rules.3.body"></span></li>
-            <li><strong data-i18n="start.rules.4.lead"></strong> <span data-i18n="start.rules.4.body"></span></li>
-          </ol>
-        </details>
-        <h2 data-i18n="start.controlsTitle">Controls</h2>
-        <dl class="controls" data-controls></dl>
-        <div class="settings" data-settings>
-          <label class="toggle"><input type="checkbox" data-sound checked> <span data-i18n="settings.sound">Sound</span></label>
-          <label class="toggle"><input type="checkbox" data-voices checked> <span data-i18n="settings.voices">Student voices</span></label>
-          <label class="volume"><span data-i18n="settings.volume">Volume</span> <input type="range" min="0" max="100" step="5" value="70" data-volume></label>
-          <label class="language"><span data-i18n="settings.language">Language</span> <select data-language></select></label>
-          <label class="quality"><span data-i18n="settings.graphics">Graphics</span> <select data-quality></select></label>
-        </div>
-        <div class="btnStack panelFooter">
-          <button class="btn" id="resumeBtn" type="button"><span data-i18n="pause.resume">Resume</span> ▸</button>
+        <div class="btnStack">
+          <button class="btn big" id="resumeBtn" type="button"><span data-i18n="pause.resume">Resume</span> <svg class="ico solid" aria-hidden="true"><use href="#i-play"></use></svg></button>
+          <div class="pauseTools">
+            <button class="btn secondary small" id="pauseHelpBtn" type="button" data-open="helpOverlay"><svg class="ico" aria-hidden="true"><use href="#i-book"></use></svg><span data-i18n="start.rulesTitle">How to play</span></button>
+            <button class="btn secondary small" id="pauseSettingsBtn" type="button" data-open="settingsOverlay"><svg class="ico" aria-hidden="true"><use href="#i-gear"></use></svg><span data-i18n="settings.title">Settings</span></button>
+          </div>
           <div class="linkRow">
             <button class="linkBtn" id="restartFromPause" type="button" data-i18n="pause.restart">Restart the period</button>
             <button class="linkBtn" id="pauseMenuBtn" type="button" data-i18n="pause.menu">Back to menu</button>
@@ -227,7 +305,7 @@
     </div>
 
     <div class="overlay" id="confirmOverlay" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmBody" hidden>
-      <div class="discPanel confirmPanel">
+      <div class="panel confirmPanel">
         <h2 id="confirmTitle"></h2>
         <p id="confirmBody"></p>
         <div class="btnStack">

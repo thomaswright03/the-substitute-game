@@ -81,6 +81,35 @@ export async function faceCard(page, id) {
   }, id);
 }
 
+// Opens the settings sheet from whichever of the start or pause screens is showing.
+export async function openSettings(page) {
+  await page.locator('#startOverlay:not([hidden]) #settingsBtn, #pauseOverlay:not([hidden]) #pauseSettingsBtn').click();
+  await expect(page.locator('#settingsOverlay')).toBeVisible();
+}
+
+// Closes the sheet that is open on top of the start or pause screen (Escape does).
+export async function closeSheet(page) {
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.sheetOverlay:visible')).toHaveCount(0);
+}
+
 export function lastLog(page) {
   return page.locator('#log div').last();
+}
+
+// Stands in for the browser's speech voices, recording what each utterance would have said.
+export async function fakeSpeech(page) {
+  await page.addInitScript(() => {
+    const said = [];
+    window.__said = said;
+    const synth = {
+      speaking: false,
+      pending: false,
+      getVoices: () => [],
+      addEventListener() {},
+      cancel() { this.speaking = false; },
+      speak(u) { said.push({ text: u.text, pitch: u.pitch, rate: u.rate, lang: u.lang }); },
+    };
+    Object.defineProperty(window, 'speechSynthesis', { value: synth, configurable: true });
+  });
 }

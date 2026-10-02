@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { lookup } from './strings.js';
 import { el } from './dom.js';
-import { S, name } from './session.js';
+import { S, name, studentNumber } from './session.js';
 import { project, stereoPan, world } from './world.js';
 import { characterData } from './characters.js';
 import { freeArea, placeBubble } from './rollcall.js';
@@ -64,6 +64,7 @@ function lines(key) {
 
 /** @param {Shout} s */
 function writeShout(s) {
+  el.shoutBubble.dataset.who = String(studentNumber(s.id));
   el.shoutName.textContent = name(s.id);
   el.shoutText.textContent = lines(s.key)[s.line] || '';
   delete s.bw;

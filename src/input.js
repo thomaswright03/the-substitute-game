@@ -10,6 +10,7 @@ import { askRollCall } from './rollcall.js';
 import { setSeatChart, toggleSeatChart } from './seating.js';
 import { chooseDiscipline, closeDiscipline } from './discipline.js';
 import { cancelConfirm, refreshButtonLabels, setPaused } from './round.js';
+import { closeSheet, isSheet } from './sheets.js';
 import { audioPrefs, setMuted } from './audio.js';
 import { DIGITS, HELD_KEYS, actionFor, eventCode, learnFromKeyEvent } from './keys.js';
 
@@ -153,6 +154,11 @@ function onKeyDown(e) {
   const action = actionFor(code);
   const top = topDialog();
 
+  if (isSheet(top)) {
+    // how to play, settings and the Voice studio close on Escape and leave the rest to their controls
+    if (top && code === 'Escape') { e.preventDefault(); closeSheet(top); }
+    return;
+  }
   if (top === el.discOverlay) {
     const option = MENU_OPTIONS[DIGITS[code]];
     if (option) { e.preventDefault(); chooseDiscipline(option); }

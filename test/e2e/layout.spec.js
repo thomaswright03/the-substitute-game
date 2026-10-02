@@ -221,16 +221,16 @@ test.describe('on a phone', () => {
   });
 
   for (const size of [{ width: 375, height: 667 }, { width: 390, height: 844 }]) {
-    test(`in portrait at ${size.width}x${size.height} the rules come before Start, and play keeps half the screen for the room`, async ({ page }) => {
+    test(`in portrait at ${size.width}x${size.height} Start and the rules are in reach, and play keeps half the screen for the room`, async ({ page }) => {
       await page.setViewportSize(size);
       await openGame(page);
-      // the start card reads intro, rules, then the settings: the first rule is on screen as it opens
-      const firstRule = page.locator('#startOverlay .rules li').first();
-      await expect(firstRule).toBeInViewport();
-      const ruleTop = (await firstRule.boundingBox()).y;
-      const setupTop = (await page.locator('#startOverlay .difficulty').boundingBox()).y;
-      expect(ruleTop).toBeLessThan(setupTop);
+      // the menu is the title, the difficulty and Start; the rules are one tap away on their own sheet
       await expect(page.locator('#startBtn')).toBeInViewport();
+      await expect(page.locator('#helpBtn')).toBeInViewport();
+      await page.locator('#helpBtn').click();
+      await expect(page.locator('#helpOverlay .rules li').first()).toBeInViewport();
+      await page.keyboard.press('Escape');
+      await expect(page.locator('#helpOverlay')).toBeHidden();
 
       await startRound(page);
       await expect(page.locator('#attendancePanel')).toBeVisible();
@@ -274,8 +274,8 @@ test.describe('on a phone', () => {
 
   test('touch controls are shown instead of keyboard help', async ({ page }) => {
     await openGame(page);
-    await expect(page.locator('#startOverlay .controls')).toContainText('Left stick');
-    await expect(page.locator('#startOverlay .controls')).not.toContainText('WASD');
+    await expect(page.locator('#helpOverlay .controls')).toContainText('Left stick');
+    await expect(page.locator('#helpOverlay .controls')).not.toContainText('WASD');
     await startRound(page);
     await expect(page.locator('#joystick')).toBeVisible();
     await expect(page.locator('#hint')).toBeHidden();

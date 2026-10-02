@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { freezeRandomness, hooks, openGame, startRound } from './helpers.js';
+import { openSettings, closeSheet, freezeRandomness, hooks, openGame, startRound } from './helpers.js';
 
 test('sound starts only after the first interaction, and each event has its cue', async ({ page }) => {
   await openGame(page);
@@ -29,17 +29,21 @@ test('sound starts only after the first interaction, and each event has its cue'
 
 test('mute and volume are remembered between visits', async ({ page }) => {
   await openGame(page);
-  const sound = page.locator('#startOverlay [data-sound]');
-  const volume = page.locator('#startOverlay [data-volume]');
+  await openSettings(page);
+  const sound = page.locator('#settingsOverlay [data-sound]');
+  const volume = page.locator('#settingsOverlay [data-volume]');
   await expect(sound).toBeChecked();
   await volume.fill('40');
   await sound.uncheck();
   await expect(page.locator('#muteBtn')).toHaveAttribute('aria-pressed', 'true');
   await expect(volume).toBeDisabled();
 
+  await closeSheet(page);
   await openGame(page);
   await expect(page.locator('#startOverlay [data-sound]')).not.toBeChecked();
-  await expect(page.locator('#startOverlay [data-volume]')).toHaveValue('40');
+  await openSettings(page);
+  await expect(page.locator('#settingsOverlay [data-volume]')).toHaveValue('40');
+  await closeSheet(page);
   await expect(page.locator('#muteBtn')).toHaveAttribute('aria-pressed', 'true');
 
   // the HUD button and the pause screen show the same setting
@@ -48,5 +52,6 @@ test('mute and volume are remembered between visits', async ({ page }) => {
   await page.keyboard.press('m');
   await expect(page.locator('#muteBtn')).toHaveAttribute('aria-pressed', 'false');
   await page.keyboard.press('Escape');
-  await expect(page.locator('#pauseOverlay [data-sound]')).toBeChecked();
+  await openSettings(page);
+  await expect(page.locator('#settingsOverlay [data-sound]')).toBeChecked();
 });

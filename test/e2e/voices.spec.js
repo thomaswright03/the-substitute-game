@@ -1,22 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { activate, faceStudent, freezeRandomness, hooks, openGame, startRound } from './helpers.js';
-
-// Stands in for the browser's speech voices, recording what each utterance would have said.
-async function fakeSpeech(page) {
-  await page.addInitScript(() => {
-    const said = [];
-    window.__said = said;
-    const synth = {
-      speaking: false,
-      pending: false,
-      getVoices: () => [],
-      addEventListener() {},
-      cancel() { this.speaking = false; },
-      speak(u) { said.push({ text: u.text, pitch: u.pitch, rate: u.rate, lang: u.lang }); },
-    };
-    Object.defineProperty(window, 'speechSynthesis', { value: synth, configurable: true });
-  });
-}
+import { activate, closeSheet, faceStudent, fakeSpeech, freezeRandomness, hooks, openGame, openSettings, startRound } from './helpers.js';
 
 test('a stern talking-to gets a grunt, a sigh and a line said aloud over the student’s head', async ({ page }) => {
   await fakeSpeech(page);
@@ -70,7 +53,9 @@ test('each student has their own voice, and muting or switching voices off silen
 
   // switched off: the bubble still shows, but nothing is said
   await page.keyboard.press('Escape');
-  await page.locator('#pauseOverlay [data-voices]').uncheck();
+  await openSettings(page);
+  await page.locator('#settingsOverlay [data-voices]').uncheck();
+  await closeSheet(page);
   await page.locator('#resumeBtn').click();
   const before = await page.evaluate(() => window.__said.length);
   await hooks(page, (s) => {
@@ -83,7 +68,10 @@ test('each student has their own voice, and muting or switching voices off silen
 
   // the setting is remembered, and is greyed out while all sound is muted
   await openGame(page);
-  await expect(page.locator('#startOverlay [data-voices]')).not.toBeChecked();
+  await openSettings(page);
+  await expect(page.locator('#settingsOverlay [data-voices]')).not.toBeChecked();
+  await closeSheet(page);
   await page.locator('#startOverlay [data-sound]').uncheck();
-  await expect(page.locator('#startOverlay [data-voices]')).toBeDisabled();
+  await openSettings(page);
+  await expect(page.locator('#settingsOverlay [data-voices]')).toBeDisabled();
 });

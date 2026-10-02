@@ -13,7 +13,7 @@ import { currentContext } from './aim.js';
 import { drainEvents } from './events.js';
 import { renderControlsLists } from './input.js';
 import { audioStarted, playedCues } from './audio.js';
-import { spokenLines } from './voice.js';
+import { playedClips, spokenLines } from './voice.js';
 import { currentShout } from './shout.js';
 import { updatePrincipal } from './principal.js';
 
@@ -79,7 +79,7 @@ export function exposeTestHooks() {
     get scene() { return scene; },
     context: currentContext,
     audio: { started: audioStarted, cues: () => [...playedCues] },
-    voice: { lines: () => spokenLines.map((l) => ({ ...l })) },
+    voice: { lines: () => spokenLines.map((l) => ({ ...l })), clips: () => [...playedClips] },
     shout: currentShout,
     // run the rules forward as if `seconds` of unpaused play had passed
     /**

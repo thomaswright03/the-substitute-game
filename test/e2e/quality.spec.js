@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { freezeRandomness, hooks, openGame, startRound } from './helpers.js';
+import { closeSheet, freezeRandomness, hooks, openGame, openSettings, startRound } from './helpers.js';
 
 // Makes every frame take at least `ms` milliseconds, like a device that can't keep up.
 function slowEveryFrame(page, ms) {
@@ -40,7 +40,8 @@ test('Automatic steps the graphics down, one thing at a time, while frames stay 
   expect((await quality()).pixelRatio).toBeLessThan(1);
   // the pause screen says where Automatic has got to
   await page.keyboard.press('Escape');
-  await expect(page.locator('#pauseOverlay select[data-quality] option:checked')).toHaveText('Automatic · Minimum');
+  await openSettings(page);
+  await expect(page.locator('#settingsOverlay select[data-quality] option:checked')).toHaveText('Automatic · Minimum');
 });
 
 test('a chosen graphics level is used, kept after a reload, and never changed for you', async ({ page }) => {
@@ -48,13 +49,14 @@ test('a chosen graphics level is used, kept after a reload, and never changed fo
   await openGame(page);
   await startRound(page);
   await page.keyboard.press('Escape');
-  await page.locator('#pauseOverlay select[data-quality]').selectOption('low');
+  await openSettings(page);
+  await page.locator('#settingsOverlay select[data-quality]').selectOption('low');
   expect(await hooks(page, (s) => s.quality())).toMatchObject({ setting: 'low', level: 2, pixelRatio: 1, bloom: false, shadows: true });
-  // both copies of the control agree
-  await expect(page.locator('#startOverlay select[data-quality]')).toHaveValue('low');
 
   await openGame(page);
-  await expect(page.locator('#startOverlay select[data-quality]')).toHaveValue('low');
+  await openSettings(page);
+  await expect(page.locator('#settingsOverlay select[data-quality]')).toHaveValue('low');
+  await closeSheet(page);
   await startRound(page);
   await freezeRandomness(page);
   await slowEveryFrame(page, 80);
@@ -63,6 +65,7 @@ test('a chosen graphics level is used, kept after a reload, and never changed fo
 
   // High is the full look: glow and shadows on
   await page.keyboard.press('Escape');
-  await page.locator('#pauseOverlay select[data-quality]').selectOption('high');
+  await openSettings(page);
+  await page.locator('#settingsOverlay select[data-quality]').selectOption('high');
   expect(await hooks(page, (s) => s.quality())).toMatchObject({ setting: 'high', level: 0, bloom: true, shadows: true });
 });

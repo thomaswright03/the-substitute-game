@@ -19,6 +19,8 @@ import { refreshSpeech, updateSpeech } from './rollcall.js';
 import { refreshShout, updateShout } from './shout.js';
 import { setupVoices } from './voice.js';
 import { setupClips } from './clips.js';
+import { setupSheets } from './sheets.js';
+import { setupStudio } from './studio.js';
 import { renderSeatChart, setupSeating } from './seating.js';
 import { setupDiscipline } from './discipline.js';
 import { updateProjectile } from './effects.js';
@@ -125,6 +127,8 @@ async function init() {
   setupVoices();
   setupClips().catch(() => { /* no recordings: the placeholder voices speak */ });
   setupSettings();
+  setupSheets();
+  setupStudio();
   if (boot.blocked) return;
   try {
     createRenderer();

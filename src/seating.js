@@ -3,7 +3,7 @@ import { STUDENTS } from './data.js';
 import * as R from './rules.js';
 import { t } from './strings.js';
 import { el } from './dom.js';
-import { S, frozen, name } from './session.js';
+import { S, frozen, name, studentNumber } from './session.js';
 import { animateSeatSwap } from './world.js';
 import { pushLog } from './log.js';
 import { releaseLook, requestLook, stopHoverLook } from './pointer.js';
@@ -40,7 +40,14 @@ export function renderSeatChart() {
         btn.textContent = t('seating.empty');
         btn.disabled = !S.seatFirst;
       } else {
-        btn.textContent = name(id);
+        btn.dataset.who = String(studentNumber(id));
+        const avatar = document.createElement('span');
+        avatar.className = 'seatAvatar';
+        avatar.setAttribute('aria-hidden', 'true');
+        avatar.textContent = name(id).split(' ').map((word) => word[0]).join('').slice(0, 2);
+        const label = document.createElement('span');
+        label.textContent = name(id);
+        btn.append(avatar, label);
         if (friendColor[id]) btn.style.setProperty('--friend', friendColor[id]);
         const note = R.adjacentFriend(game, id) ? t('seating.together') : '';
         if (note) {

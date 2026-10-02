@@ -38,6 +38,9 @@ const MALE = /\bmale\b|\bman\b|daniel|david|alex|fred|george|james|mark|thomas|j
 /** @type {{id: string, text: string, source: LineSource}[]} every line asked for, newest last (for tests and diagnostics) */
 export const spokenLines = [];
 
+/** @type {string[]} the keys of the recordings played so far, newest last (for tests and diagnostics) */
+export const playedClips = [];
+
 /**
  * The line being said: how much it matters, whether it is still sounding, and how to cut it off.
  * @typedef {{priority: number, playing: () => boolean, stop: () => void}} Utterance
@@ -163,7 +166,9 @@ function playRecording(id, text, clip, { priority, yell, pan }) {
       return;
     }
     source = playBuffer(buffer, { pan, onEnd: () => { ended = true; if (current === line) current = null; } });
-    if (!source) { ended = true; current = null; }
+    if (!source) { ended = true; current = null; return; }
+    playedClips.push(clip.key);
+    if (playedClips.length > 50) playedClips.shift();
   });
   return true;
 }

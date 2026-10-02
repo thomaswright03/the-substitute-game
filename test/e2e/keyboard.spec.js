@@ -31,7 +31,7 @@ test.describe('on a French AZERTY keyboard', () => {
 
   test('the controls, the hint bar and the prompts name the keys printed on it', async ({ page }) => {
     await openGame(page);
-    const controls = page.locator('#startOverlay .controls');
+    const controls = page.locator('#helpOverlay .controls');
     await expect(controls).toContainText('ZQSD / ↑↓');
     await expect(controls.locator('div', { hasText: 'faire l’appel' }).locator('dt')).toHaveText('A');
     await expect(page.locator('#hint')).toContainText('ZQSD se déplacer');
@@ -103,7 +103,7 @@ test.describe('where the browser cannot tell the layout', () => {
       Object.defineProperty(Navigator.prototype, 'keyboard', { configurable: true, get: () => undefined });
     });
     await openGame(page);
-    await expect(page.locator('#startOverlay .controls')).toContainText('ZQSD / ↑↓');
+    await expect(page.locator('#helpOverlay .controls')).toContainText('ZQSD / ↑↓');
     await startRound(page);
     await freezeRandomness(page);
     // this player's keyboard types w in the W position after all (a QWERTY keyboard)
@@ -118,7 +118,7 @@ test('keyboard only: look up at the board and take a top-row card while the bott
   await page.setViewportSize({ width: 480, height: 320 });
   await page.addInitScript(() => localStorage.setItem('substitute.quality', 'minimum'));
   await openGame(page);
-  await expect(page.locator('#startOverlay .controls')).toContainText('look up / down');
+  await expect(page.locator('#helpOverlay .controls')).toContainText('look up / down');
   // the mouse rests mid-screen: the test's mouse starts in the corner, where hovering turns the
   // view until the pointer is captured
   await page.mouse.move(240, 160);
