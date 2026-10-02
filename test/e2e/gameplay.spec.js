@@ -221,7 +221,7 @@ test('getting hit by a throw has a visible cost', async ({ page }) => {
   await expect(page.locator('#log')).toContainText('Something hits you in the back of the head');
   await expect(page.locator('#log')).toContainText('Getting hit costs you');
   // the log never says who it was: the item is on the floor, and one desk is missing it
-  await expect(page.locator('#log')).not.toContainText('Dixie Normous');
+  await expect(page.locator('#log > *').filter({ hasText: 'Something hits you' })).not.toContainText('Dixie');
   const clue = await hooks(page, (s) => ({
     floor: s.game.floor,
     missing: s.game.roster.filter((r) => !s.game.students[r.id].items.includes(s.game.kit[1])).map((r) => r.id),
