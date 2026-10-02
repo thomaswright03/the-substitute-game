@@ -110,6 +110,7 @@ const EN = {
     sound: 'Sound',
     volume: 'Volume',
     mute: 'Mute',
+    voices: 'Student voices',
     language: 'Language',
     graphics: 'Graphics',
     // Automatic starts at High and steps down on a device that can't keep up
@@ -316,6 +317,30 @@ const EN = {
     caught: 'Caught! You turn just in time to catch {name} red-handed.',
     notEligible: '{name} isn’t acting up. You can only discipline a student who is.',
     detainedAlready: '{name} is already in detention.',
+  },
+  // what students blurt out (shown over their head and said aloud); every list is the same length
+  shout: {
+    active: {
+      notes: ['Pass it on, pass it on!', 'Don’t read it, just pass it!', 'Okay, this one’s juicy.'],
+      phone: ['Hold on, I gotta take this.', 'One sec, it’s my mom!', 'No way, did you see this?'],
+      plane: ['Incoming!', 'Clear the runway!', 'Watch this one fly!'],
+      tip: ['Look, no hands!', 'Bet I can go further!', 'Whoa, whoa, I got it!'],
+      argue: ['Actually, that’s not even right!', 'Says who?', 'Prove it!'],
+      sleep: ['Five more minutes…', 'Wake me up at the bell.', 'I’m just resting my eyes.'],
+      snack: ['What? I’m hungry!', 'Anyone want a chip?', 'I skipped breakfast, okay?'],
+      spin: ['Wheee!', 'The room is spinning!', 'Faster, faster!'],
+    },
+    talk: ['Ugh. Fine.', 'Okay, okay, jeez.', 'Whatever.'],
+    detention: ['Detention? Seriously?', 'This is so unfair!', 'You’re not even our real teacher!'],
+    principal: ['Oh, come on!', 'This is so lame.', 'I didn’t even do anything!'],
+    zap: ['Ow!', 'Hey! That hurt!', 'Ouch! What was that?'],
+    caught: ['It wasn’t me!', 'It slipped!', 'I was aiming at the bin!'],
+    hit: ['Bullseye!', 'Got you!', 'Ha! Didn’t see that coming!'],
+    warn: ['Five more seconds!', 'I’m almost done!', 'Just one more text!'],
+    calm: ['Fine…', 'Okay, sorry.', 'Yeah, yeah.'],
+    wrongStudent: ['That’s not my name.', 'Wrong kid!', 'Do I look like that?'],
+    delivered: ['Here!', 'That’s me!', 'Present!'],
+    nearlyLost: ['I can’t take this anymore!', 'I’m about to lose it!', 'I’m so out of here!'],
   },
   students: {
     dixieNormous: {

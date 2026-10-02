@@ -104,6 +104,7 @@
     <div class="prompt" id="prompt"></div>
     <div class="threatCue" id="threatCue" hidden data-i18n="prompt.throwCue">Something’s coming. Turn around!</div>
     <div class="speechBubble" id="speechBubble" hidden><div class="bubbleText" id="bubbleText"></div></div>
+    <div class="speechBubble shout" id="shoutBubble" hidden><div class="bubbleText"><span class="bubbleName" id="shoutName"></span> <span id="shoutText"></span></div></div>
     <div class="dirArrow" id="dirArrow" aria-hidden="true" hidden><span id="dirArrowGlyph">➜</span></div>
 
     <div class="bottomBar" id="bottomBar">
@@ -139,6 +140,7 @@
           <div class="settings" data-settings>
             <label class="language"><span data-i18n="settings.language">Language</span> <select data-language></select></label>
             <label class="toggle"><input type="checkbox" data-sound checked> <span data-i18n="settings.sound">Sound</span></label>
+            <label class="toggle"><input type="checkbox" data-voices checked> <span data-i18n="settings.voices">Student voices</span></label>
             <label class="volume"><span data-i18n="settings.volume">Volume</span> <input type="range" min="0" max="100" step="5" value="70" data-volume></label>
             <label class="quality"><span data-i18n="settings.graphics">Graphics</span> <select data-quality></select></label>
           </div>
@@ -209,6 +211,7 @@
         <dl class="controls" data-controls></dl>
         <div class="settings" data-settings>
           <label class="toggle"><input type="checkbox" data-sound checked> <span data-i18n="settings.sound">Sound</span></label>
+          <label class="toggle"><input type="checkbox" data-voices checked> <span data-i18n="settings.voices">Student voices</span></label>
           <label class="volume"><span data-i18n="settings.volume">Volume</span> <input type="range" min="0" max="100" step="5" value="70" data-volume></label>
           <label class="language"><span data-i18n="settings.language">Language</span> <select data-language></select></label>
           <label class="quality"><span data-i18n="settings.graphics">Graphics</span> <select data-quality></select></label>

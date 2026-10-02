@@ -11,6 +11,11 @@ import { startPrincipal } from './principal.js';
 import { endRound } from './round.js';
 import { play } from './audio.js';
 import { on } from './bus.js';
+import { studentReacts } from './shout.js';
+import { STUDENTS } from './data.js';
+
+/** @type {Record<string, string>} how each student acts up, for what they say when they start */
+const BEHAVIOUR = Object.fromEntries(STUDENTS.map((s) => [s.id, s.type]));
 
 // Player actions ask for their events to be handled at once (see bus.js).
 export function setupEvents() {
@@ -26,8 +31,11 @@ export function drainEvents() {
 function handleEvent(e) {
   const n = 'id' in e ? name(e.id) : '';
   switch (e.type) {
-    case 'activate': pushLog(t('students.' + e.id + '.active')); break;
-    case 'nearlyLost': pushLog(t('log.nearlyLost', { name: n })); break;
+    case 'activate':
+      pushLog(t('students.' + e.id + '.active'));
+      studentReacts(e.id, 'active', BEHAVIOUR[e.id]);
+      break;
+    case 'nearlyLost': pushLog(t('log.nearlyLost', { name: n })); studentReacts(e.id, 'nearlyLost'); break;
     case 'eggedOn': pushLog(t('log.eggedOn', { name: n, friend: name(e.friendId) })); break;
     case 'cardPicked':
       pushLog(t('log.cardPicked', { name: n }));
@@ -36,10 +44,12 @@ function handleEvent(e) {
     case 'cardDelivered':
       pushLog(t('log.cardDelivered', { name: n }));
       flashPose(e.id, 'hand', 1.2);
+      studentReacts(e.id, 'delivered');
       break;
     case 'wrongStudent':
       pushLog(t('log.wrongStudent', { name: n, held: name(e.heldId) }));
       flashPose(e.id, 'shake', 0.8);
+      studentReacts(e.id, 'wrongStudent');
       break;
     case 'cardResolvedByOffice':
       pushLog(t('log.cardResolvedByOffice', { name: n }));
@@ -48,16 +58,23 @@ function handleEvent(e) {
     case 'attendanceComplete': pushLog(t('log.attendanceComplete')); break;
     case 'rollCall': showRollCallAnswer(e.id); break;
     case 'help':
-      if (e.result === 'warned') pushLog(t('students.' + e.id + '.warn'));
-      else if (e.result === 'missed') pushLog(t('log.helpMissed', { name: n }));
-      else if (e.result === 'calmed') pushLog(t('students.' + e.id + '.calm'));
+      if (e.result === 'warned') {
+        pushLog(t('students.' + e.id + '.warn'));
+        studentReacts(e.id, 'warn');
+      } else if (e.result === 'missed') pushLog(t('log.helpMissed', { name: n }));
+      else if (e.result === 'calmed') {
+        pushLog(t('students.' + e.id + '.calm'));
+        studentReacts(e.id, 'calm');
+      }
       break;
-    case 'talk': pushLog(t(e.stillActive ? 'log.talkPartial' : 'log.talk', { name: n })); break;
-    case 'detention': pushLog(t('log.detention', { name: n })); renderSeatChart(); break;
-    case 'principal': play('knock'); startPrincipal(e.id); renderSeatChart(); break;
+    // a stern talking-to gets a grunt and a sigh
+    case 'talk': pushLog(t(e.stillActive ? 'log.talkPartial' : 'log.talk', { name: n })); studentReacts(e.id, 'talk'); break;
+    case 'detention': pushLog(t('log.detention', { name: n })); renderSeatChart(); studentReacts(e.id, 'detention'); break;
+    case 'principal': play('knock'); startPrincipal(e.id); renderSeatChart(); studentReacts(e.id, 'principal'); break;
     case 'zap':
       pushLog(t('log.zap', { name: n }));
       play('zap');
+      studentReacts(e.id, 'zap');
       zapVisual(e.id);
       if (e.setOffId) pushLog(t('log.zapSetOff', { name: name(e.setOffId) }));
       break;
@@ -73,12 +90,14 @@ function handleEvent(e) {
       play('hit');
       hitFlash();
       pushLog(t('log.hit', { name: n }));
+      studentReacts(e.id, 'hit');
       if (e.first) pushLog(t('log.hitFirst'));
       break;
     case 'caught':
       clearProjectile();
       play('caught');
       pushLog(t('log.caught', { name: n }));
+      studentReacts(e.id, 'caught');
       openDiscipline(e.id);
       break;
     case 'over':

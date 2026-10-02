@@ -41,6 +41,7 @@ export const el = {
   clockValue: $('clockValue'), clockFill: $('clockFill'),
   crosshair: $('crosshair'), prompt: $('prompt'), threatCue: $('threatCue'),
   speechBubble: $('speechBubble'), bubbleText: $('bubbleText'), dirArrow: $('dirArrow'), dirArrowGlyph: $('dirArrowGlyph'),
+  shoutBubble: $('shoutBubble'), shoutName: $('shoutName'), shoutText: $('shoutText'),
   pauseBtn: $('pauseBtn', HTMLButtonElement), fullscreenBtn: $('fullscreenBtn', HTMLButtonElement),
   startOverlay: $('startOverlay'), startBtn: $('startBtn', HTMLButtonElement), bestStart: $('bestStart'),
   endOverlay: $('endOverlay'), restartBtn: $('restartBtn', HTMLButtonElement),

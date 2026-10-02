@@ -97,6 +97,7 @@ export default {
     sound: 'Son',
     volume: 'Volume',
     mute: 'Couper le son',
+    voices: 'Voix des élèves',
     language: 'Langue',
     graphics: 'Graphismes',
     quality: {
@@ -299,6 +300,29 @@ export default {
     caught: 'Pris sur le fait ! Vous vous retournez juste à temps pour surprendre {name}.',
     notEligible: '{name} ne chahute pas. Vous ne pouvez sanctionner qu’un élève qui chahute.',
     detainedAlready: '{name} est déjà en retenue.',
+  },
+  shout: {
+    active: {
+      notes: ['Fais passer, fais passer !', 'Ne le lis pas, fais passer !', 'Bon, celui-là est croustillant.'],
+      phone: ['Attends, je dois répondre.', 'Une seconde, c’est ma mère !', 'Non, t’as vu ça ?'],
+      plane: ['Attention, ça décolle !', 'Dégagez la piste !', 'Regardez-le voler !'],
+      tip: ['Regardez, sans les mains !', 'Je parie que je vais plus loin !', 'Ouh là, ça va, je gère !'],
+      argue: ['En fait, c’est même pas vrai !', 'Qui a dit ça ?', 'Prouvez-le !'],
+      sleep: ['Encore cinq minutes…', 'Réveillez-moi à la sonnerie.', 'Je repose juste mes yeux.'],
+      snack: ['Quoi ? J’ai faim !', 'Quelqu’un veut une chips ?', 'J’ai pas déjeuné, d’accord ?'],
+      spin: ['Youpiii !', 'La salle tourne !', 'Plus vite, plus vite !'],
+    },
+    talk: ['Pff. D’accord.', 'Ça va, ça va.', 'Si vous le dites.'],
+    detention: ['Une colle ? Sérieux ?', 'C’est trop injuste !', 'Vous êtes même pas notre vrai prof !'],
+    principal: ['Oh, non, allez !', 'Trop nul.', 'J’ai même rien fait !'],
+    zap: ['Aïe !', 'Hé ! Ça fait mal !', 'Ouille ! C’était quoi, ça ?'],
+    caught: ['C’est pas moi !', 'Ça m’a échappé !', 'Je visais la poubelle !'],
+    hit: ['En plein dans le mille !', 'Je t’ai eu !', 'Ha ! Pas vu venir, hein ?'],
+    warn: ['Encore cinq secondes !', 'J’ai presque fini !', 'Juste un dernier message !'],
+    calm: ['D’accord…', 'Ok, pardon.', 'Oui, oui.'],
+    wrongStudent: ['C’est pas mon nom.', 'Mauvais élève !', 'J’ai une tête à m’appeler comme ça ?'],
+    delivered: ['Ici !', 'C’est moi !', 'Me voilà !'],
+    nearlyLost: ['J’en peux plus !', 'Je vais craquer !', 'Moi, je me casse !'],
   },
   students: {
     dixieNormous: {

@@ -3,9 +3,9 @@
 // suspended until then anyway). The mute switch and the volume are remembered between visits.
 
 const PREFS_KEY = 'substitute.audio';
-const DEFAULT_PREFS = { muted: false, volume: 0.7 };
+const DEFAULT_PREFS = { muted: false, volume: 0.7, voices: true };
 
-/** @typedef {{muted: boolean, volume: number}} AudioPrefs */
+/** @typedef {{muted: boolean, volume: number, voices: boolean}} AudioPrefs */
 
 /**
  * The audio graph, once the first gesture has created it: the context, the master volume every
@@ -28,6 +28,7 @@ function loadPrefs() {
     if (saved && typeof saved === 'object') {
       return {
         muted: saved.muted === true,
+        voices: saved.voices !== false,
         volume: Number.isFinite(saved.volume) ? Math.min(1, Math.max(0, saved.volume)) : DEFAULT_PREFS.volume,
       };
     }
@@ -59,6 +60,12 @@ function applyPrefs() {
 /** @param {boolean} muted */
 export function setMuted(muted) {
   prefs.muted = !!muted;
+  applyPrefs();
+}
+
+/** @param {boolean} on whether the students speak their lines aloud */
+export function setVoices(on) {
+  prefs.voices = !!on;
   applyPrefs();
 }
 
@@ -170,9 +177,46 @@ function noise(a, dest, at, { dur, peak = 0.3, filter = 'bandpass', freq = 1000,
   src.stop(at + dur + 0.05);
 }
 
+/**
+ * A voiced sound: a buzzing glottal tone at `pitch` Hz, bent along `contour` (multiples of the
+ * pitch over the sound's length), shaped into a vowel by two formant filters, with some breath.
+ * @param {Engine} a
+ * @param {AudioNode} dest
+ * @param {number} at
+ * @param {{pitch: number, contour: number[], dur: number, vowel?: [number, number], peak?: number, attack?: number, breath?: number}} options
+ */
+function voiced(a, dest, at, { pitch, contour, dur, vowel = [640, 1190], peak = 0.5, attack = 0.02, breath = 0.15 }) {
+  // a higher voice has shorter vocal tract, so its formants sit higher
+  const scale = pitch > 170 ? 1.17 : 1;
+  const mix = a.ctx.createGain();
+  mix.gain.value = 1;
+  const g = envelope(a, at, peak, attack, dur * 0.35, Math.max(0.02, dur * 0.65 - attack));
+  mix.connect(g).connect(dest);
+  for (const [freq, q, level] of [[vowel[0] * scale, 6, 1], [vowel[1] * scale, 8, 0.55]]) {
+    const f = a.ctx.createBiquadFilter();
+    f.type = 'bandpass';
+    f.frequency.value = freq;
+    f.Q.value = q;
+    const lvl = a.ctx.createGain();
+    lvl.gain.value = level * 3;
+    f.connect(lvl).connect(mix);
+    const o = a.ctx.createOscillator();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(pitch * contour[0], at);
+    contour.forEach((k, i) => {
+      if (i) o.frequency.linearRampToValueAtTime(pitch * k, at + dur * i / (contour.length - 1));
+    });
+    o.connect(f);
+    o.start(at);
+    o.stop(at + dur + 0.05);
+  }
+  if (breath) noise(a, dest, at, { dur, peak: breath * peak, freq: vowel[1] * scale, q: 1.2, attack: attack * 2 });
+}
+
 /* ---------------- the cues ---------------- */
 
-/** @typedef {(a: Engine, dest: AudioNode, at: number, options: {long?: boolean}) => void} Cue */
+/** @typedef {{long?: boolean, pitch?: number, delay?: number}} CueOptions */
+/** @typedef {(a: Engine, dest: AudioNode, at: number, options: CueOptions) => void} Cue */
 /** @type {Record<string, Cue>} */
 const CUES = {
   // an electric school bell: a metallic chord hammered about 22 times a second
@@ -220,6 +264,34 @@ const CUES = {
       noise(a, dest, at + dt, { dur: 0.07, peak: 0.3, freq: 700, q: 3 });
     }
   },
+  // the student voices: `pitch` is the speaking pitch of the student making the sound, in Hz
+  // a short, annoyed "hnh" through the nose
+  grunt(a, dest, at, { pitch = 130 }) {
+    voiced(a, dest, at, { pitch, contour: [1.05, 1, 0.8], dur: 0.28, vowel: [500, 1000], peak: 0.45, attack: 0.012, breath: 0.25 });
+  },
+  // a long, falling "uuugh"
+  groan(a, dest, at, { pitch = 130 }) {
+    voiced(a, dest, at, { pitch, contour: [1.1, 1.15, 0.95, 0.72], dur: 0.85, vowel: [620, 1100], peak: 0.4, attack: 0.08, breath: 0.2 });
+  },
+  // a heavy breath out, with a little voice at its start
+  sigh(a, dest, at, { pitch = 130 }) {
+    noise(a, dest, at, { dur: 1.0, peak: 0.28, freq: 1500, to: 520, q: 0.9, attack: 0.18, hold: 0.2 });
+    voiced(a, dest, at + 0.05, { pitch, contour: [1.05, 0.8], dur: 0.45, vowel: [700, 1200], peak: 0.12, attack: 0.08, breath: 0.4 });
+  },
+  // "ow!": a sharp jump up in pitch
+  yelp(a, dest, at, { pitch = 130 }) {
+    voiced(a, dest, at, { pitch, contour: [1.8, 2.5, 1.5], dur: 0.32, vowel: [750, 1150], peak: 0.5, attack: 0.008, breath: 0.1 });
+  },
+  // a quick breath in: caught out
+  gasp(a, dest, at) {
+    noise(a, dest, at, { dur: 0.32, peak: 0.3, filter: 'bandpass', freq: 900, to: 2400, q: 1.1, attack: 0.05 });
+  },
+  // "ha-ha-ha", falling
+  laugh(a, dest, at, { pitch = 130 }) {
+    for (let i = 0; i < 4; i++) {
+      voiced(a, dest, at + i * 0.13, { pitch: pitch * (1.35 - i * 0.08), contour: [1, 0.92], dur: 0.09, vowel: [800, 1300], peak: 0.35, attack: 0.006, breath: 0.35 });
+    }
+  },
   // the last seconds before the bell
   tick(a, dest, at) {
     tone(a, dest, at, { type: 'square', freq: 1250, dur: 0.05, peak: 0.08 });
@@ -229,14 +301,15 @@ const CUES = {
 // Plays a cue. pan runs from -1 (hard left) to 1 (hard right). Before the first gesture, or
 // when muted, this does nothing audible, but the cue is still recorded.
 /**
- * Plays a cue: `pan` places it from -1 (left) to 1 (right); `long` is the end-of-period bell.
+ * Plays a cue: `pan` places it from -1 (left) to 1 (right); `long` is the end-of-period bell;
+ * `pitch` is the voice of the student who makes a vocal sound; `delay` starts it that many seconds later.
  * @param {string} name
- * @param {{pan?: number, long?: boolean}} [options]
+ * @param {{pan?: number} & CueOptions} [options]
  */
 export function play(name, { pan = 0, ...opts } = {}) {
   playedCues.push(name);
   if (playedCues.length > 50) playedCues.shift();
   const a = engine;
   if (!a || a.ctx.state !== 'running' || prefs.muted || !CUES[name]) return;
-  CUES[name](a, output(a, pan), a.ctx.currentTime + 0.01, opts);
+  CUES[name](a, output(a, pan), a.ctx.currentTime + 0.01 + (opts.delay || 0), opts);
 }

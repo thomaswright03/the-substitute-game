@@ -10,6 +10,7 @@ import { player } from './player.js';
 import { characterData } from './characters.js';
 import { pushLog } from './log.js';
 import { emit } from './bus.js';
+import { speak } from './voice.js';
 
 const ANSWER_SECONDS = 9; // of play: a pause doesn't use them up
 /** @type {number} the roll-call line used last, so the next answer is a different one */
@@ -84,6 +85,8 @@ export function showRollCallAnswer(id) {
   writeSpeech(speech);
   S.speech = speech;
   pushLog(speech.answer);
+  // the answer matters most: nothing else a student says cuts it off
+  speak(id, rollCallLines()[line] || '', { priority: 3 });
 }
 
 export function clearSpeech() {
@@ -112,25 +115,7 @@ export function updateSpeech() {
     el.dirArrow.hidden = true;
   } else if (pos.onScreen) {
     el.dirArrow.hidden = true;
-    el.speechBubble.hidden = false;
-    // the bubble's size only changes with its text: measure it once, the first frame it shows
-    if (!speech.bw || !speech.bh) {
-      speech.bw = el.speechBubble.offsetWidth;
-      speech.bh = el.speechBubble.offsetHeight;
-    }
-    // keep the whole bubble on screen and below the HUD; the tail still points at the speaker
-    const bw = speech.bw, bh = speech.bh;
-    const x = Math.round(Math.max(safe.left + bw / 2, Math.min(safe.right - bw / 2, pos.x)));
-    const y = Math.round(Math.max(safe.top + bh, pos.y));
-    const tail = Math.round(Math.max(-(bw / 2 - 16), Math.min(bw / 2 - 16, pos.x - x)));
-    if (x !== speech.x || y !== speech.y || tail !== speech.tail) {
-      speech.x = x;
-      speech.y = y;
-      speech.tail = tail;
-      el.speechBubble.style.left = x + 'px';
-      el.speechBubble.style.top = y + 'px';
-      el.speechBubble.style.setProperty('--tail', tail + 'px');
-    }
+    placeBubble(el.speechBubble, speech, pos, safe);
   } else {
     el.speechBubble.hidden = true;
     // an arrow at the edge of the free play area, pointing toward the student
@@ -144,6 +129,35 @@ export function updateSpeech() {
     el.dirArrow.style.top = cy + dy * k + 'px';
     el.dirArrowGlyph.style.display = 'inline-block';
     el.dirArrowGlyph.style.transform = 'rotate(' + Math.atan2(dy, dx) + 'rad)';
+  }
+}
+
+/**
+ * Shows a speech bubble over a point on screen, kept whole on screen and below the HUD, with its
+ * tail still pointing at the speaker. `state` remembers the bubble's size (measured once, the
+ * first frame it shows: it only changes with the text) and where it was last put.
+ * @param {HTMLElement} bubble
+ * @param {{bw?: number, bh?: number, x?: number, y?: number, tail?: number}} state
+ * @param {{x: number, y: number}} pos
+ * @param {{left: number, right: number, top: number}} safe
+ */
+export function placeBubble(bubble, state, pos, safe) {
+  bubble.hidden = false;
+  if (!state.bw || !state.bh) {
+    state.bw = bubble.offsetWidth;
+    state.bh = bubble.offsetHeight;
+  }
+  const bw = state.bw, bh = state.bh;
+  const x = Math.round(Math.max(safe.left + bw / 2, Math.min(safe.right - bw / 2, pos.x)));
+  const y = Math.round(Math.max(safe.top + bh, pos.y));
+  const tail = Math.round(Math.max(-(bw / 2 - 16), Math.min(bw / 2 - 16, pos.x - x)));
+  if (x !== state.x || y !== state.y || tail !== state.tail) {
+    state.x = x;
+    state.y = y;
+    state.tail = tail;
+    bubble.style.left = x + 'px';
+    bubble.style.top = y + 'px';
+    bubble.style.setProperty('--tail', tail + 'px');
   }
 }
 

@@ -13,6 +13,8 @@ import { currentContext } from './aim.js';
 import { drainEvents } from './events.js';
 import { renderControlsLists } from './input.js';
 import { audioStarted, playedCues } from './audio.js';
+import { spokenLines } from './voice.js';
+import { currentShout } from './shout.js';
 import { updatePrincipal } from './principal.js';
 
 /** @type {{position: THREE.Vector3, target: THREE.Vector3} | null} look at the scene from anywhere */
@@ -77,6 +79,8 @@ export function exposeTestHooks() {
     get scene() { return scene; },
     context: currentContext,
     audio: { started: audioStarted, cues: () => [...playedCues] },
+    voice: { lines: () => spokenLines.map((l) => ({ ...l })) },
+    shout: currentShout,
     // run the rules forward as if `seconds` of unpaused play had passed
     /**
      * @param {number} seconds
