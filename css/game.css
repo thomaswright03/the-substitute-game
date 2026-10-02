@@ -345,6 +345,8 @@ select:hover { border-color: color-mix(in srgb, var(--chalk) 45%, transparent); 
 }
 @container stage (max-width: 360px) {
   .badge .value { font-size: var(--fs-3); }
+  /* without the icon the label and the value share the one column */
+  .badge { grid-template-columns: minmax(0, 1fr); }
   .badge::before { display: none; }
 }
 
@@ -362,7 +364,8 @@ select:hover { border-color: color-mix(in srgb, var(--chalk) 45%, transparent); 
   max-width: min(calc(480 * var(--px)), 100%);
 }
 .attendancePanel { padding: var(--space-5) var(--space-8); text-align: center; animation: dropIn 0.35s var(--ease); }
-@keyframes dropIn { from { opacity: 0; translate: 0 calc(-10 * var(--px)); } }
+/* it grows into place, not slides: a panel that slid down from above would pass over the badges */
+@keyframes dropIn { from { opacity: 0; scale: 0.96; } }
 .attKicker, .seatChart .kicker { font-family: var(--font-display); font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; font-size: var(--fs-1); color: var(--pencil-yellow); }
 .attQuestion { font-family: var(--font-display); font-weight: 600; font-size: var(--fs-3); margin: var(--space-1) 0; }
 .attHint, .attAnswer { font-family: var(--font-body); font-size: var(--fs-2); color: var(--chalk-dim); line-height: 1.35; margin-top: var(--space-1); }
