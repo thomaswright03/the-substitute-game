@@ -1,22 +1,78 @@
-Character models: "Ultimate Modular Men Pack" and "Ultimate Modular Women Pack" by Quaternius
-(https://quaternius.com), obtained via poly.pizza.
+CHARACTER MODEL CREDITS
+=======================
 
-Files used and their per-model licence:
-  business-man.glb   (Business Man, men pack)   - CC0 (Public Domain)
-  casual-man.glb     (Casual Character, men)     - CC0 (Public Domain)
-  hoodie-man.glb     (Hoodie Character, men)     - CC0 (Public Domain)
-  worker-man.glb     (Worker, men pack)          - CC0 (Public Domain)
-  punk-man.glb       (Punk, men pack)            - CC0 (Public Domain)
-  suit-woman.glb     (Suit, women pack)          - CC BY (Attribution: Quaternius)
-  worker-woman.glb   (Worker, women pack)        - CC BY (Attribution: Quaternius)
-  punk-woman.glb     (Punk, women pack)          - CC0 (Public Domain)
-  casual-woman.glb   (Animated Woman, women pack)- CC0 (Public Domain)
+Creator:  Quaternius (https://quaternius.com)
+Works:    "Ultimate Modular Men Pack" and "Ultimate Modular Women Pack"
+Obtained: via poly.pizza (https://poly.pizza), as glTF (.glb) downloads
 
-CC BY items require attribution: "Character model by Quaternius (quaternius.com)".
-Modifications: geometry and rig are unchanged. For web delivery the files were re-packed with
-scripts/optimize-assets.mjs: animation clips the game never plays were removed (only
-"Idle_Neutral" is kept, plus "Walk" for business-man.glb), and the geometry was
-meshopt-compressed (EXT_meshopt_compression) with normals, UVs and skin weights quantized.
-At runtime the game poses the rigs in code and gives each head an expressive face
-(src/face.js): blend shapes added to the head's own eye and brow meshes, and a generated
-mouth. The files themselves carry no further changes.
+Files used and their per-model licence (as recorded when the files were downloaded):
+
+  File               Model name / pack                  Licence
+  -----------------  ---------------------------------  ------------------------------
+  business-man.glb   Business Man, men pack             CC0 1.0 (public domain dedication)
+  casual-man.glb     Casual Character, men pack         CC0 1.0 (public domain dedication)
+  hoodie-man.glb     Hoodie Character, men pack         CC0 1.0 (public domain dedication)
+  worker-man.glb     Worker, men pack                   CC0 1.0 (public domain dedication)
+  punk-man.glb       Punk, men pack                     CC0 1.0 (public domain dedication)
+  suit-woman.glb     Suit, women pack                   CC BY (Creative Commons Attribution)
+  worker-woman.glb   Worker, women pack                 CC BY (Creative Commons Attribution)
+  punk-woman.glb     Punk, women pack                   CC0 1.0 (public domain dedication)
+  casual-woman.glb   Animated Woman, women pack         CC0 1.0 (public domain dedication)
+
+CC0 deed:     https://creativecommons.org/publicdomain/zero/1.0/
+
+
+ATTRIBUTION FOR THE TWO CC BY MODELS
+------------------------------------
+
+  "Suit" and "Worker" (Ultimate Modular Women Pack) by Quaternius
+  (https://quaternius.com), obtained from poly.pizza (https://poly.pizza),
+  licensed under Creative Commons Attribution (CC BY).
+  Modified: re-packed for web delivery and posed in code; see "Changes" below.
+  The licensor provides the material as-is, without warranties; see the
+  disclaimer of warranties in the licence.
+
+  Licence version: NOT RECORDED. The original download note says only "CC BY".
+  The version could not be re-checked from this repository's build environment
+  on 2026-09-24 (poly.pizza and quaternius.com were not reachable from it).
+  Licence deeds: CC BY 4.0 https://creativecommons.org/licenses/by/4.0/
+                 CC BY 3.0 https://creativecommons.org/licenses/by/3.0/
+  TODO (owner): confirm the version on the poly.pizza listing and keep only the
+  matching link.
+
+
+CHANGES
+-------
+
+Stored files. For web delivery the files were re-packed with scripts/optimize-assets.mjs:
+animation clips the game never plays were removed (only "Idle_Neutral" is kept, plus "Walk"
+for business-man.glb), and the geometry was meshopt-compressed (EXT_meshopt_compression)
+with normals, UVs and skin weights quantized. The original rig and mesh shapes are
+otherwise unchanged. SHA-256 of each file as committed:
+
+  1716dc257ffcc02600344cb7027e9034e1c1ec058339ab2570eb492020894c31  business-man.glb
+  6c5f8269572bd3c4781c6cf320f43cda82729e2b7aff714ea3d8364ca3b98a11  casual-man.glb
+  4ef387ade518db6b59469fc0d53aab2417a0caac32fb00358ba02e45246e4b4d  casual-woman.glb
+  4eaf4f2851b86106b565d0e39cf794c7d0c662fbc2f01136472e86baf06b80f9  hoodie-man.glb
+  c86f0ab1f251b6b7f9028136149ab56847b39d6be22b22bd84c8e44fad022b0f  punk-man.glb
+  d368e21ce561a1eff5eb48581f9e250badd0f902175a610290345c49e22ef86f  punk-woman.glb
+  99fa8446eabf2171c4393972133fab72119af545d3e6239eb6260da7256af577  suit-woman.glb
+  3c9f8e8f2c35d63fa4e3d367fe71eb34842de1e63bca214106c13bcc3143d978  worker-man.glb
+  56c9cead6fd7e48d97554a6f61132d0f6bb2435a06492b76cb3c9e129acc2adb  worker-woman.glb
+
+At runtime the game, without further changing the files:
+  - freezes each model on its "Idle_Neutral" animation clip and bends the leg, head and
+    arm bones to pose it seated at a desk and to animate "tells";
+  - applies scale, rotation and position offsets to place it in the classroom;
+  - adds simple props (phone, notes, paper plane, snack) as separate meshes;
+  - gives each head an expressive face (src/face.js): blend shapes added to the head's own
+    eye and brow meshes, and a generated mouth. No third-party face model is used.
+
+
+WHAT THE ORIGINAL FILES SAID
+----------------------------
+
+Checked on 2026-09-24 by reading each as-downloaded file's glTF JSON header: every file had
+asset.generator "FBX2glTF v0.9.7" and asset.version "2.0", and no copyright, author,
+licence or "extras" metadata. The files therefore did not name their creator or licence;
+the information above rests on the download record.

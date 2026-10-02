@@ -298,13 +298,46 @@ ready. `npm start` and GitHub Pages send scripts, styles and models gzip-compres
 first load is a little over 3 MB on the wire. If you host the game somewhere else, turn on gzip or
 Brotli compression for `.html`, `.js`, `.css` and `.glb` files there too.
 
+## Privacy and data
+
+- **No personal data is collected or sent anywhere.** There are no accounts, forms, analytics,
+  ads, cookies or third-party requests. The page loads only its own files by relative path
+  (scripts, models, fonts), from whichever server you load it from.
+- **Settings are stored on your device only**, in the browser's `localStorage`: language,
+  difficulty, graphics quality, sound on/off and volume, and your best report-card grade per
+  difficulty. None of it leaves your browser; clear this site's data in your browser to remove it.
+- **Offline cache:** on the published site a service worker (`sw.js`) keeps the game's own files
+  in your browser's cache so repeat visits load faster. It never caches other sites.
+- **Hosting:** whoever serves the files (GitHub Pages, or your own machine) receives ordinary
+  web-server requests for them, like any web page. See GitHub's privacy statement for what
+  GitHub Pages logs.
+
+## Content note and intended audience
+
+All characters are fictional. The game's humour includes crude, innuendo-style pun names for
+students and a cartoon "lightning zap" discipline option. **It is intended for adults and is
+not designed for or directed at children.** Review the content against the target platform's
+rules before hosting or distributing it anywhere else.
+
+## Licence
+
+The project's own code and documentation are released under the [MIT License](LICENSE),
+© 2026 Thomas Wright. Bundled third-party files keep their own licences: see
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for sources and where each licence text is.
+
 ## Asset credits
 
-- **Character bodies**: Quaternius "Ultimate Modular Men/Women" packs (CC0 / CC BY per
-  model). See `assets/characters/CREDITS.txt` for the exact split, the required attribution
-  and the modifications made.
-- **Fonts**: Fredoka, Nunito and JetBrains Mono, under the SIL Open Font License. The
+- **Character bodies**: Quaternius "Ultimate Modular Men/Women" packs, obtained via poly.pizza.
+  Seven models are CC0 and two ("Suit" and "Worker", women pack) are **CC BY**; the CC BY
+  version was not recorded at download and still needs confirming. See
+  `assets/characters/CREDITS.txt` for the per-file licence, the attribution, the
+  modifications made and checksums.
+- **three.js r186** (`lib/three/`): © 2010-2026 three.js authors, MIT. See `lib/three/LICENSE`.
+- **Fonts**: Fredoka, Nunito and JetBrains Mono, under the SIL Open Font License 1.1. The
   licence texts are in `assets/fonts/`.
+- **Expressive faces** are generated in code (`src/face.js`). An earlier version used a
+  third-party head model whose licence could not be established; it was removed from the
+  current tree but is still in git history. Details in `THIRD_PARTY_NOTICES.md`.
 
 ## Status
 
