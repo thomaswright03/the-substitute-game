@@ -10,6 +10,7 @@ import { characterData } from './characters.js';
 import { freeArea, placeBubble } from './rollcall.js';
 import { play } from './audio.js';
 import { speak, voicePitch } from './voice.js';
+import { slotOf } from './clips.js';
 
 const SHOUT_SECONDS = 3.5; // of play
 // a newer, less important line doesn't replace one this young
@@ -99,7 +100,7 @@ export function studentReacts(id, kind, behaviour) {
     delay += 0.55;
   }
   const text = lines(key)[line];
-  const say = () => speak(id, text, { priority: reaction.priority, yell: reaction.yell });
+  const say = () => speak(id, text, { priority: reaction.priority, yell: reaction.yell, slot: slotOf(key, line), pan });
   const wait = reaction.sounds ? (reaction.gap || 0) + delay - 0.55 : 0;
   // the line follows the sound, unless something newer was said or the game stopped meanwhile
   if (wait > 0) setTimeout(() => { if (shout === mine && S.running && !S.paused) say(); }, wait * 1000);

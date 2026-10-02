@@ -46,8 +46,15 @@ const TYPES = {
   '.png': 'image/png',
   '.woff2': 'font/woff2',
   '.txt': 'text/plain; charset=utf-8',
+  '.mp3': 'audio/mpeg',
+  '.wav': 'audio/wav',
+  '.ogg': 'audio/ogg',
+  '.m4a': 'audio/mp4',
+  '.aac': 'audio/aac',
+  '.webm': 'audio/webm',
+  '.flac': 'audio/flac',
 };
-// woff2 and png are already compressed; gzip would only cost time
+// woff2, png and sound files are already compressed; gzip would only cost time
 const COMPRESSIBLE = new Set(['.html', '.js', '.mjs', '.css', '.json', '.glb', '.svg', '.txt']);
 const gzipped = new Map(); // path -> { mtimeMs, body }
 

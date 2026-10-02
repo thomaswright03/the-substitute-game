@@ -16,6 +16,7 @@
     "deadcode": "knip",
     "typecheck": "tsc -p tsconfig.json",
     "optimize-assets": "node scripts/optimize-assets.mjs",
+    "voices": "node scripts/voices.mjs",
     "vendor-three": "node scripts/vendor-three.mjs"
   },
   "engines": {

@@ -5,12 +5,13 @@ import * as R from './rules.js';
 import { lookup, t } from './strings.js';
 import { el } from './dom.js';
 import { S, frozen, name } from './session.js';
-import { project, world } from './world.js';
+import { project, stereoPan, world } from './world.js';
 import { player } from './player.js';
 import { characterData } from './characters.js';
 import { pushLog } from './log.js';
 import { emit } from './bus.js';
 import { speak } from './voice.js';
+import { slotOf } from './clips.js';
 
 const ANSWER_SECONDS = 9; // of play: a pause doesn't use them up
 /** @type {number} the roll-call line used last, so the next answer is a different one */
@@ -86,7 +87,7 @@ export function showRollCallAnswer(id) {
   S.speech = speech;
   pushLog(speech.answer);
   // the answer matters most: nothing else a student says cuts it off
-  speak(id, rollCallLines()[line] || '', { priority: 3 });
+  speak(id, rollCallLines()[line] || '', { priority: 3, slot: slotOf('rollcall', line), pan: stereoPan(g.position) });
 }
 
 export function clearSpeech() {

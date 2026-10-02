@@ -313,3 +313,36 @@ export function play(name, { pan = 0, ...opts } = {}) {
   if (!a || a.ctx.state !== 'running' || prefs.muted || !CUES[name]) return;
   CUES[name](a, output(a, pan), a.ctx.currentTime + 0.01 + (opts.delay || 0), opts);
 }
+
+/* ---------------- recorded lines ---------------- */
+
+/**
+ * Decodes a recording. Resolves to its length in seconds, and keeps the decoded sound for
+ * playBuffer(); rejects when the browser can't read the file or sound hasn't started yet.
+ * @param {ArrayBuffer} data
+ * @returns {Promise<AudioBuffer>}
+ */
+export function decodeAudio(data) {
+  if (!engine) return Promise.reject(new Error('Sound has not started'));
+  return engine.ctx.decodeAudioData(data);
+}
+
+/**
+ * Plays a decoded recording through the master volume, placed from -1 (left) to 1 (right).
+ * Nothing plays when muted or before the first gesture. Returns the playing source, or null.
+ * @param {AudioBuffer} buffer
+ * @param {{pan?: number, gain?: number, onEnd?: () => void}} [options]
+ * @returns {AudioBufferSourceNode | null}
+ */
+export function playBuffer(buffer, { pan = 0, gain = 1, onEnd } = {}) {
+  const a = engine;
+  if (!a || a.ctx.state !== 'running' || prefs.muted) return null;
+  const src = a.ctx.createBufferSource();
+  src.buffer = buffer;
+  const level = a.ctx.createGain();
+  level.gain.value = gain;
+  src.connect(level).connect(output(a, pan));
+  if (onEnd) src.onended = onEnd;
+  src.start();
+  return src;
+}
