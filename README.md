@@ -57,6 +57,8 @@ A round is one 3rd-period class, 9:05 to 9:50 on the clock: two minutes of real 
    - *Call the principal*: the student is marched out and the room sobers up (−20% to
      others). Once per period, and it costs report points.
    - *Zap*: instant calm, but the commotion sets another student off. 20-second cooldown.
+   - *Read the note to the class* (5, only for the note-passer): settles her for good and puts the note
+     up on screen, read aloud in the teacher's voice, but the class howls (+8% to the others acting up).
 
 Reach the bell and you get a report card (A to D). Points come off for hits taken, heavy
 discipline and close calls.
@@ -69,7 +71,7 @@ discipline and close calls.
 | Turn | ←/→ or mouse (click the view to lock the pointer) | drag the view |
 | Look up / down | Shift+↑/↓ or Page Up / Page Down, or the mouse | drag the view |
 | Help / pick up / give card | E | action button |
-| Discipline | F, then 1–4 | Discipline button |
+| Discipline | F, then 1–5 | Discipline button |
 | Seating chart | R (Tab / Enter to pick seats) | Seats button |
 | Roll call | Q | Roll call button |
 | Pause | Esc or P | pause button |

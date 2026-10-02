@@ -109,6 +109,31 @@ test('discipline is refused for a student who is behaving', async ({ page }) => 
   await expect(page.locator('#disciplineOverlay')).toBeHidden();
 });
 
+test('a caught note-passer’s note can be read to the class; nobody else has one', async ({ page }) => {
+  await freezeRandomness(page);
+  await activate(page, 'mikeOxlong', 20);
+  await faceStudent(page, 'mikeOxlong');
+  await page.keyboard.press('f');
+  await expect(page.locator('#disciplineOverlay')).toBeVisible();
+  await expect(page.locator('#discRead')).toBeHidden();
+  await page.keyboard.press('5');
+  await expect(page.locator('#disciplineOverlay')).toBeVisible();
+  await page.keyboard.press('Escape');
+
+  await activate(page, 'dixieNormous', 40);
+  await faceStudent(page, 'dixieNormous');
+  await page.keyboard.press('f');
+  await expect(page.locator('#discRead')).toBeVisible();
+  await expect(page.locator('#discReadNote')).toContainText('the class howls');
+  await page.keyboard.press('5');
+  await expect(page.locator('#disciplineOverlay')).toBeHidden();
+  await expect(page.locator('#noteCard')).toBeVisible();
+  await expect(page.locator('#noteText')).not.toHaveText('');
+  await expect(lastLog(page)).toContainText('read it out');
+  const read = await hooks(page, (h) => h.voice.lines().filter((l) => l.id === 'teacher').length);
+  expect(read).toBe(1);
+});
+
 test('discipline menu: shows costs, traps focus, and detention runs out', async ({ page }) => {
   await freezeRandomness(page);
   for (const [i, id] of ['mikeOxlong', 'steve', 'moeLester'].entries()) {
