@@ -7,10 +7,12 @@
 //  - Relaxed: a markedly slower player (slower to react, to aim, to read and to find each
 //    owner) wins at least 80% of seeds, where on Standard the same player almost never wins.
 //  - Relaxed starts gently: a player who spends the whole first minute learning the controls,
-//    doing nothing useful, has not lost yet, on every seed.
+//    doing nothing useful, has not lost yet, on every seed. That player spends most of the
+//    minute at the chalkboard with their back to the class, since picking up a name card is the
+//    first thing the game asks for, and that is when throws happen.
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { createGame } from '../../src/rules.js';
+import { adjacentFriend, createGame } from '../../src/rules.js';
 import { DEFAULT_DIFFICULTY } from '../../src/data.js';
 import { run, seeded } from './helpers.js';
 import { FIRST_TIMER, playWell } from './bot.js';
@@ -62,11 +64,28 @@ describe('balance', () => {
   });
 
   test('a player still learning the controls survives the first minute of Relaxed', () => {
+    let facing = 0;
     for (let seed = 1; seed <= SEEDS; seed++) {
       const game = createGame({ rng: seeded(seed), difficulty: 'relaxed' });
-      run(game, 60);
+      const moves = seeded(1000 + seed);
+      // a few seconds finding the way to the board, then spells of facing it (reading the
+      // cards, working out how to take one) broken by glances back at the class
+      let clock = 6 + moves() * 6;
+      run(game, clock);
+      while (clock < 60 && game.phase !== 'over') {
+        const facingBoard = moves() < 0.75;
+        const spell = Math.min(2 + moves() * 8, 60 - clock);
+        run(game, spell, { facingBoard });
+        clock += spell;
+        if (facingBoard) facing += spell;
+        for (const s of game.roster) {
+          const active = game.students[s.id].active;
+          assert.ok(!active || !adjacentFriend(game, s.id), `seed ${seed}: ${s.id} acting up beside a friend`);
+        }
+      }
       assert.notEqual(game.phase, 'over', `seed ${seed}: lost at ${game.elapsed.toFixed(1)} s`);
     }
+    assert.ok(facing / SEEDS >= 30, `faced the board only ${(facing / SEEDS).toFixed(0)} s a minute`);
   });
 
   test('doing nothing still loses on Relaxed', () => {

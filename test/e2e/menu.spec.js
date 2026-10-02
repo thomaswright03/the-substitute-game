@@ -118,3 +118,37 @@ test('the end screen shows the best grade, and says when it is a new one', async
   await expect(page.locator('#endBestGrade')).toHaveText('A');
   await expect(page.locator('#endNewBest')).toBeHidden();
 });
+
+test('reloading or leaving the page mid-period asks first; the start and end screens do not', async ({ page }) => {
+  /** every dialog the page opened, each answered "stay on this page" */
+  const dialogs = [];
+  page.on('dialog', (d) => { dialogs.push(d.type()); d.dismiss().catch(() => {}); });
+  await openGame(page);
+  await page.reload();
+  await expect(page.locator('#startOverlay')).toBeVisible({ timeout: 90_000 });
+  expect(dialogs).toEqual([]);
+
+  await startRound(page);
+  await freezeRandomness(page);
+  // The reload is held up by the browser's "Leave site?" question, and staying keeps the period:
+  // a mark left on the page survives, which a reload would have wiped.
+  const reloadAndStay = async (count) => {
+    await page.evaluate(() => { window.stayedMark = true; setTimeout(() => location.reload()); });
+    await expect.poll(() => dialogs.length).toBe(count);
+    expect(await page.evaluate(() => window.stayedMark === true)).toBe(true);
+    expect(dialogs.every((type) => type === 'beforeunload')).toBe(true);
+  };
+  await reloadAndStay(1);
+  expect(await hooks(page, (s) => s.running)).toBe(true);
+  // paused is still mid-period
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#pauseOverlay')).toBeVisible();
+  await reloadAndStay(2);
+  await expect(page.locator('#pauseOverlay')).toBeVisible();
+  await page.locator('#resumeBtn').click();
+
+  await winPeriod(page);
+  await page.reload();
+  await expect(page.locator('#startOverlay')).toBeVisible({ timeout: 90_000 });
+  expect(dialogs).toEqual(['beforeunload', 'beforeunload']);
+});

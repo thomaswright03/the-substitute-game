@@ -11,12 +11,8 @@
     "checkJs": true,
     "noEmit": true,
     "skipLibCheck": true,
-    // strict mode's checks that the code already meets; strictNullChecks and noImplicitAny
-    // are not on yet
-    "strictFunctionTypes": true,
-    "strictBindCallApply": true,
-    "noImplicitThis": true,
-    "useUnknownInCatchVariables": true,
+    // every strict check, null checks and no implicit any included
+    "strict": true,
     "noImplicitReturns": true,
     "noUnusedLocals": true,
     "noFallthroughCasesInSwitch": true

@@ -11,6 +11,8 @@ import { CHAIR, DESK, canvasTexture } from './scene.js';
 const DESK_Y = DESK.topY - CHAIR.seatTop;
 const DESK_MID_Z = -CHAIR.z + DESK.halfDepth / 2; // halfway between the desk's centre and its near edge
 const REST_L = [-0.15, DESK_Y + 0.05, DESK_MID_Z + 0.05];
+/** @typedef {readonly number[]} Offset [x, y, z] from the top-centre of the chair seat */
+/** @type {Partial<Record<import('./data.js').Behaviour, {prop: Offset, R: Offset, L: Offset}>>} */
 export const TELL_POSES = {
   notes: { prop: [0.05, DESK_Y + 0.004, DESK_MID_Z - 0.04], R: [0.07, DESK_Y + 0.06, DESK_MID_Z + 0.02], L: REST_L },
   phone: { prop: [0, DESK_Y + 0.17, DESK_MID_Z + 0.01], R: [0.1, DESK_Y + 0.12, DESK_MID_Z + 0.07], L: [-0.1, DESK_Y + 0.12, DESK_MID_Z + 0.07] },
@@ -67,6 +69,7 @@ function paperPlaneGeometry() {
 }
 
 // Each builder returns a prop in seat-space orientation (see TELL_POSES), centred on its anchor.
+/** @type {Partial<Record<import('./data.js').Behaviour, () => THREE.Object3D>>} */
 export const PROP_BUILDERS = {
   notes: () => {
     const sheet = new THREE.Mesh(new THREE.PlaneGeometry(0.17, 0.21), new THREE.MeshStandardMaterial({ map: notesTexture(), roughness: 0.6 }));

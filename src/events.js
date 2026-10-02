@@ -18,13 +18,13 @@ export function setupEvents() {
 }
 
 export function drainEvents() {
-  if (!S.game) return;
   const events = S.game.events.splice(0);
   for (const e of events) handleEvent(e);
 }
 
+/** @param {import('./rules.js').GameEvent} e */
 function handleEvent(e) {
-  const n = e.id ? name(e.id) : '';
+  const n = 'id' in e ? name(e.id) : '';
   switch (e.type) {
     case 'activate': pushLog(t('students.' + e.id + '.active')); break;
     case 'nearlyLost': pushLog(t('log.nearlyLost', { name: n })); break;
@@ -83,7 +83,7 @@ function handleEvent(e) {
       break;
     case 'over':
       // the bell only rings when time runs out; a student storming off ends the period early
-      if (!e.outcome.culpritId) play('bell', { long: true });
+      if (e.outcome.reason !== 'student') play('bell', { long: true });
       endRound(e.outcome);
       break;
     default: break;

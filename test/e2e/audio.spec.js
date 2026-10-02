@@ -12,7 +12,7 @@ test('sound starts only after the first interaction, and each event has its cue'
   await freezeRandomness(page);
   await hooks(page, (s) => s.lookAt(0, 1.9, -6.2, 0, -4.5));
   await page.waitForFunction(() => window.__substitute.camera.position.z < -4);
-  await hooks(page, (s) => { s.game.tuning.throwChanceAttendance = 1000; });
+  await hooks(page, (s) => { s.game.tuning.gentleStart = false; s.game.tuning.throwChanceAttendance = 1000; });
   await page.waitForFunction(() => {
     const cues = window.__substitute.audio.cues();
     return cues.includes('windup') && cues.indexOf('hit') > cues.indexOf('windup');

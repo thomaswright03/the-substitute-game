@@ -8,13 +8,19 @@ import { pushLog } from './log.js';
 import { releaseLook, requestLook, stopHoverLook } from './pointer.js';
 import { emit } from './bus.js';
 
+/** @typedef {import('./rules.js').DisciplineOption} DisciplineOption */
+
+/** @type {Record<DisciplineOption, HTMLButtonElement>} */
 const buttons = {
-  talk: $('discTalk'), detention: $('discDetention'), principal: $('discPrincipal'), zap: $('discZap'),
+  talk: $('discTalk', HTMLButtonElement), detention: $('discDetention', HTMLButtonElement),
+  principal: $('discPrincipal', HTMLButtonElement), zap: $('discZap', HTMLButtonElement),
 };
+/** @type {Record<DisciplineOption, HTMLElement>} */
 const notes = {
   talk: $('discTalkNote'), detention: $('discDetentionNote'), principal: $('discPrincipalNote'), zap: $('discZapNote'),
 };
 
+/** @param {string} id */
 export function openDiscipline(id) {
   const game = S.game;
   if (!S.running || S.principalSeq) return;
@@ -51,6 +57,7 @@ export function closeDiscipline() {
   if (S.running) requestLook();
 }
 
+/** @param {DisciplineOption} option */
 export function chooseDiscipline(option) {
   if (S.disciplineTarget === null || buttons[option].disabled) return;
   const id = S.disciplineTarget;

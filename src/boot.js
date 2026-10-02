@@ -9,12 +9,48 @@
 
   var lastProgressAt = Date.now();
   var lastFraction = -1;
+  /** @type {ReturnType<typeof setInterval> | null} */
   var stallTimer = null;
 
+  /** @param {string} id */
   function byId(id) {
     return document.getElementById(id);
   }
 
+  // The player's language, as src/settings.js chooses it: their saved choice, else the first of
+  // the browser's languages the game has. Only the start-up cards are translated here; the game
+  // translates the rest of the page once it has loaded.
+  function startupLanguage() {
+    var tables = window.SubstituteBootStrings;
+    if (!tables) return null;
+    try {
+      var saved = localStorage.getItem('substitute.language');
+      if (saved && Object.prototype.hasOwnProperty.call(tables, saved)) return saved;
+    } catch {
+      // storage blocked: fall back to the browser's languages
+    }
+    var tags = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || 'en'];
+    for (var i = 0; i < tags.length; i++) {
+      var code = String(tags[i]).slice(0, 2).toLowerCase();
+      if (Object.prototype.hasOwnProperty.call(tables, code)) return code;
+    }
+    return 'en';
+  }
+
+  function translateCards() {
+    var code = startupLanguage();
+    var screen = byId('loadingScreen');
+    if (!code || !screen || !window.SubstituteBootStrings) return;
+    /** @type {Record<string, string>} */
+    var text = window.SubstituteBootStrings[/** @type {'en' | 'es' | 'fr'} */ (code)];
+    document.documentElement.lang = code;
+    screen.querySelectorAll('[data-i18n^="boot."]').forEach(function (node) {
+      var value = text[(node.getAttribute('data-i18n') || '').slice(5)];
+      if (typeof value === 'string') node.textContent = value;
+    });
+  }
+
+  /** @param {string} id the card to show */
   function show(id) {
     CARDS.forEach(function (card) {
       var el = byId(card);
@@ -38,6 +74,7 @@
     }
   }
 
+  /** @type {SubstituteBoot} */
   var boot = {
     blocked: false,
     reason: null,
@@ -89,6 +126,7 @@
     },
   };
   window.SubstituteBoot = boot;
+  translateCards();
 
   document.addEventListener('click', function (e) {
     var target = e.target instanceof Element ? e.target.closest('[data-action="reload"]') : null;

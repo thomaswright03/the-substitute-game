@@ -5,6 +5,9 @@
 // port defaults to $PORT or 8000; --root serves another folder (e.g. the built _site/);
 // --base mounts it under a path, the way GitHub Pages serves a project site.
 //
+// A missing file is a 404; when the folder has a 404.html (the built site does), that page is
+// sent with it, as GitHub Pages does.
+//
 // Text files and the (meshopt-compressed) models are sent gzip-compressed when the browser
 // accepts it, which roughly halves the first download. Every response carries an ETag and a
 // Last-Modified date with "Cache-Control: no-cache": the browser keeps its copy and asks each
@@ -104,7 +107,9 @@ const server = createServer(async (req, res) => {
     res.writeHead(200, headers);
     res.end(req.method === 'HEAD' ? undefined : body);
   } catch {
-    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }).end('Not found');
+    const page = await readFile(join(ROOT, '404.html')).catch(() => null);
+    if (page) res.writeHead(404, { 'Content-Type': TYPES['.html'], 'Cache-Control': 'no-cache' }).end(req.method === 'HEAD' ? undefined : page);
+    else res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }).end('Not found');
   }
 });
 

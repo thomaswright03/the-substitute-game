@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#141c16">
+<meta name="theme-color" content="#141c16" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#d8cfb8" media="(prefers-color-scheme: light)">
 <meta name="description" content="The Substitute: a 3D classroom-management game. Take attendance, keep the class calm and survive until the bell.">
 <title>The Substitute</title>
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
@@ -194,6 +195,16 @@
         <div class="kicker" data-i18n="pause.kicker">Class Paused</div>
         <h1 id="pauseTitle" data-i18n="pause.title">Take a Breath</h1>
         <p data-i18n="pause.body">The clock and the kids are frozen. Resume whenever you’re ready.</p>
+        <details class="howTo" id="pauseRules">
+          <summary data-i18n="start.rulesTitle">How to play</summary>
+          <ol class="rules">
+            <li><strong data-i18n="start.rules.0.lead"></strong> <span data-i18n="start.rules.0.body"></span></li>
+            <li><strong data-i18n="start.rules.1.lead"></strong> <span data-i18n="start.rules.1.body"></span></li>
+            <li><strong data-i18n="start.rules.2.lead"></strong> <span data-i18n="start.rules.2.body"></span></li>
+            <li><strong data-i18n="start.rules.3.lead"></strong> <span data-i18n="start.rules.3.body"></span></li>
+            <li><strong data-i18n="start.rules.4.lead"></strong> <span data-i18n="start.rules.4.body"></span></li>
+          </ol>
+        </details>
         <h2 data-i18n="start.controlsTitle">Controls</h2>
         <dl class="controls" data-controls></dl>
         <div class="settings" data-settings>
@@ -239,6 +250,7 @@
   </div>
 </main>
 
+<script src="src/boot-strings.js"></script>
 <script src="src/boot.js"></script>
 <script type="importmap">
 {

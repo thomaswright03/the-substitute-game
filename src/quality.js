@@ -19,12 +19,13 @@ let autoLevel = 0;
 let slowFor = 0;
 let settle = SETTLE_S;
 let frameMs = 0; // frame time, smoothed over about half a second
+/** @type {(() => void)[]} */
 const listeners = [];
 
 function load() {
   try {
     const saved = localStorage.getItem(QUALITY_KEY);
-    if (QUALITY_SETTINGS.includes(saved)) return saved;
+    if (saved && QUALITY_SETTINGS.includes(saved)) return saved;
   } catch { /* storage blocked: Automatic */ }
   return 'auto';
 }
@@ -38,6 +39,7 @@ export function qualityLevel() {
   return setting === 'auto' ? autoLevel : QUALITY_SETTINGS.indexOf(setting) - 1;
 }
 
+/** @param {() => void} fn */
 export function onQualityChange(fn) {
   listeners.push(fn);
 }
@@ -54,6 +56,7 @@ function apply() {
   for (const fn of listeners) fn();
 }
 
+/** @param {string} value 'auto' or a level's name */
 export function setQualitySetting(value) {
   if (!QUALITY_SETTINGS.includes(value)) return;
   setting = value;
@@ -72,6 +75,7 @@ export function setupQuality() {
 }
 
 // Called every frame with the time it took, in seconds.
+/** @param {number} dt */
 export function noteFrame(dt) {
   if (setting !== 'auto' || autoLevel >= QUALITY_LEVELS.length - 1 || document.hidden) return;
   if (settle > 0) {

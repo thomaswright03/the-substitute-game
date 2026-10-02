@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { fileURLToPath } from 'node:url';
+import ES from '../../src/i18n/es.js';
+import FR from '../../src/i18n/fr.js';
 import { hooks, openGame, startRound, watchPage } from './helpers.js';
 
 test('loads to the start screen with no errors, 404s or external requests', async ({ page }) => {
@@ -113,4 +115,55 @@ test('if three.js itself fails to download, the friendly error appears', async (
   await page.goto('/');
   await expect(page.locator('#loadFailed')).toBeVisible({ timeout: 30_000 });
   await expect(page.locator('#loadingCard')).toBeHidden();
+});
+
+// The start-up cards come from src/boot.js, which runs before (and without) the game's modules.
+test('when the game script can’t load, a Spanish browser is told so in Spanish', async ({ browser }) => {
+  const context = await browser.newContext({ locale: 'es-ES' });
+  const page = await context.newPage();
+  await page.route('**/src/main.js', (route) => route.fulfill({ status: 404, body: 'nope' }));
+  await page.goto('/');
+  const failed = page.locator('#loadFailed');
+  await expect(failed).toBeVisible({ timeout: 30_000 });
+  await expect(failed.locator('h1')).toHaveText(ES.boot.loadFailTitle);
+  await expect(failed.locator('p')).toHaveText(ES.boot.loadFailBody);
+  await expect(page.locator('#retryBtn')).toHaveText(ES.boot.retry);
+  await expect(page.locator('html')).toHaveAttribute('lang', 'es');
+  await context.close();
+});
+
+test('without WebGL, a French browser is told so in French', async ({ browser }) => {
+  const context = await browser.newContext({ locale: 'fr-FR' });
+  const page = await context.newPage();
+  await page.addInitScript(() => {
+    const original = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (type, ...rest) {
+      if (/webgl/i.test(String(type))) return null;
+      return original.call(this, type, ...rest);
+    };
+  });
+  await page.goto('/');
+  const card = page.locator('#noWebgl');
+  await expect(card).toBeVisible({ timeout: 5000 });
+  await expect(card.locator('h1')).toHaveText(FR.boot.noWebglTitle);
+  await expect(card.locator('p')).toHaveText(FR.boot.noWebglBody);
+  await context.close();
+});
+
+test('the start-up cards follow the language the player chose over the browser’s', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('substitute.language', 'fr'));
+  await page.route('**/src/main.js', (route) => route.fulfill({ status: 404, body: 'nope' }));
+  await page.goto('/');
+  await expect(page.locator('#loadFailed h1')).toHaveText(FR.boot.loadFailTitle);
+});
+
+test('opened as a file in a Spanish browser, the explanation is in Spanish', async ({ browser }) => {
+  const context = await browser.newContext({ locale: 'es-ES' });
+  const page = await context.newPage();
+  const file = fileURLToPath(new URL('../../index.html', import.meta.url));
+  await page.goto('file://' + file);
+  const card = page.locator('#fileProtocol');
+  await expect(card).toBeVisible({ timeout: 5000 });
+  await expect(card.locator('h1')).toHaveText(ES.boot.fileTitle);
+  await context.close();
 });

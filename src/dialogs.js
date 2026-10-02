@@ -1,13 +1,24 @@
 // Modal dialogs: a stack that remembers where focus came from, and a focus trap.
 import { el } from './dom.js';
 
+/** @type {{node: HTMLElement, returnTo: Element | null}[]} open dialogs, the top one last */
 const dialogStack = [];
 const FOCUSABLE = 'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
+/**
+ * What Tab can reach inside `root`, in order.
+ * @param {HTMLElement} root
+ */
 function focusables(root) {
-  return [...root.querySelectorAll(FOCUSABLE)].filter((n) => !n.closest('[hidden]') && n.offsetParent !== null);
+  return [...root.querySelectorAll(FOCUSABLE)]
+    .filter((n) => n instanceof HTMLElement && !n.closest('[hidden]') && n.offsetParent !== null)
+    .map((n) => /** @type {HTMLElement} */ (n));
 }
 
+/**
+ * @param {HTMLElement} node
+ * @param {HTMLElement} [focusTarget] what takes focus (else the first thing Tab reaches)
+ */
 export function openDialog(node, focusTarget) {
   node.hidden = false;
   if (!dialogStack.some((d) => d.node === node)) dialogStack.push({ node, returnTo: document.activeElement });
@@ -16,13 +27,14 @@ export function openDialog(node, focusTarget) {
   node.scrollTop = 0;
 }
 
+/** @param {HTMLElement} node */
 export function closeDialog(node) {
   node.hidden = true;
   const i = dialogStack.findIndex((d) => d.node === node);
   if (i < 0) return;
   const [entry] = dialogStack.splice(i, 1);
   const back = entry.returnTo;
-  if (back && back !== document.body && back.isConnected && back.offsetParent !== null && !back.closest('[hidden]')) {
+  if (back instanceof HTMLElement && back !== document.body && back.isConnected && back.offsetParent !== null && !back.closest('[hidden]')) {
     back.focus({ preventScroll: true });
   } else {
     el.canvas.focus({ preventScroll: true });

@@ -5,12 +5,14 @@ import { S } from './session.js';
 import { scene, world } from './world.js';
 import { EYE_HEIGHT, player } from './player.js';
 import { freeArea } from './rollcall.js';
+import { partsOf } from './characters.js';
 
 export function hitFlash() {
   restartAnimation(el.hitVignette, 'show');
   restartAnimation(el.stage, 'hit');
 }
 
+/** @param {string} id */
 export function zapVisual(id) {
   restartAnimation(el.flash, 'zap');
   const g = world.students[id];
@@ -25,18 +27,18 @@ export function zapVisual(id) {
   }, 350);
 }
 
-let projectileGeo = null, projectileMat = null;
+// one ball, shared by every throw
+const projectileGeo = new THREE.SphereGeometry(0.045, 8, 6);
+const projectileMat = new THREE.MeshStandardMaterial({ color: 0xf3ecd8 });
 const flightTarget = new THREE.Vector3();
 
+/** @param {string} id the thrower */
 export function launchProjectile(id) {
   clearProjectile();
-  if (!projectileGeo) {
-    projectileGeo = new THREE.SphereGeometry(0.045, 8, 6);
-    projectileMat = new THREE.MeshStandardMaterial({ color: 0xf3ecd8 });
-  }
   const g = world.students[id];
+  const { hand, head } = partsOf(g);
   const from = new THREE.Vector3();
-  (g.userData.parts.hand || g.userData.parts.head).getWorldPosition(from);
+  (hand || head || g).getWorldPosition(from);
   const mesh = new THREE.Mesh(projectileGeo, projectileMat);
   mesh.position.copy(from);
   scene.add(mesh);
@@ -55,6 +57,7 @@ export function clearProjectile() {
 // The warning goes at the top of the free play area, under the attendance panel or the banner,
 // so it never covers what the player is reading. While the seating chart is open (which can
 // fill a small screen) it is shown inside the chart instead.
+/** @type {number | null} */
 let cueTop = null;
 function showThreatCue() {
   if (el.threatCue.hidden !== S.seatChartOpen) el.threatCue.hidden = S.seatChartOpen;
