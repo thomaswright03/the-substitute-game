@@ -748,6 +748,20 @@ body.touch .log div:nth-last-child(n+3) { display: none; }
   .menuPanel { margin-left: var(--space-7); }
 }
 
+/* a phone held sideways: the title shrinks so the difficulty and Start stay on screen */
+@container stage (max-height: 440px) {
+  .menuScreen { padding: var(--space-5) var(--space-7); }
+  .menuPanel { gap: var(--space-4); margin-block: 0; }
+  .menuPanel .apple { width: calc(32 * var(--px)); height: calc(32 * var(--px)); font-size: calc(16 * var(--px)); margin: 0 0 var(--space-2); }
+  .menuPanel p.lead { display: none; }
+  .menuPanel h1 { font-size: var(--fs-5); margin: 0; }
+  .menuPanel .kicker { font-size: var(--fs-1); }
+  .difficulty label { padding: var(--space-4) var(--space-6); }
+  .menuActions { gap: var(--space-3); }
+  .menuActions .btn.big { min-height: var(--touch); font-size: var(--fs-3); padding: var(--space-4) var(--space-8); }
+  .menuQuick label { min-height: calc(36 * var(--px)); }
+}
+
 /* sheets: how to play, settings, the voice studio */
 .sheet { width: 100%; max-width: calc(620 * var(--px)); text-align: left; padding: 0; display: flex; flex-direction: column; max-height: 100%; overflow: hidden; }
 .sheet.wide { max-width: calc(860 * var(--px)); }

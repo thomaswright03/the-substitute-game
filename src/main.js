@@ -47,6 +47,19 @@ function resize() {
   resizeRenderer(Math.max(1, el.stage.clientWidth), Math.max(1, el.stage.clientHeight));
 }
 
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+// Behind the start and end screens the classroom drifts slowly, so they are not a still picture.
+// (Tests keep the camera where they put it.)
+/** @param {number} nowS */
+function drift(nowS) {
+  if (S.running || TEST_MODE || reducedMotion.matches) return;
+  camera.position.x += Math.sin(nowS * 0.21) * 0.5;
+  camera.position.z -= (1 - Math.cos(nowS * 0.17)) * 0.6;
+  camera.rotation.y += Math.sin(nowS * 0.21 + 0.8) * 0.03;
+  camera.updateMatrixWorld(true);
+}
+
 /** @type {number | null} */
 let lastT = null;
 let stopped = false;
@@ -75,6 +88,7 @@ function step(now) {
 
   if (S.running && !frozen()) stepPlayer(realDt);
   syncCamera(camera);
+  drift(nowS);
   applyCameraOverride();
 
   if (TEST_MODE) testFault();
